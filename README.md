@@ -1,3 +1,8 @@
+# **Программное средство управления процессом стажировки сотрудников (серверная часть)**
+
+Ссылка на репозиторий с документацией: https://github.com/pashpashovich/GrowPathDocumentation  
+Ссылка на репозиторий с серверной частью: https://github.com/pashpashovich/GrowPathServer
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
