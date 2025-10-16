@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { store } from './store';
 import { growPathTheme } from './theme';
 import DesignSystemDemo from './components/DesignSystemDemo';
+import MentorDashboard from './pages/MentorDashboard';
 import './App.css';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
             <Routes>
               <Route path="/" element={<DesignSystemDemo />} />
               <Route path="/demo" element={<DesignSystemDemo />} />
+              <Route path="/mentor" element={<MentorDashboard />} />
             </Routes>
           </div>
         </Router>

@@ -4,6 +4,7 @@ import userReducer from './slices/userSlice';
 import internReducer from './slices/internSlice';
 import mentorReducer from './slices/mentorSlice';
 import hrReducer from './slices/hrSlice';
+import taskReducer from './slices/taskSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     intern: internReducer,
     mentor: mentorReducer,
     hr: hrReducer,
+    task: taskReducer,
   },
 });
