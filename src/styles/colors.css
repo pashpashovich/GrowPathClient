@@ -1,0 +1,77 @@
+/* GrowPath Design System - Color Palette */
+
+:root {
+  /* Primary Colors */
+  --color-primary: #1A7AE0;
+  --color-primary-light: #92C0FA;
+  --color-primary-dark: #1565C0;
+  
+  /* Success Colors */
+  --color-success: #31F0A4;
+  --color-success-light: #99E6D8;
+  --color-success-dark: #2DD4A0;
+  
+  /* Background Colors */
+  --color-background: #F6F7F9;
+  --color-background-white: #FFFFFF;
+  --color-background-light: #FAFAFA;
+  
+  /* Text Colors */
+  --color-text-primary: #212121;
+  --color-text-secondary: #757575;
+  --color-text-disabled: #9E9E9E;
+  --color-text-white: #FFFFFF;
+  
+  /* Border Colors */
+  --color-border: #E0E0E0;
+  --color-border-light: #F0F0F0;
+  --color-border-dark: #BDBDBD;
+  
+  /* Status Colors */
+  --color-error: #FF5252;
+  --color-warning: #FF9800;
+  --color-info: #2196F3;
+  
+  /* Rating Colors */
+  --color-rating-high: #31F0A4;
+  --color-rating-medium: #FFC107;
+  --color-rating-low: #FF5252;
+  
+  /* Experience Colors */
+  --color-experience-beginner: #92C0FA;
+  --color-experience-intermediate: #FF9800;
+  --color-experience-advanced: #31F0A4;
+  
+  /* Shadow Colors */
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+  --shadow-dark: rgba(0, 0, 0, 0.2);
+  
+  /* Focus Colors */
+  --color-focus: rgba(26, 122, 224, 0.2);
+  --color-focus-error: rgba(255, 82, 82, 0.2);
+}
+
+/* Color Utility Classes */
+.text-primary { color: var(--color-primary); }
+.text-success { color: var(--color-success); }
+.text-error { color: var(--color-error); }
+.text-warning { color: var(--color-warning); }
+.text-info { color: var(--color-info); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-disabled { color: var(--color-text-disabled); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-success { background-color: var(--color-success); }
+.bg-error { background-color: var(--color-error); }
+.bg-warning { background-color: var(--color-warning); }
+.bg-info { background-color: var(--color-info); }
+.bg-background { background-color: var(--color-background); }
+.bg-white { background-color: var(--color-background-white); }
+
+.border-primary { border-color: var(--color-primary); }
+.border-success { border-color: var(--color-success); }
+.border-error { border-color: var(--color-error); }
+.border-warning { border-color: var(--color-warning); }
+.border-info { border-color: var(--color-info); }
+.border-default { border-color: var(--color-border); }
