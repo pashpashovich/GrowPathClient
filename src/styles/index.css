@@ -1,10 +1,6 @@
-/* GrowPath Design System - Main Styles */
-
-/* Import Design System Styles */
 @import './colors.css';
 @import './typography.css';
 
-/* Reset and Base Styles */
 * {
   box-sizing: border-box;
 }
@@ -26,18 +22,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Remove default margins */
 h1, h2, h3, h4, h5, h6, p, ul, ol, li, blockquote, pre {
   margin: 0;
 }
 
-/* Remove default list styles */
 ul, ol {
   list-style: none;
   padding: 0;
 }
 
-/* Remove default button styles */
 button {
   margin: 0;
   padding: 0;
@@ -47,7 +40,6 @@ button {
   cursor: pointer;
 }
 
-/* Remove default input styles */
 input, textarea, select {
   margin: 0;
   padding: 0;
@@ -57,51 +49,42 @@ input, textarea, select {
   color: inherit;
 }
 
-/* Remove default link styles */
 a {
   color: inherit;
   text-decoration: none;
 }
 
-/* Remove default table styles */
 table {
   border-collapse: collapse;
   border-spacing: 0;
 }
 
-/* Remove default fieldset styles */
 fieldset {
   margin: 0;
   padding: 0;
   border: none;
 }
 
-/* Remove default legend styles */
 legend {
   padding: 0;
 }
 
-/* Remove default details styles */
 details {
   display: block;
 }
 
-/* Remove default summary styles */
 summary {
   display: list-item;
 }
 
-/* Remove default template styles */
 template {
   display: none;
 }
 
-/* Remove default hidden styles */
 [hidden] {
   display: none !important;
 }
 
-/* Focus styles */
 :focus {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -111,13 +94,11 @@ template {
   outline: none;
 }
 
-/* Selection styles */
 ::selection {
   background-color: var(--color-primary);
   color: var(--color-text-white);
 }
 
-/* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -136,7 +117,6 @@ template {
   background: var(--color-text-secondary);
 }
 
-/* Utility Classes */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -230,7 +210,6 @@ template {
   box-shadow: 0 10px 15px -3px var(--shadow-light), 0 4px 6px -2px var(--shadow-light);
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .container {
     padding: 0 12px;
@@ -246,3 +225,5 @@ template {
     display: none;
   }
 }
+
+

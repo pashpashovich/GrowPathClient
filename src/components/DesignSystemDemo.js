@@ -1,206 +1,460 @@
 import React, { useState } from 'react';
-import { Button, Input } from './ui';
+import {
+  Container,
+  Typography,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+  Avatar,
+  Paper,
+  TextField,
+  Button as MuiButton,
+} from '@mui/material';
+import { Search, Email, Lock, Person, Business } from '@mui/icons-material';
 
 const DesignSystemDemo = () => {
   const [inputValue, setInputValue] = useState('');
   const [emailValue, setEmailValue] = useState('');
   const [passwordValue, setPasswordValue] = useState('');
   const [errorValue, setErrorValue] = useState('');
+  const [departmentValue, setDepartmentValue] = useState('');
+
+  const tableColumns = [
+    { field: 'name', headerName: 'Стажер', type: 'avatar' },
+    { field: 'rating', headerName: 'Рейтинг', type: 'rating' },
+    { field: 'experience', headerName: 'Опыт', type: 'experience' },
+    { field: 'position', headerName: 'Должность' },
+    { field: 'mentor', headerName: 'Ментор' },
+    { field: 'actions', headerName: 'Действия', type: 'actions' },
+  ];
+
+  const tableData = [
+    {
+      id: 1,
+      name: 'Иван Иванов',
+      rating: 9.0,
+      experience: 2,
+      position: 'Java разработчик',
+      mentor: 'Иван Иванов',
+      avatar: '',
+    },
+    {
+      id: 2,
+      name: 'Петр Петров',
+      rating: 7.6,
+      experience: 5,
+      position: 'ML инженер',
+      mentor: 'Иван Иванов',
+      avatar: '',
+    },
+    {
+      id: 3,
+      name: 'Анна Сидорова',
+      rating: 9.4,
+      experience: 3,
+      position: 'QA тестировщик',
+      mentor: 'Иван Иванов',
+      avatar: '',
+    },
+    {
+      id: 4,
+      name: 'Мария Козлова',
+      rating: 5.6,
+      experience: 1,
+      position: 'Frontend разработчик',
+      mentor: 'Иван Иванов',
+      avatar: '',
+    },
+  ];
+
+  const departmentOptions = [
+    { value: 'development', label: 'Разработка' },
+    { value: 'qa', label: 'Тестирование' },
+    { value: 'design', label: 'Дизайн' },
+    { value: 'marketing', label: 'Маркетинг' },
+  ];
 
   return (
-    <div className="container" style={{ padding: '40px 20px' }}>
-      <h1>GrowPath Design System</h1>
-      <p className="text-large mb-6">
-        Демонстрация базовых компонентов дизайн-системы
-      </p>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h1" gutterBottom>
+        GrowPath Design System
+      </Typography>
+      <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
+        Демонстрация компонентов с использованием Material-UI и Redux
+      </Typography>
 
-      <section className="mb-8">
-        <h2>Кнопки</h2>
-        <div className="flex gap-4 mb-4">
-          <Button variant="primary" size="small">Сохранить</Button>
-          <Button variant="primary" size="medium">Войти</Button>
-          <Button variant="primary" size="large">Большая кнопка</Button>
-        </div>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h2" gutterBottom>
+          Кнопки
+        </Typography>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item>
+            <MuiButton variant="contained" size="small">Сохранить</MuiButton>
+          </Grid>
+          <Grid item>
+            <MuiButton variant="contained" size="medium">Войти</MuiButton>
+          </Grid>
+          <Grid item>
+            <MuiButton variant="contained" size="large">Большая кнопка</MuiButton>
+          </Grid>
+        </Grid>
         
-        <div className="flex gap-4 mb-4">
-          <Button variant="secondary">Вторичная</Button>
-          <Button variant="outline">Контурная</Button>
-          <Button variant="success">Успех</Button>
-          <Button variant="danger">Опасность</Button>
-        </div>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item>
+            <MuiButton variant="outlined">Вторичная</MuiButton>
+          </Grid>
+          <Grid item>
+            <MuiButton variant="outlined" color="primary">Контурная</MuiButton>
+          </Grid>
+          <Grid item>
+            <MuiButton variant="contained" color="success">Успех</MuiButton>
+          </Grid>
+          <Grid item>
+            <MuiButton variant="contained" color="error">Опасность</MuiButton>
+          </Grid>
+        </Grid>
         
-        <div className="flex gap-4 mb-4">
-          <Button variant="primary" disabled>Отключена</Button>
-          <Button variant="primary" className="btn--loading">Загрузка</Button>
-        </div>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item>
+            <MuiButton variant="contained" disabled>Отключена</MuiButton>
+          </Grid>
+        </Grid>
         
-        <Button variant="primary" className="btn--full-width mb-4">
+        <MuiButton variant="contained" fullWidth sx={{ mb: 2 }}>
           Полная ширина
-        </Button>
-      </section>
+        </MuiButton>
+      </Box>
 
-      <section className="mb-8">
-        <h2>Поля ввода</h2>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h2" gutterBottom>
+          Поля ввода
+        </Typography>
         
-        <div className="mb-4">
-          <Input
-            label="Имя"
-            placeholder="Введите ваше имя"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            required
-          />
-        </div>
-        
-        <div className="mb-4">
-          <Input
-            type="email"
-            label="E-mail"
-            placeholder="example@email.com"
-            value={emailValue}
-            onChange={(e) => setEmailValue(e.target.value)}
-            icon="📧"
-            required
-          />
-        </div>
-        
-        <div className="mb-4">
-          <Input
-            type="password"
-            label="Пароль"
-            placeholder="Введите пароль"
-            value={passwordValue}
-            onChange={(e) => setPasswordValue(e.target.value)}
-            showPasswordToggle
-            required
-          />
-        </div>
-        
-        <div className="mb-4">
-          <Input
-            label="Поиск стажера"
-            placeholder="Искать стажера"
-            icon="🔍"
-            iconPosition="left"
-          />
-        </div>
-        
-        <div className="mb-4">
-          <Input
-            label="Выберите департамент"
-            placeholder="Выберите департамент"
-            icon="▼"
-            iconPosition="right"
-            className="input--select"
-          />
-        </div>
-        
-        <div className="mb-4">
-          <Input
-            label="Поле с ошибкой"
-            placeholder="Должен включать минимум 8 символов"
-            value={errorValue}
-            onChange={(e) => setErrorValue(e.target.value)}
-            error="Должен включать минимум 8 символов"
-          />
-        </div>
-        
-        <div className="mb-4">
-          <Input
-            label="Отключенное поле"
-            placeholder="Это поле отключено"
-            disabled
-          />
-        </div>
-      </section>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              label="Имя"
+              placeholder="Введите ваше имя"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              required
+              fullWidth
+            />
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <TextField
+              type="email"
+              label="E-mail"
+              placeholder="example@email.com"
+              value={emailValue}
+              onChange={(e) => setEmailValue(e.target.value)}
+              required
+              fullWidth
+              InputProps={{
+                startAdornment: <Email sx={{ mr: 1, color: 'text.secondary' }} />
+              }}
+            />
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <TextField
+              type="password"
+              label="Пароль"
+              placeholder="Введите пароль"
+              value={passwordValue}
+              onChange={(e) => setPasswordValue(e.target.value)}
+              required
+              fullWidth
+            />
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <TextField
+              label="Поиск стажера"
+              placeholder="Искать стажера"
+              fullWidth
+              InputProps={{
+                startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />
+              }}
+            />
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <TextField
+              select
+              label="Выберите департамент"
+              value={departmentValue}
+              onChange={(e) => setDepartmentValue(e.target.value)}
+              fullWidth
+            >
+              {departmentOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </TextField>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <TextField
+              label="Поле с ошибкой"
+              placeholder="Должен включать минимум 8 символов"
+              value={errorValue}
+              onChange={(e) => setErrorValue(e.target.value)}
+              error
+              helperText="Должен включать минимум 8 символов"
+              fullWidth
+            />
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <TextField
+              label="Отключенное поле"
+              placeholder="Это поле отключено"
+              disabled
+              fullWidth
+            />
+          </Grid>
+        </Grid>
+      </Box>
 
-      <section className="mb-8">
-        <h2>Типографика</h2>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h2" gutterBottom>
+          Типографика
+        </Typography>
         
-        <div className="mb-4">
-          <h1>Заголовок H1 - Montserrat 30px Bold</h1>
-          <h2>Заголовок H2 - Montserrat 24px Bold</h2>
-          <h3>Заголовок H3 - Montserrat 20px Semibold</h3>
-          <h4>Заголовок H4 - Montserrat 18px Semibold</h4>
-          <h5>Заголовок H5 - Montserrat 16px Semibold</h5>
-          <h6>Заголовок H6 - Montserrat 14px Semibold</h6>
-        </div>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography variant="h1" gutterBottom>
+              Заголовок H1 - Montserrat 30px Bold
+            </Typography>
+            <Typography variant="h2" gutterBottom>
+              Заголовок H2 - Montserrat 24px Bold
+            </Typography>
+            <Typography variant="h3" gutterBottom>
+              Заголовок H3 - Montserrat 20px Semibold
+            </Typography>
+            <Typography variant="h4" gutterBottom>
+              Заголовок H4 - Montserrat 18px Semibold
+            </Typography>
+            <Typography variant="h5" gutterBottom>
+              Заголовок H5 - Montserrat 16px Semibold
+            </Typography>
+            <Typography variant="h6" gutterBottom>
+              Заголовок H6 - Montserrat 14px Semibold
+            </Typography>
+          </CardContent>
+        </Card>
         
-        <div className="mb-4">
-          <p className="text-large">Большой текст - Source Sans Pro 18px</p>
-          <p className="text-base">Основной текст - Source Sans Pro 16px</p>
-          <p className="text-small">Малый текст - Source Sans Pro 14px</p>
-          <p className="text-xs">Очень малый текст - Source Sans Pro 12px</p>
-        </div>
-        
-        <div className="mb-4">
-          <p className="font-normal">Обычный вес шрифта</p>
-          <p className="font-semibold">Полужирный вес шрифта</p>
-          <p className="font-bold">Жирный вес шрифта</p>
-        </div>
-      </section>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Размеры текста
+            </Typography>
+            <Typography variant="h6" gutterBottom>
+              Большой текст - Source Sans Pro 18px
+            </Typography>
+            <Typography variant="body1" gutterBottom>
+              Основной текст - Source Sans Pro 16px
+            </Typography>
+            <Typography variant="body2" gutterBottom>
+              Малый текст - Source Sans Pro 14px
+            </Typography>
+            <Typography variant="caption" display="block">
+              Очень малый текст - Source Sans Pro 12px
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
 
-      <section className="mb-8">
-        <h2>Цветовая палитра</h2>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h2" gutterBottom>
+          Цветовая палитра
+        </Typography>
         
-        <div className="flex gap-4 mb-4">
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#1A7AE0', color: 'white' }}>
-            Primary Blue<br/>#1A7AE0
-          </div>
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#92C0FA', color: '#212121' }}>
-            Light Blue<br/>#92C0FA
-          </div>
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#31F0A4', color: '#212121' }}>
-            Bright Green<br/>#31F0A4
-          </div>
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#99E6D8', color: '#212121' }}>
-            Light Green<br/>#99E6D8
-          </div>
-        </div>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, backgroundColor: '#1A7AE0', color: 'white', textAlign: 'center' }}>
+              <Typography variant="body2" fontWeight="bold">
+                Primary Blue<br/>#1A7AE0
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, backgroundColor: '#92C0FA', color: '#212121', textAlign: 'center' }}>
+              <Typography variant="body2" fontWeight="bold">
+                Light Blue<br/>#92C0FA
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, backgroundColor: '#31F0A4', color: '#212121', textAlign: 'center' }}>
+              <Typography variant="body2" fontWeight="bold">
+                Bright Green<br/>#31F0A4
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, backgroundColor: '#99E6D8', color: '#212121', textAlign: 'center' }}>
+              <Typography variant="body2" fontWeight="bold">
+                Light Green<br/>#99E6D8
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
         
-        <div className="flex gap-4 mb-4">
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#F6F7F9', color: '#212121', border: '1px solid #E0E0E0' }}>
-            Off-white<br/>#F6F7F9
-          </div>
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#212121', color: 'white' }}>
-            Dark Gray<br/>#212121
-          </div>
-        </div>
-      </section>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, backgroundColor: '#F6F7F9', color: '#212121', border: '1px solid #E0E0E0', textAlign: 'center' }}>
+              <Typography variant="body2" fontWeight="bold">
+                Off-white<br/>#F6F7F9
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Paper sx={{ p: 2, backgroundColor: '#212121', color: 'white', textAlign: 'center' }}>
+              <Typography variant="body2" fontWeight="bold">
+                Dark Gray<br/>#212121
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
 
-      <section className="mb-8">
-        <h2>Цвета рейтингов</h2>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h2" gutterBottom>
+          Цвета рейтингов
+        </Typography>
         
-        <div className="flex gap-4 mb-4">
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#31F0A4', color: '#212121' }}>
-            Высокий рейтинг<br/>9.0
-          </div>
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#FFC107', color: '#212121' }}>
-            Средний рейтинг<br/>7.6
-          </div>
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#FF5252', color: 'white' }}>
-            Низкий рейтинг<br/>5.6
-          </div>
-        </div>
-      </section>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={12} sm={4}>
+            <Chip 
+              label="Высокий рейтинг 9.0" 
+              sx={{ 
+                backgroundColor: '#31F0A4', 
+                color: '#212121',
+                fontWeight: 'bold',
+                width: '100%',
+                height: '48px'
+              }} 
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Chip 
+              label="Средний рейтинг 7.6" 
+              sx={{ 
+                backgroundColor: '#FFC107', 
+                color: '#212121',
+                fontWeight: 'bold',
+                width: '100%',
+                height: '48px'
+              }} 
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Chip 
+              label="Низкий рейтинг 5.6" 
+              sx={{ 
+                backgroundColor: '#FF5252', 
+                color: 'white',
+                fontWeight: 'bold',
+                width: '100%',
+                height: '48px'
+              }} 
+            />
+          </Grid>
+        </Grid>
+      </Box>
 
-      <section className="mb-8">
-        <h2>Цвета опыта</h2>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h2" gutterBottom>
+          Цвета опыта
+        </Typography>
         
-        <div className="flex gap-4 mb-4">
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#92C0FA', color: '#212121' }}>
-            Начинающий<br/>2 мес
-          </div>
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#FF9800', color: 'white' }}>
-            Средний<br/>5 мес
-          </div>
-          <div className="p-4 rounded-md" style={{ backgroundColor: '#31F0A4', color: '#212121' }}>
-            Продвинутый<br/>3 мес
-          </div>
-        </div>
-      </section>
-    </div>
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={12} sm={4}>
+            <Chip 
+              label="Начинающий 2 мес" 
+              sx={{ 
+                backgroundColor: '#92C0FA', 
+                color: '#212121',
+                fontWeight: 'bold',
+                width: '100%',
+                height: '48px'
+              }} 
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Chip 
+              label="Средний 5 мес" 
+              sx={{ 
+                backgroundColor: '#FF9800', 
+                color: 'white',
+                fontWeight: 'bold',
+                width: '100%',
+                height: '48px'
+              }} 
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Chip 
+              label="Продвинутый 3 мес" 
+              sx={{ 
+                backgroundColor: '#31F0A4', 
+                color: '#212121',
+                fontWeight: 'bold',
+                width: '100%',
+                height: '48px'
+              }} 
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h2" gutterBottom>
+          Таблица стажеров
+        </Typography>
+        
+        <Card>
+          <CardContent>
+            <Grid container spacing={2}>
+              {tableData.map((intern) => (
+                <Grid item xs={12} sm={6} md={4} key={intern.id}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Box display="flex" alignItems="center" gap={1} mb={1}>
+                        <Avatar />
+                        <Typography variant="h6">{intern.name}</Typography>
+                      </Box>
+                      <Chip 
+                        label={`Рейтинг: ${intern.rating}`}
+                        sx={{ 
+                          backgroundColor: intern.rating >= 8 ? '#31F0A4' : intern.rating >= 6 ? '#FFC107' : '#FF5252',
+                          color: intern.rating >= 6 ? '#212121' : 'white',
+                          mb: 1
+                        }}
+                      />
+                      <Typography variant="body2" color="text.secondary">
+                        {intern.position}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Ментор: {intern.mentor}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </CardContent>
+        </Card>
+      </Box>
+    </Container>
   );
 };
 
 export default DesignSystemDemo;
+
