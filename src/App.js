@@ -7,6 +7,8 @@ import { store } from './store';
 import { growPathTheme } from './theme';
 import DesignSystemDemo from './components/DesignSystemDemo';
 import MentorDashboard from './pages/MentorDashboard';
+import InternDashboard from './pages/InternDashboard';
+import Navigation from './components/Navigation';
 import './App.css';
 
 function App() {
@@ -16,10 +18,12 @@ function App() {
         <CssBaseline />
         <Router>
           <div className="App">
+            <Navigation />
             <Routes>
               <Route path="/" element={<DesignSystemDemo />} />
               <Route path="/demo" element={<DesignSystemDemo />} />
               <Route path="/mentor" element={<MentorDashboard />} />
+              <Route path="/intern" element={<InternDashboard />} />
             </Routes>
           </div>
         </Router>

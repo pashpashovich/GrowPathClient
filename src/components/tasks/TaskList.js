@@ -199,18 +199,11 @@ const TaskList = () => {
 
   return (
     <Box>
-      {/* Заголовок и кнопка создания */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      {/* Заголовок */}
+      <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1">
           Управление задачами
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Assignment />}
-          onClick={() => setIsTaskFormOpen(true)}
-        >
-          Создать задание
-        </Button>
       </Box>
 
       {/* Фильтры */}

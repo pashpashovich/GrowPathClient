@@ -60,20 +60,22 @@ const TaskDetails = ({ open, onClose }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'assigned': return 'info';
-      case 'in_progress': return 'warning';
+      case 'pending': return 'default';
+      case 'in_progress': return 'primary';
+      case 'submitted': return 'warning';
       case 'completed': return 'success';
-      case 'cancelled': return 'error';
+      case 'rejected': return 'error';
       default: return 'default';
     }
   };
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'assigned': return 'Назначено';
+      case 'pending': return 'Доступно';
       case 'in_progress': return 'В работе';
+      case 'submitted': return 'На ревью';
       case 'completed': return 'Завершено';
-      case 'cancelled': return 'Отменено';
+      case 'rejected': return 'Требует доработки';
       default: return status;
     }
   };
@@ -126,22 +128,24 @@ const TaskDetails = ({ open, onClose }) => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Schedule fontSize="small" color="action" />
                   <Typography variant="body2" color="text.secondary">
-                    Срок выполнения:
-                  </Typography>
-                  <Typography variant="body2">
-                    {new Date(currentTask.dueDate).toLocaleDateString('ru-RU')}
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Person fontSize="small" color="action" />
-                  <Typography variant="body2" color="text.secondary">
                     Создано:
                   </Typography>
                   <Typography variant="body2">
                     {new Date(currentTask.createdAt).toLocaleDateString('ru-RU')}
                   </Typography>
                 </Box>
+                
+                {currentTask.takenBy && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Person fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      Взято в работу:
+                    </Typography>
+                    <Typography variant="body2">
+                      {new Date(currentTask.takenAt).toLocaleDateString('ru-RU')}
+                    </Typography>
+                  </Box>
+                )}
               </Grid>
             </Grid>
           </Paper>
@@ -157,79 +161,50 @@ const TaskDetails = ({ open, onClose }) => {
           </Paper>
 
           {/* Назначенные стажеры */}
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Назначенные стажеры
-            </Typography>
-            <AvatarGroup max={4}>
-              {currentTask.assignees.map((assignee) => (
-                <Avatar key={assignee.id} alt={assignee.name}>
-                  {assignee.name.split(' ').map(n => n[0]).join('')}
-                </Avatar>
-              ))}
-            </AvatarGroup>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              {currentTask.assignees.map(a => a.name).join(', ')}
-            </Typography>
-          </Paper>
-
-          {/* Прогресс */}
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Прогресс выполнения
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-              <LinearProgress 
-                variant="determinate" 
-                value={currentTask.progress} 
-                sx={{ flexGrow: 1, height: 8, borderRadius: 4 }}
-              />
-              <Typography variant="body2" color="text.secondary">
-                {currentTask.progress}%
+          {currentTask.assignedInterns && currentTask.assignedInterns.length > 0 && (
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Назначенные стажеры
               </Typography>
-            </Box>
-          </Paper>
+              <Typography variant="body2" color="text.secondary">
+                {currentTask.assignedInterns.length} стажер(ов) назначено
+              </Typography>
+            </Paper>
+          )}
+
 
           {/* Чек-лист */}
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Чек-лист приемки
-            </Typography>
-            <List dense>
-              {currentTask.checklist.map((item, index) => (
-                <ListItem key={item.id} sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    {item.completed ? (
-                      <CheckCircle color="success" />
-                    ) : (
+          {currentTask.checklist && currentTask.checklist.length > 0 && (
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Чек-лист приемки
+              </Typography>
+              <List dense>
+                {currentTask.checklist.map((item, index) => (
+                  <ListItem key={index} sx={{ px: 0 }}>
+                    <ListItemIcon>
                       <RadioButtonUnchecked color="action" />
-                    )}
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={item.text}
-                    sx={{
-                      textDecoration: item.completed ? 'line-through' : 'none',
-                      color: item.completed ? 'text.secondary' : 'text.primary'
-                    }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
+                    </ListItemIcon>
+                    <ListItemText primary={typeof item === 'string' ? item : item.text || item} />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          )}
 
           {/* Прикрепленные файлы */}
-          {currentTask.attachments.length > 0 && (
+          {currentTask.attachments && currentTask.attachments.length > 0 && (
             <Paper sx={{ p: 2 }}>
               <Typography variant="h6" gutterBottom>
                 Прикрепленные файлы
               </Typography>
               <List dense>
-                {currentTask.attachments.map((attachment) => (
-                  <ListItem key={attachment.id} sx={{ px: 0 }}>
+                {currentTask.attachments.map((attachment, index) => (
+                  <ListItem key={index} sx={{ px: 0 }}>
                     <ListItemIcon>
                       <AttachFile color="action" />
                     </ListItemIcon>
-                    <ListItemText primary={attachment.name} />
+                    <ListItemText primary={typeof attachment === 'string' ? attachment : attachment.name || attachment} />
                   </ListItem>
                 ))}
               </List>
@@ -237,24 +212,28 @@ const TaskDetails = ({ open, onClose }) => {
           )}
 
           {/* Полезные ссылки */}
-          {currentTask.links.length > 0 && (
+          {currentTask.links && currentTask.links.length > 0 && (
             <Paper sx={{ p: 2 }}>
               <Typography variant="h6" gutterBottom>
                 Полезные ссылки
               </Typography>
               <List dense>
-                {currentTask.links.map((link) => (
-                  <ListItem key={link.id} sx={{ px: 0 }}>
-                    <ListItemIcon>
-                      <LinkIcon color="action" />
-                    </ListItemIcon>
-                    <ListItemText>
-                      <Link href={link.url} target="_blank" rel="noopener noreferrer">
-                        {link.title}
-                      </Link>
-                    </ListItemText>
-                  </ListItem>
-                ))}
+                {currentTask.links.map((link, index) => {
+                  const linkUrl = typeof link === 'string' ? link : link.url || link;
+                  const linkTitle = typeof link === 'string' ? link : link.title || link;
+                  return (
+                    <ListItem key={index} sx={{ px: 0 }}>
+                      <ListItemIcon>
+                        <LinkIcon color="action" />
+                      </ListItemIcon>
+                      <ListItemText>
+                        <Link href={linkUrl} target="_blank" rel="noopener noreferrer">
+                          {linkTitle}
+                        </Link>
+                      </ListItemText>
+                    </ListItem>
+                  );
+                })}
               </List>
             </Paper>
           )}

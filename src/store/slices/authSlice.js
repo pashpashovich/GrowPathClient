@@ -1,7 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { mockCurrentUser } from '../../data/mockData';
 
 const initialState = {
-  user: null,
+  user: mockCurrentUser,
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
   isLoading: false,

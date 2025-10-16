@@ -1,30 +1,13 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Container, Modal, Tabs, Tab } from '@mui/material';
-import { Add } from '@mui/icons-material';
-import TaskForm from '../components/tasks/TaskForm';
-import TaskList from '../components/tasks/TaskList';
+import { Box, Typography, Container, Modal, Tabs, Tab } from '@mui/material';
+import InternTaskList from '../components/tasks/InternTaskList';
+import TaskSubmissionForm from '../components/tasks/TaskSubmissionForm';
 import TaskDetails from '../components/tasks/TaskDetails';
-import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
-import { useDispatch, useSelector } from 'react-redux';
-import { removeTask } from '../store/slices/taskSlice';
 
-const MentorDashboard = () => {
-  const dispatch = useDispatch();
-  const tasks = useSelector((state) => state.task.tasks);
-  const [openForm, setOpenForm] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState(null);
+const InternDashboard = () => {
   const [selectedTask, setSelectedTask] = useState(null);
+  const [submissionTask, setSubmissionTask] = useState(null);
   const [tabValue, setTabValue] = useState(0);
-
-  const handleOpenForm = (task = null) => {
-    setTaskToEdit(task);
-    setOpenForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setOpenForm(false);
-    setTaskToEdit(null);
-  };
 
   const handleViewTask = (task) => {
     setSelectedTask(task);
@@ -34,10 +17,12 @@ const MentorDashboard = () => {
     setSelectedTask(null);
   };
 
-  const handleDeleteTask = (taskId) => {
-    if (window.confirm('Вы уверены, что хотите удалить это задание?')) {
-      dispatch(removeTask(taskId));
-    }
+  const handleSubmitTask = (task) => {
+    setSubmissionTask(task);
+  };
+
+  const handleCloseSubmissionForm = () => {
+    setSubmissionTask(null);
   };
 
   const handleTabChange = (event, newValue) => {
@@ -48,44 +33,31 @@ const MentorDashboard = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h3" component="h1">
-          Панель ментора
+          Панель стажера
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenForm()}
-        >
-          Создать задание
-        </Button>
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Все задания" />
-          <Tab label="Проверка заданий" />
+          <Tab label="Мои задания" />
           <Tab label="Статистика" />
         </Tabs>
       </Box>
 
       {tabValue === 0 && (
-        <TaskList
-          onEdit={handleOpenForm}
-          onDelete={handleDeleteTask}
-          onView={handleViewTask}
+        <InternTaskList
+          onViewTask={handleViewTask}
+          onSubmitTask={handleSubmitTask}
         />
       )}
 
       {tabValue === 1 && (
-        <TaskReviewPanel onViewTask={handleViewTask} />
-      )}
-
-      {tabValue === 2 && (
         <Box>
           <Typography variant="h4" gutterBottom>
-            Статистика заданий
+            Статистика выполнения
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Здесь будет отображаться статистика по заданиям, прогрессу стажеров и аналитика.
+            Здесь будет отображаться статистика выполнения заданий, прогресс и достижения.
           </Typography>
         </Box>
       )}
@@ -114,19 +86,20 @@ const MentorDashboard = () => {
         >
           {selectedTask && (
             <TaskDetails
-              open={!!selectedTask}
+              task={selectedTask}
               onClose={handleCloseTaskDetails}
+              onEdit={() => {}} // Стажер не может редактировать задачи
             />
           )}
         </Box>
       </Modal>
 
-      {/* Модальное окно для создания/редактирования задачи */}
+      {/* Модальное окно для сдачи задачи */}
       <Modal
-        open={openForm}
-        onClose={handleCloseForm}
-        aria-labelledby="task-form-modal-title"
-        aria-describedby="task-form-modal-description"
+        open={!!submissionTask}
+        onClose={handleCloseSubmissionForm}
+        aria-labelledby="task-submission-modal-title"
+        aria-describedby="task-submission-modal-description"
       >
         <Box
           sx={{
@@ -143,11 +116,16 @@ const MentorDashboard = () => {
             borderRadius: 2,
           }}
         >
-          <TaskForm taskToEdit={taskToEdit} onClose={handleCloseForm} />
+          {submissionTask && (
+            <TaskSubmissionForm
+              task={submissionTask}
+              onClose={handleCloseSubmissionForm}
+            />
+          )}
         </Box>
       </Modal>
     </Container>
   );
 };
 
-export default MentorDashboard;
+export default InternDashboard;

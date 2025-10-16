@@ -1,7 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { mockInterns } from '../../data/mockData';
 
 const initialState = {
-  interns: [],
+  interns: mockInterns,
   currentIntern: null,
   internProgress: null,
   isLoading: false,
