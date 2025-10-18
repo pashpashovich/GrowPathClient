@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Container, Modal, Tabs, Tab } from '@mui/material';
+import { Box, Typography, Button, Container, Modal, AppBar, Toolbar, IconButton } from '@mui/material';
+import { Logout } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
+import Logo from '../components/Logo';
 import TaskForm from '../components/tasks/TaskForm';
-import TaskList from '../components/tasks/TaskList';
 import TaskDetails from '../components/tasks/TaskDetails';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
+import KanbanBoard from '../components/tasks/KanbanBoard';
+import Sidebar from '../components/Sidebar';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeTask } from '../store/slices/taskSlice';
+import { logout } from '../store/slices/authSlice';
+import { useLocation } from 'react-router-dom';
 
 const MentorDashboard = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const tasks = useSelector((state) => state.task.tasks);
   const [openForm, setOpenForm] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
-  const [tabValue, setTabValue] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleOpenForm = (task = null) => {
     setTaskToEdit(task);
@@ -40,46 +48,17 @@ const MentorDashboard = () => {
     }
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
   };
 
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h3" component="h1">
-          Панель ментора
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenForm()}
-        >
-          Создать задание
-        </Button>
-      </Box>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Все задания" />
-          <Tab label="Проверка заданий" />
-          <Tab label="Статистика" />
-        </Tabs>
-      </Box>
-
-      {tabValue === 0 && (
-        <TaskList
-          onEdit={handleOpenForm}
-          onDelete={handleDeleteTask}
-          onView={handleViewTask}
-        />
-      )}
-
-      {tabValue === 1 && (
-        <TaskReviewPanel onViewTask={handleViewTask} />
-      )}
-
-      {tabValue === 2 && (
+  const getCurrentPage = () => {
+    if (location.pathname === '/mentor/review') {
+      return <TaskReviewPanel onViewTask={handleViewTask} />;
+    } else if (location.pathname === '/mentor/stats') {
+      return (
         <Box>
           <Typography variant="h4" gutterBottom>
             Статистика заданий
@@ -88,7 +67,81 @@ const MentorDashboard = () => {
             Здесь будет отображаться статистика по заданиям, прогрессу стажеров и аналитика.
           </Typography>
         </Box>
-      )}
+      );
+    } else {
+      return (
+        <KanbanBoard
+          onEdit={handleOpenForm}
+          onDelete={handleDeleteTask}
+          onView={handleViewTask}
+        />
+      );
+    }
+  };
+
+  return (
+    <Box>
+      {/* Глобальный хедер */}
+      <AppBar position="fixed" sx={{ zIndex: 1300 }}>
+        <Toolbar>
+          <Logo size="medium" />
+          
+          <Box sx={{ flexGrow: 1 }} />
+          
+              <IconButton
+                color="inherit"
+                onClick={handleLogout}
+                title="Выйти"
+              >
+                <Logout />
+              </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      <Box sx={{ display: 'flex', mt: 8 }}>
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            ml: sidebarOpen ? '280px' : '80px',
+            transition: 'margin-left 0.3s ease',
+            minHeight: 'calc(100vh - 64px)',
+            backgroundColor: '#f5f5f5',
+          }}
+        >
+        {/* Верхняя панель */}
+        <Box sx={{ 
+          backgroundColor: 'white',
+          color: 'text.primary',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          p: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2,
+          mt: 2
+        }}>
+          <Typography variant="h6" component="div">
+            {location.pathname === '/mentor/review' ? 'Проверка заданий' :
+             location.pathname === '/mentor/stats' ? 'Статистика' :
+             'Доска задач'}
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenForm()}
+          >
+            Создать задание
+          </Button>
+        </Box>
+
+        {/* Основной контент */}
+        <Box sx={{ py: 3, px: 3, overflowX: 'auto' }}>
+          {getCurrentPage()}
+        </Box>
+      </Box>
 
       {/* Модальное окно для просмотра деталей задачи */}
       <Modal
@@ -116,6 +169,10 @@ const MentorDashboard = () => {
             <TaskDetails
               open={!!selectedTask}
               onClose={handleCloseTaskDetails}
+              onEdit={() => {
+                handleCloseTaskDetails();
+                handleOpenForm(selectedTask);
+              }}
             />
           )}
         </Box>
@@ -143,10 +200,11 @@ const MentorDashboard = () => {
             borderRadius: 2,
           }}
         >
-          <TaskForm taskToEdit={taskToEdit} onClose={handleCloseForm} />
+          <TaskForm open={openForm} taskToEdit={taskToEdit} onClose={handleCloseForm} />
         </Box>
       </Modal>
-    </Container>
+      </Box>
+    </Box>
   );
 };
 

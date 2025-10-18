@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
-import { Box, Typography, Container, Modal, Tabs, Tab } from '@mui/material';
+import { Box, Typography, Container, Modal, AppBar, Toolbar, IconButton } from '@mui/material';
+import { Logout } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import Logo from '../components/Logo';
 import InternTaskList from '../components/tasks/InternTaskList';
 import TaskSubmissionForm from '../components/tasks/TaskSubmissionForm';
 import TaskDetails from '../components/tasks/TaskDetails';
+import Sidebar from '../components/Sidebar';
+import { useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
 
 const InternDashboard = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [selectedTask, setSelectedTask] = useState(null);
   const [submissionTask, setSubmissionTask] = useState(null);
-  const [tabValue, setTabValue] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleViewTask = (task) => {
     setSelectedTask(task);
@@ -25,33 +35,15 @@ const InternDashboard = () => {
     setSubmissionTask(null);
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
   };
 
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h3" component="h1">
-          Панель стажера
-        </Typography>
-      </Box>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Мои задания" />
-          <Tab label="Статистика" />
-        </Tabs>
-      </Box>
-
-      {tabValue === 0 && (
-        <InternTaskList
-          onViewTask={handleViewTask}
-          onSubmitTask={handleSubmitTask}
-        />
-      )}
-
-      {tabValue === 1 && (
+  const getCurrentPage = () => {
+    if (location.pathname === '/intern/stats') {
+      return (
         <Box>
           <Typography variant="h4" gutterBottom>
             Статистика выполнения
@@ -60,7 +52,71 @@ const InternDashboard = () => {
             Здесь будет отображаться статистика выполнения заданий, прогресс и достижения.
           </Typography>
         </Box>
-      )}
+      );
+    } else {
+      return (
+        <InternTaskList
+          onViewTask={handleViewTask}
+          onSubmitTask={handleSubmitTask}
+        />
+      );
+    }
+  };
+
+  return (
+    <Box>
+      {/* Глобальный хедер */}
+      <AppBar position="fixed" sx={{ zIndex: 1300 }}>
+        <Toolbar>
+          <Logo size="medium" />
+          
+          <Box sx={{ flexGrow: 1 }} />
+          
+              <IconButton
+                color="inherit"
+                onClick={handleLogout}
+                title="Выйти"
+              >
+                <Logout />
+              </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      <Box sx={{ display: 'flex', mt: 8 }}>
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            ml: sidebarOpen ? '280px' : '80px',
+            transition: 'margin-left 0.3s ease',
+            minHeight: 'calc(100vh - 64px)',
+            backgroundColor: '#f5f5f5',
+          }}
+        >
+        {/* Верхняя панель */}
+        <Box sx={{ 
+          backgroundColor: 'white',
+          color: 'text.primary',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          p: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2,
+          mt: 2
+        }}>
+          <Typography variant="h6" component="div">
+            {location.pathname === '/intern/stats' ? 'Статистика' : 'Мои задания'}
+          </Typography>
+        </Box>
+
+        {/* Основной контент */}
+        <Box sx={{ py: 3, px: 3, overflowX: 'auto' }}>
+          {getCurrentPage()}
+        </Box>
+      </Box>
 
       {/* Модальное окно для просмотра деталей задачи */}
       <Modal
@@ -124,8 +180,10 @@ const InternDashboard = () => {
           )}
         </Box>
       </Modal>
-    </Container>
+      </Box>
+    </Box>
   );
 };
 
 export default InternDashboard;
+

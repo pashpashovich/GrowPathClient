@@ -153,6 +153,10 @@ const TaskReviewPanel = ({ onViewTask }) => {
   };
 
   const filteredTasks = tasks.filter(task => {
+    // Показываем только задачи на ревью и завершенные
+    const isReviewable = task.status === 'submitted' || task.status === 'completed';
+    if (!isReviewable) return false;
+    
     const statusMatch = statusFilter === 'all' || task.status === statusFilter;
     const internMatch = internFilter === 'all' || 
       (task.takenBy && task.takenBy === internFilter) ||
@@ -162,7 +166,7 @@ const TaskReviewPanel = ({ onViewTask }) => {
   });
 
   const submittedTasks = filteredTasks.filter(task => task.status === 'submitted');
-  const inProgressTasks = filteredTasks.filter(task => task.status === 'in_progress');
+  const completedTasks = filteredTasks.filter(task => task.status === 'completed');
 
   return (
     <Box>
@@ -180,9 +184,7 @@ const TaskReviewPanel = ({ onViewTask }) => {
             >
               <MenuItem value="all">Все</MenuItem>
               <MenuItem value="submitted">На ревью</MenuItem>
-              <MenuItem value="in_progress">В работе</MenuItem>
               <MenuItem value="completed">Завершено</MenuItem>
-              <MenuItem value="rejected">Требует доработки</MenuItem>
             </Select>
           </FormControl>
           
@@ -208,6 +210,14 @@ const TaskReviewPanel = ({ onViewTask }) => {
         <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="body2">
             У вас {submittedTasks.length} заданий на ревью, требующих проверки
+          </Typography>
+        </Alert>
+      )}
+
+      {completedTasks.length > 0 && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            {completedTasks.length} заданий уже проверено и завершено
           </Typography>
         </Alert>
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,9 +21,9 @@ import {
 } from '@mui/material';
 import { Add, Delete, AttachFile, Link } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { addTask } from '../../store/slices/taskSlice';
+import { addTask, updateTask } from '../../store/slices/taskSlice';
 
-const TaskForm = ({ open, onClose }) => {
+const TaskForm = ({ open, onClose, taskToEdit }) => {
   const dispatch = useDispatch();
   const { interns } = useSelector((state) => state.intern);
   
@@ -39,6 +39,41 @@ const TaskForm = ({ open, onClose }) => {
   });
   
   const [errors, setErrors] = useState({});
+
+  // Заполняем форму при редактировании
+  useEffect(() => {
+    if (taskToEdit) {
+      setFormData({
+        title: taskToEdit.title || '',
+        description: taskToEdit.description || '',
+        priority: taskToEdit.priority || 'medium',
+        assignees: taskToEdit.assignedInterns || [],
+        checklist: taskToEdit.checklist ? 
+          taskToEdit.checklist.map((item, index) => ({
+            id: index + 1,
+            text: typeof item === 'string' ? item : item.text || '',
+            completed: typeof item === 'object' ? item.completed || false : false
+          })) : 
+          [{ id: 1, text: '', completed: false }],
+        attachments: taskToEdit.attachments || [],
+        links: taskToEdit.links || [],
+        dueDate: taskToEdit.dueDate ? new Date(taskToEdit.dueDate).toISOString().split('T')[0] : '',
+      });
+    } else {
+      // Сбрасываем форму при создании новой задачи
+      setFormData({
+        title: '',
+        description: '',
+        priority: 'medium',
+        assignees: [],
+        checklist: [{ id: 1, text: '', completed: false }],
+        attachments: [],
+        links: [],
+        dueDate: '',
+      });
+    }
+    setErrors({});
+  }, [taskToEdit]);
 
   // Mock data для стажеров
   const mockInterns = [
@@ -149,16 +184,40 @@ const TaskForm = ({ open, onClose }) => {
 
   const handleSubmit = () => {
     if (validateForm()) {
-      const newTask = {
-        id: Date.now(), // Временный ID
-        ...formData,
-        status: 'assigned',
-        createdAt: new Date().toISOString(),
-        createdBy: 'current-user-id', // В реальном приложении из auth
-        progress: 0,
-      };
-      
-      dispatch(addTask(newTask));
+      if (taskToEdit) {
+        // Редактирование существующей задачи
+        const updatedTask = {
+          ...taskToEdit,
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          assignedInterns: formData.assignees,
+          checklist: formData.checklist.map(item => item.text),
+          attachments: formData.attachments,
+          links: formData.links,
+          dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : taskToEdit.dueDate,
+        };
+        
+        dispatch(updateTask(updatedTask));
+      } else {
+        // Создание новой задачи
+        const newTask = {
+          id: Date.now(), // Временный ID
+          title: formData.title,
+          description: formData.description,
+          priority: formData.priority,
+          assignedInterns: formData.assignees,
+          checklist: formData.checklist.map(item => item.text),
+          attachments: formData.attachments,
+          links: formData.links,
+          dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          createdBy: 'current-user-id', // В реальном приложении из auth
+        };
+        
+        dispatch(addTask(newTask));
+      }
       
       // Сброс формы
       setFormData({
@@ -196,7 +255,7 @@ const TaskForm = ({ open, onClose }) => {
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Typography variant="h5" component="div">
-          Создать задание
+          {taskToEdit ? 'Редактировать задание' : 'Создать задание'}
         </Typography>
       </DialogTitle>
       

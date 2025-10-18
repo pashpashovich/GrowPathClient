@@ -2,9 +2,12 @@ import { createSlice } from '@reduxjs/toolkit';
 import { mockCurrentUser } from '../../data/mockData';
 
 const initialState = {
-  user: mockCurrentUser,
-  token: localStorage.getItem('token'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  user: null,
+  tokens: {
+    accessToken: localStorage.getItem('accessToken'),
+    refreshToken: localStorage.getItem('refreshToken'),
+  },
+  isAuthenticated: !!localStorage.getItem('accessToken'),
   isLoading: false,
   error: null,
   role: null, // 'intern', 'mentor', 'hr', 'admin'
@@ -17,17 +20,30 @@ const authSlice = createSlice({
     login: (state, action) => {
       state.isAuthenticated = true;
       state.user = action.payload.user;
-      state.token = action.payload.token;
+      state.tokens = action.payload.tokens;
       state.role = action.payload.user.role;
       state.error = null;
+      localStorage.setItem('accessToken', action.payload.tokens.accessToken);
+      localStorage.setItem('refreshToken', action.payload.tokens.refreshToken);
     },
     logout: (state) => {
       state.isAuthenticated = false;
       state.user = null;
-      state.token = null;
+      state.tokens = { accessToken: null, refreshToken: null };
       state.role = null;
       state.error = null;
-      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    },
+    setUser: (state, action) => {
+      state.user = action.payload;
+      state.role = action.payload.role;
+    },
+    setTokens: (state, action) => {
+      state.tokens = action.payload;
+      state.isAuthenticated = true;
+      localStorage.setItem('accessToken', action.payload.accessToken);
+      localStorage.setItem('refreshToken', action.payload.refreshToken);
     },
     clearError: (state) => {
       state.error = null;
@@ -41,5 +57,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { login, logout, clearError, setRole, setLoading } = authSlice.actions;
+export const { login, logout, setUser, setTokens, clearError, setRole, setLoading } = authSlice.actions;
 export default authSlice.reducer;
