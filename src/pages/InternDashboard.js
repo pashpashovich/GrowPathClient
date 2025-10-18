@@ -6,10 +6,13 @@ import Logo from '../components/Logo';
 import InternTaskList from '../components/tasks/InternTaskList';
 import TaskSubmissionForm from '../components/tasks/TaskSubmissionForm';
 import TaskDetails from '../components/tasks/TaskDetails';
+import RoadmapPage from './RoadmapPage';
+import InternRatingPage from './InternRatingPage';
 import Sidebar from '../components/Sidebar';
 import { useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
+import { setCurrentTask } from '../store/slices/taskSlice';
 
 const InternDashboard = () => {
   const dispatch = useDispatch();
@@ -20,6 +23,7 @@ const InternDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleViewTask = (task) => {
+    dispatch(setCurrentTask(task));
     setSelectedTask(task);
   };
 
@@ -42,7 +46,11 @@ const InternDashboard = () => {
 
 
   const getCurrentPage = () => {
-    if (location.pathname === '/intern/stats') {
+    if (location.pathname === '/intern/roadmap') {
+      return <RoadmapPage canEdit={false} />;
+    } else if (location.pathname === '/intern/rating') {
+      return <InternRatingPage />;
+    } else if (location.pathname === '/intern/stats') {
       return (
         <Box>
           <Typography variant="h4" gutterBottom>
@@ -108,7 +116,9 @@ const InternDashboard = () => {
           mt: 2
         }}>
           <Typography variant="h6" component="div">
-            {location.pathname === '/intern/stats' ? 'Статистика' : 'Мои задания'}
+            {location.pathname === '/intern/roadmap' ? 'Дорожная карта' :
+             location.pathname === '/intern/rating' ? 'Мой рейтинг' :
+             location.pathname === '/intern/stats' ? 'Статистика' : 'Мои задания'}
           </Typography>
         </Box>
 
@@ -140,13 +150,14 @@ const InternDashboard = () => {
             borderRadius: 2,
           }}
         >
-          {selectedTask && (
-            <TaskDetails
-              task={selectedTask}
-              onClose={handleCloseTaskDetails}
-              onEdit={() => {}} // Стажер не может редактировать задачи
-            />
-          )}
+              {selectedTask && (
+                <TaskDetails
+                  open={!!selectedTask}
+                  onClose={handleCloseTaskDetails}
+                  onEdit={() => {}} // Стажер не может редактировать задачи
+                  canEdit={false} // Стажер не может редактировать задачи
+                />
+              )}
         </Box>
       </Modal>
 

@@ -8,7 +8,8 @@ export const mockInterns = [
     position: 'Frontend Developer',
     experience: 'beginner',
     startDate: '2024-01-15',
-    mentor: 'mentor-1'
+    mentor: 'mentor-1',
+    internshipId: 'internship-1' // Frontend разработка - React
   },
   {
     id: 'intern-2',
@@ -17,16 +18,18 @@ export const mockInterns = [
     position: 'Backend Developer',
     experience: 'intermediate',
     startDate: '2024-01-10',
-    mentor: 'mentor-1'
+    mentor: 'mentor-1',
+    internshipId: 'internship-2' // Backend разработка - Node.js
   },
   {
     id: 'intern-3',
     name: 'Елена Сидорова',
     email: 'elena.sidorova@example.com',
-    position: 'Full Stack Developer',
+    position: 'QA Engineer',
     experience: 'beginner',
     startDate: '2024-02-01',
-    mentor: 'mentor-2'
+    mentor: 'mentor-1',
+    internshipId: 'internship-3' // QA тестирование
   }
 ];
 

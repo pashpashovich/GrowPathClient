@@ -135,7 +135,7 @@ const AuthForm = () => {
       } else if (userData.user.role === 'intern') {
         navigate('/intern');
       } else if (userData.user.role === 'hr') {
-        navigate('/mentor'); // HR пока использует менторский интерфейс
+        navigate('/hr'); // HR перенаправляется на свой дашборд
       } else if (userData.user.role === 'admin') {
         navigate('/mentor'); // Админ пока использует менторский интерфейс
       } else {

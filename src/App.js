@@ -8,6 +8,9 @@ import { growPathTheme } from './theme';
 import LoginPage from './pages/LoginPage';
 import MentorDashboard from './pages/MentorDashboard';
 import InternDashboard from './pages/InternDashboard';
+import HRDashboard from './pages/HRDashboard';
+import HRRatingPage from './pages/HRRatingPage';
+import InternRatingPage from './pages/InternRatingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -35,6 +38,12 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
+                  <Route path="/mentor/roadmap" element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <MentorDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
                   <Route path="/mentor/review" element={
                     <ProtectedRoute requiredRole="mentor">
                       <MentorDashboard />
@@ -53,9 +62,33 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
+                  <Route path="/intern/roadmap" element={
+                    <ProtectedRoute requiredRole="intern">
+                      <InternDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
                   <Route path="/intern/stats" element={
                     <ProtectedRoute requiredRole="intern">
                       <InternDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/intern/rating" element={
+                    <ProtectedRoute requiredRole="intern">
+                      <InternDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/hr" element={
+                    <ProtectedRoute requiredRole="hr">
+                      <HRDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/hr/rating" element={
+                    <ProtectedRoute requiredRole="hr">
+                      <HRDashboard />
                     </ProtectedRoute>
                   } />
                   

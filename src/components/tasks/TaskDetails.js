@@ -35,7 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useSelector } from 'react-redux';
 
-const TaskDetails = ({ open, onClose, onEdit }) => {
+const TaskDetails = ({ open, onClose, onEdit, canEdit = true }) => {
   const { currentTask } = useSelector((state) => state.task);
 
   if (!currentTask) return null;
@@ -244,9 +244,11 @@ const TaskDetails = ({ open, onClose, onEdit }) => {
         <Button onClick={onClose}>
           Закрыть
         </Button>
-        <Button variant="contained" startIcon={<Edit />} onClick={onEdit}>
-          Редактировать
-        </Button>
+        {canEdit && (
+          <Button variant="contained" startIcon={<Edit />} onClick={onEdit}>
+            Редактировать
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

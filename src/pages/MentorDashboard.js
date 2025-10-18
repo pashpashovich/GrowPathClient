@@ -8,6 +8,7 @@ import TaskForm from '../components/tasks/TaskForm';
 import TaskDetails from '../components/tasks/TaskDetails';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
+import RoadmapPage from './RoadmapPage';
 import Sidebar from '../components/Sidebar';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeTask } from '../store/slices/taskSlice';
@@ -55,7 +56,9 @@ const MentorDashboard = () => {
 
 
   const getCurrentPage = () => {
-    if (location.pathname === '/mentor/review') {
+    if (location.pathname === '/mentor/roadmap') {
+      return <RoadmapPage canEdit={true} />;
+    } else if (location.pathname === '/mentor/review') {
       return <TaskReviewPanel onViewTask={handleViewTask} />;
     } else if (location.pathname === '/mentor/stats') {
       return (
@@ -124,7 +127,8 @@ const MentorDashboard = () => {
           mt: 2
         }}>
           <Typography variant="h6" component="div">
-            {location.pathname === '/mentor/review' ? 'Проверка заданий' :
+            {location.pathname === '/mentor/roadmap' ? 'Дорожная карта' :
+             location.pathname === '/mentor/review' ? 'Проверка заданий' :
              location.pathname === '/mentor/stats' ? 'Статистика' :
              'Доска задач'}
           </Typography>
@@ -165,16 +169,17 @@ const MentorDashboard = () => {
             borderRadius: 2,
           }}
         >
-          {selectedTask && (
-            <TaskDetails
-              open={!!selectedTask}
-              onClose={handleCloseTaskDetails}
-              onEdit={() => {
-                handleCloseTaskDetails();
-                handleOpenForm(selectedTask);
-              }}
-            />
-          )}
+              {selectedTask && (
+                <TaskDetails
+                  open={!!selectedTask}
+                  onClose={handleCloseTaskDetails}
+                  onEdit={() => {
+                    handleCloseTaskDetails();
+                    handleOpenForm(selectedTask);
+                  }}
+                  canEdit={true} // Ментор может редактировать задачи
+                />
+              )}
         </Box>
       </Modal>
 

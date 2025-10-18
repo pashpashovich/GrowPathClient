@@ -19,7 +19,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     } else if (user?.role === 'intern') {
       return <Navigate to="/intern" replace />;
     } else if (user?.role === 'hr') {
-      return <Navigate to="/mentor" replace />; // HR использует менторский интерфейс
+      return <Navigate to="/hr" replace />; // HR перенаправляется на свой дашборд
     } else if (user?.role === 'admin') {
       return <Navigate to="/mentor" replace />; // Админ использует менторский интерфейс
     } else {

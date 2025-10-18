@@ -25,6 +25,8 @@ import {
   Logout,
   ChevronLeft,
   ChevronRight,
+  Timeline,
+  EmojiEvents,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -36,26 +38,41 @@ const Sidebar = ({ open, onClose }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
 
-  const menuItems = [
-    {
-      text: 'Доска задач',
-      icon: <Dashboard />,
-      path: '/mentor',
-      active: location.pathname === '/mentor' || location.pathname === '/',
-    },
-    {
-      text: 'Проверка заданий',
-      icon: <CheckCircle />,
-      path: '/mentor/review',
-      active: location.pathname === '/mentor/review',
-    },
-    {
-      text: 'Статистика',
-      icon: <BarChart />,
-      path: '/mentor/stats',
-      active: location.pathname === '/mentor/stats',
-    },
-  ];
+      const menuItems = [
+        {
+          text: 'Доска задач',
+          icon: <Dashboard />,
+          path: '/mentor',
+          active: location.pathname === '/mentor' || location.pathname === '/',
+        },
+        {
+          text: 'Дорожная карта',
+          icon: <Timeline />,
+          path: '/mentor/roadmap',
+          active: location.pathname === '/mentor/roadmap',
+        },
+        {
+          text: 'Проверка заданий',
+          icon: <CheckCircle />,
+          path: '/mentor/review',
+          active: location.pathname === '/mentor/review',
+        },
+        {
+          text: 'Статистика',
+          icon: <BarChart />,
+          path: '/mentor/stats',
+          active: location.pathname === '/mentor/stats',
+        },
+      ];
+
+      const hrMenuItems = [
+        {
+          text: 'Рейтинг стажеров',
+          icon: <EmojiEvents />,
+          path: '/hr/rating',
+          active: location.pathname === '/hr/rating',
+        },
+      ];
 
   const internMenuItems = [
     {
@@ -63,6 +80,18 @@ const Sidebar = ({ open, onClose }) => {
       icon: <Assignment />,
       path: '/intern',
       active: location.pathname === '/intern',
+    },
+    {
+      text: 'Дорожная карта',
+      icon: <Timeline />,
+      path: '/intern/roadmap',
+      active: location.pathname === '/intern/roadmap',
+    },
+    {
+      text: 'Мой рейтинг',
+      icon: <EmojiEvents />,
+      path: '/intern/rating',
+      active: location.pathname === '/intern/rating',
     },
     {
       text: 'Статистика',
@@ -73,7 +102,8 @@ const Sidebar = ({ open, onClose }) => {
   ];
 
   const isMentor = currentUser?.role === 'mentor' || location.pathname.includes('/mentor');
-  const items = isMentor ? menuItems : internMenuItems;
+  const isHR = currentUser?.role === 'hr' || location.pathname.includes('/hr');
+  const items = isHR ? hrMenuItems : (isMentor ? menuItems : internMenuItems);
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -116,9 +146,9 @@ const Sidebar = ({ open, onClose }) => {
             <Typography variant="h6" fontWeight="bold" color="primary.main">
               GrowPath
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {isMentor ? 'Панель ментора' : 'Панель стажера'}
-            </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isHR ? 'Панель HR' : (isMentor ? 'Панель ментора' : 'Панель стажера')}
+                </Typography>
           </Box>
         )}
         <Tooltip title={isCollapsed ? 'Развернуть меню' : 'Свернуть меню'} placement="right">
@@ -158,12 +188,12 @@ const Sidebar = ({ open, onClose }) => {
               <Typography variant="caption" color="text.secondary" noWrap>
                 {currentUser?.email || 'user@example.com'}
               </Typography>
-              <Chip
-                label={isMentor ? 'Ментор' : 'Стажер'}
-                size="small"
-                color="primary"
-                sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }}
-              />
+                  <Chip
+                    label={isHR ? 'HR' : (isMentor ? 'Ментор' : 'Стажер')}
+                    size="small"
+                    color="primary"
+                    sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }}
+                  />
             </Box>
           </Box>
         </Box>
