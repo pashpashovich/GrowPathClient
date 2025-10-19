@@ -12,3 +12,4 @@ const InternRatingPage = () => {
 
 export default InternRatingPage;
 
+
