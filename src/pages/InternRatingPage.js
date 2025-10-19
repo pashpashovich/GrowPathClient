@@ -4,12 +4,16 @@ import InternRating from '../components/rating/InternRating';
 
 const InternRatingPage = () => {
   return (
-    <Box>
+    <Box sx={{ width: '100%' }}>
       <InternRating />
     </Box>
   );
 };
 
 export default InternRatingPage;
+
+
+
+
 
 

@@ -1,21 +1,91 @@
-import React, { useState } from 'react';
-import { Box, Typography, AppBar, Toolbar, IconButton } from '@mui/material';
-import { Logout } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, AppBar, Toolbar, IconButton, Button, Paper } from '@mui/material';
+import { Logout, Add } from '@mui/icons-material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
+import { setPrograms } from '../store/slices/internshipProgramSlice';
 import Logo from '../components/Logo';
 import Sidebar from '../components/Sidebar';
 import HRRatingPage from './HRRatingPage';
+import InternshipProgramsList from '../components/internshipPrograms/InternshipProgramsList';
+import InternshipProgramForm from '../components/internshipPrograms/InternshipProgramForm';
+import InternshipProgramDetails from '../components/internshipPrograms/InternshipProgramDetails';
+import AnalyticsPage from './AnalyticsPage';
 
 const HRDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const programs = useSelector((state) => state.internshipProgram.programs);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isProgramFormOpen, setIsProgramFormOpen] = useState(false);
+  const [isProgramDetailsOpen, setIsProgramDetailsOpen] = useState(false);
+  const [editingProgram, setEditingProgram] = useState(null);
+  const [viewingProgram, setViewingProgram] = useState(null);
+
+  // Инициализация программ стажировок при загрузке
+  useEffect(() => {
+    if (programs.length === 0) {
+      // Программы уже инициализированы в slice, но можно добавить дополнительную логику
+      console.log('HR Dashboard loaded, programs:', programs.length);
+    }
+  }, [programs.length]);
 
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
+  };
+
+  const handleCreateProgram = () => {
+    setEditingProgram(null);
+    setIsProgramFormOpen(true);
+  };
+
+  const handleEditProgram = (program) => {
+    setEditingProgram(program);
+    setIsProgramFormOpen(true);
+  };
+
+  const handleViewProgram = (program) => {
+    setViewingProgram(program);
+    setIsProgramDetailsOpen(true);
+  };
+
+  const getCurrentPage = () => {
+    if (location.pathname === '/hr/rating') {
+      return <HRRatingPage />;
+    }
+    
+    if (location.pathname === '/hr/analytics') {
+      return <AnalyticsPage />;
+    }
+    
+    return (
+      <Box>
+        {/* Панель управления */}
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h5" component="h1">
+              Программы стажировок
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleCreateProgram}
+            >
+              Создать программу
+            </Button>
+          </Box>
+        </Paper>
+
+        {/* Список программ */}
+        <InternshipProgramsList
+          onEdit={handleEditProgram}
+          onView={handleViewProgram}
+        />
+      </Box>
+    );
   };
 
   return (
@@ -50,33 +120,31 @@ const HRDashboard = () => {
             backgroundColor: '#f5f5f5',
           }}
         >
-          {/* Верхняя панель */}
-          <Box sx={{
-            backgroundColor: 'white',
-            color: 'text.primary',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            p: 2,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 2,
-            mt: 2
-          }}>
-            <Typography variant="h6" component="div">
-              Рейтинг стажеров
-            </Typography>
-          </Box>
-
           {/* Основной контент */}
           <Box sx={{ py: 3, px: 3, overflowX: 'auto' }}>
-            <HRRatingPage />
+            {getCurrentPage()}
           </Box>
         </Box>
       </Box>
+
+      {/* Форма создания/редактирования программы */}
+      <InternshipProgramForm
+        open={isProgramFormOpen}
+        onClose={() => setIsProgramFormOpen(false)}
+        programToEdit={editingProgram}
+      />
+
+      {/* Детальный просмотр программы */}
+      <InternshipProgramDetails
+        open={isProgramDetailsOpen}
+        onClose={() => setIsProgramDetailsOpen(false)}
+        program={viewingProgram}
+      />
     </Box>
   );
 };
 
 export default HRDashboard;
+
 
 

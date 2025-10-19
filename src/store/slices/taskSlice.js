@@ -10,6 +10,7 @@ const initialState = {
     status: '',
     assignee: '',
     priority: '',
+    internshipId: '', // Фильтр по стажировкам
   },
   pagination: {
     page: 1,

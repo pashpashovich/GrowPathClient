@@ -67,10 +67,37 @@ const Sidebar = ({ open, onClose }) => {
 
       const hrMenuItems = [
         {
+          text: 'Программы стажировок',
+          icon: <School />,
+          path: '/hr',
+          active: location.pathname === '/hr',
+        },
+        {
+          text: 'Аналитика и отчеты',
+          icon: <BarChart />,
+          path: '/hr/analytics',
+          active: location.pathname === '/hr/analytics',
+        },
+        {
           text: 'Рейтинг стажеров',
           icon: <EmojiEvents />,
           path: '/hr/rating',
           active: location.pathname === '/hr/rating',
+        },
+      ];
+
+      const adminMenuItems = [
+        {
+          text: 'Пользователи',
+          icon: <Person />,
+          path: '/admin',
+          active: location.pathname === '/admin',
+        },
+        {
+          text: 'Настройки системы',
+          icon: <Settings />,
+          path: '/admin/settings',
+          active: location.pathname === '/admin/settings',
         },
       ];
 
@@ -103,7 +130,9 @@ const Sidebar = ({ open, onClose }) => {
 
   const isMentor = currentUser?.role === 'mentor' || location.pathname.includes('/mentor');
   const isHR = currentUser?.role === 'hr' || location.pathname.includes('/hr');
-  const items = isHR ? hrMenuItems : (isMentor ? menuItems : internMenuItems);
+  const isAdmin = currentUser?.role === 'admin' || location.pathname.includes('/admin');
+  
+  const items = isAdmin ? adminMenuItems : (isHR ? hrMenuItems : (isMentor ? menuItems : internMenuItems));
 
   const handleNavigation = (path) => {
     navigate(path);

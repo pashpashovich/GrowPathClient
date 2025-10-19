@@ -9,8 +9,10 @@ import LoginPage from './pages/LoginPage';
 import MentorDashboard from './pages/MentorDashboard';
 import InternDashboard from './pages/InternDashboard';
 import HRDashboard from './pages/HRDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import HRRatingPage from './pages/HRRatingPage';
 import InternRatingPage from './pages/InternRatingPage';
+import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -23,14 +25,10 @@ function App() {
               <div className="App">
                 <Routes>
                   {/* Публичные маршруты */}
+                  <Route path="/" element={<LoginPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   
                   {/* Защищенные маршруты */}
-                  <Route path="/" element={
-                    <ProtectedRoute>
-                      <Navigate to="/mentor" replace />
-                    </ProtectedRoute>
-                  } />
                   
                   <Route path="/mentor" element={
                     <ProtectedRoute requiredRole="mentor">
@@ -92,8 +90,28 @@ function App() {
                     </ProtectedRoute>
                   } />
                   
+                  <Route path="/hr/analytics" element={
+                    <ProtectedRoute requiredRole="hr">
+                      <HRDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/admin" element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/admin/settings" element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/test" element={<TestPage />} />
+                  
                   {/* Fallback для несуществующих маршрутов */}
-                  <Route path="*" element={<Navigate to="/login" replace />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </div>
             </Router>

@@ -26,6 +26,8 @@ import { addTask, updateTask } from '../../store/slices/taskSlice';
 const TaskForm = ({ open, onClose, taskToEdit }) => {
   const dispatch = useDispatch();
   const { interns } = useSelector((state) => state.intern);
+  const programs = useSelector((state) => state.internshipProgram.programs);
+  const currentInternshipId = useSelector((state) => state.roadmap.currentInternshipId);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -36,6 +38,7 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
     attachments: [],
     links: [],
     dueDate: '',
+    goalId: '',
   });
   
   const [errors, setErrors] = useState({});
@@ -58,6 +61,7 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
         attachments: taskToEdit.attachments || [],
         links: taskToEdit.links || [],
         dueDate: taskToEdit.dueDate ? new Date(taskToEdit.dueDate).toISOString().split('T')[0] : '',
+        goalId: taskToEdit.goalId || '',
       });
     } else {
       // Сбрасываем форму при создании новой задачи
@@ -70,10 +74,26 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
         attachments: [],
         links: [],
         dueDate: '',
+        goalId: '',
       });
     }
     setErrors({});
   }, [taskToEdit]);
+
+  // Получаем цели текущей программы стажировки
+  const currentProgram = programs.find(program => 
+    program.internships?.includes(currentInternshipId) ||
+    program.id === currentInternshipId
+  );
+  const availableGoals = currentProgram?.goals || [];
+
+  // Отладочная информация
+  console.log('TaskForm Debug:', {
+    currentInternshipId,
+    programs: programs.length,
+    currentProgram,
+    availableGoals: availableGoals.length
+  });
 
   // Mock data для стажеров
   const mockInterns = [
@@ -309,6 +329,27 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
               fullWidth
             />
           </Box>
+
+          {/* Цель программы стажировки */}
+          {availableGoals.length > 0 && (
+            <FormControl fullWidth>
+              <InputLabel>Цель программы стажировки</InputLabel>
+              <Select
+                value={formData.goalId}
+                onChange={(e) => handleInputChange('goalId', e.target.value)}
+                label="Цель программы стажировки"
+              >
+                <MenuItem value="">
+                  <em>Не выбрана</em>
+                </MenuItem>
+                {availableGoals.map((goal) => (
+                  <MenuItem key={goal.id} value={goal.id}>
+                    {goal.title}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
           
           {/* Назначение стажерам */}
           <FormControl fullWidth error={!!errors.assignees}>

@@ -9,27 +9,47 @@ export const mockInterns = [
     experience: 'beginner',
     startDate: '2024-01-15',
     mentor: 'mentor-1',
-    internshipId: 'internship-1' // Frontend разработка - React
+    internshipId: 'internship-1' // Frontend разработка - Группа 1
   },
   {
     id: 'intern-2',
     name: 'Дмитрий Иванов',
     email: 'dmitry.ivanov@example.com',
-    position: 'Backend Developer',
+    position: 'Frontend Developer',
     experience: 'intermediate',
     startDate: '2024-01-10',
     mentor: 'mentor-1',
-    internshipId: 'internship-2' // Backend разработка - Node.js
+    internshipId: 'internship-1' // Frontend разработка - Группа 1
   },
   {
     id: 'intern-3',
     name: 'Елена Сидорова',
     email: 'elena.sidorova@example.com',
-    position: 'QA Engineer',
+    position: 'Frontend Developer',
     experience: 'beginner',
     startDate: '2024-02-01',
     mentor: 'mentor-1',
-    internshipId: 'internship-3' // QA тестирование
+    internshipId: 'internship-2' // Frontend разработка - Группа 2
+  },
+  {
+    id: 'intern-4',
+    name: 'Михаил Козлов',
+    email: 'mikhail.kozlov@example.com',
+    position: 'Frontend Developer',
+    experience: 'intermediate',
+    startDate: '2024-02-05',
+    mentor: 'mentor-1',
+    internshipId: 'internship-2' // Frontend разработка - Группа 2
+  },
+  {
+    id: 'intern-5',
+    name: 'Ольга Волкова',
+    email: 'olga.volkova@example.com',
+    position: 'Frontend Developer',
+    experience: 'beginner',
+    startDate: '2024-03-01',
+    mentor: 'mentor-1',
+    internshipId: 'internship-3' // Frontend разработка - Группа 3
   }
 ];
 
@@ -39,14 +59,8 @@ export const mockMentors = [
     name: 'Алексей Козлов',
     email: 'alexey.kozlov@example.com',
     position: 'Senior Frontend Developer',
-    department: 'Frontend'
-  },
-  {
-    id: 'mentor-2',
-    name: 'Мария Волкова',
-    email: 'maria.volkova@example.com',
-    position: 'Tech Lead',
-    department: 'Backend'
+    department: 'Frontend',
+    specialization: 'React, TypeScript, UI/UX'
   }
 ];
 
@@ -71,7 +85,8 @@ export const mockTasks = [
       'https://mui.com/material-ui/react-button/',
       'https://storybook.js.org/docs/react/writing-stories/introduction'
     ],
-    assignedInterns: ['intern-1', 'intern-2'],
+    assignedInterns: ['intern-1'],
+    internshipId: 'internship-1', // Frontend разработка - Группа 1
     status: 'pending',
     createdAt: '2024-01-20T10:00:00Z',
     createdBy: 'mentor-1'
@@ -96,6 +111,7 @@ export const mockTasks = [
       'https://expressjs.com/en/guide/routing.html'
     ],
     assignedInterns: ['intern-2'],
+    internshipId: 'internship-1', // Frontend разработка - Группа 1
     status: 'in_progress',
     takenBy: 'intern-2',
     takenAt: '2024-01-22T14:30:00Z',
@@ -134,6 +150,7 @@ export const mockTasks = [
       'https://redis.io/documentation'
     ],
     assignedInterns: ['intern-3'],
+    internshipId: 'internship-2', // Frontend разработка - Группа 2
     status: 'submitted',
     takenBy: 'intern-3',
     takenAt: '2024-01-23T10:15:00Z',
@@ -192,6 +209,7 @@ export const mockTasks = [
       'https://www.postgresql.org/docs/current/indexes.html'
     ],
     assignedInterns: ['intern-1'],
+    internshipId: 'internship-1', // Frontend разработка - Группа 1
     status: 'completed',
     takenBy: 'intern-1',
     takenAt: '2024-01-20T11:00:00Z',
@@ -228,6 +246,123 @@ export const mockTasks = [
         comment: 'Задача проверена и принята'
       }
     ]
+  },
+  {
+    id: 'task-5',
+    title: 'Создание модального окна',
+    description: 'Создать переиспользуемый компонент модального окна с анимациями и различными размерами.',
+    checklist: [
+      'Создать базовый компонент Modal',
+      'Добавить анимации появления/исчезновения',
+      'Реализовать различные размеры',
+      'Добавить поддержку клавиши Escape',
+      'Написать тесты'
+    ],
+    attachments: [],
+    links: [
+      'https://mui.com/material-ui/react-modal/'
+    ],
+    assignedInterns: ['intern-1'],
+    internshipId: 'internship-1', // Frontend разработка - Группа 1
+    status: 'pending',
+    createdAt: '2024-01-26T10:00:00Z',
+    createdBy: 'mentor-1'
+  },
+  {
+    id: 'task-6',
+    title: 'Настройка базы данных',
+    description: 'Настроить PostgreSQL базу данных с миграциями и seed данными.',
+    checklist: [
+      'Установить PostgreSQL',
+      'Создать схему базы данных',
+      'Написать миграции',
+      'Добавить seed данные',
+      'Настроить подключение'
+    ],
+    attachments: [],
+    links: [
+      'https://www.postgresql.org/docs/',
+      'https://knexjs.org/'
+    ],
+    assignedInterns: ['intern-4'],
+    internshipId: 'internship-2', // Frontend разработка - Группа 2
+    status: 'in_progress',
+    takenBy: 'intern-4',
+    takenAt: '2024-01-26T09:00:00Z',
+    createdAt: '2024-01-25T16:00:00Z',
+    createdBy: 'mentor-1'
+  },
+  {
+    id: 'task-7',
+    title: 'Написание тестов',
+    description: 'Написать unit и интеграционные тесты для существующего функционала.',
+    checklist: [
+      'Написать unit тесты',
+      'Создать интеграционные тесты',
+      'Настроить покрытие кода',
+      'Добавить тесты в CI/CD'
+    ],
+    attachments: [],
+    links: [
+      'https://jestjs.io/',
+      'https://testing-library.com/'
+    ],
+    assignedInterns: ['intern-5'],
+    internshipId: 'internship-3', // Frontend разработка - Группа 3
+    status: 'completed',
+    takenBy: 'intern-5',
+    takenAt: '2024-01-20T10:00:00Z',
+    submittedBy: 'intern-3',
+    submittedAt: '2024-01-24T14:00:00Z',
+    reviewedBy: 'mentor-1',
+    reviewedAt: '2024-01-25T11:00:00Z',
+    rating: 9,
+    createdAt: '2024-01-19T15:00:00Z',
+    createdBy: 'mentor-1'
+  },
+  {
+    id: 'task-8',
+    title: 'Создание формы входа',
+    description: 'Создать компонент формы входа с валидацией и обработкой ошибок.',
+    checklist: [
+      'Создать компонент LoginForm',
+      'Добавить валидацию полей',
+      'Реализовать обработку ошибок',
+      'Добавить анимации',
+      'Написать тесты'
+    ],
+    attachments: [],
+    links: [
+      'https://mui.com/material-ui/react-text-field/'
+    ],
+    assignedInterns: ['intern-3'],
+    internshipId: 'internship-2', // Frontend разработка - Группа 2
+    status: 'pending',
+    createdAt: '2024-01-27T10:00:00Z',
+    createdBy: 'mentor-1'
+  },
+  {
+    id: 'task-9',
+    title: 'Настройка роутинга',
+    description: 'Настроить React Router для навигации между страницами.',
+    checklist: [
+      'Установить React Router',
+      'Создать маршруты',
+      'Добавить защищенные маршруты',
+      'Реализовать навигацию',
+      'Добавить breadcrumbs'
+    ],
+    attachments: [],
+    links: [
+      'https://reactrouter.com/'
+    ],
+    assignedInterns: ['intern-5'],
+    internshipId: 'internship-3', // Frontend разработка - Группа 3
+    status: 'in_progress',
+    takenBy: 'intern-5',
+    takenAt: '2024-01-27T09:00:00Z',
+    createdAt: '2024-01-26T16:00:00Z',
+    createdBy: 'mentor-1'
   }
 ];
 
@@ -244,3 +379,52 @@ export const mockCurrentMentor = {
   email: 'alexey.kozlov@example.com',
   role: 'mentor'
 };
+
+export const mockCurrentAdmin = {
+  id: 'current-admin-id',
+  name: 'Администратор Системы',
+  email: 'admin@example.com',
+  role: 'admin'
+};
+
+export const mockInternships = [
+  {
+    id: 'internship-1',
+    title: 'Frontend разработка - Группа 1',
+    description: 'Стажировка по разработке пользовательских интерфейсов с использованием React',
+    programId: 'program-1',
+    startDate: '2024-02-01',
+    endDate: '2024-05-01',
+    maxPlaces: 8,
+    currentPlaces: 5,
+    status: 'active',
+    mentor: 'mentor-1',
+    interns: ['intern-1', 'intern-2'],
+  },
+  {
+    id: 'internship-2',
+    title: 'Frontend разработка - Группа 2',
+    description: 'Стажировка по разработке пользовательских интерфейсов с использованием React',
+    programId: 'program-1',
+    startDate: '2024-03-01',
+    endDate: '2024-06-01',
+    maxPlaces: 7,
+    currentPlaces: 2,
+    status: 'active',
+    mentor: 'mentor-1',
+    interns: ['intern-3', 'intern-4'],
+  },
+  {
+    id: 'internship-3',
+    title: 'Backend разработка - Группа 1',
+    description: 'Стажировка по серверной разработке с использованием Node.js',
+    programId: 'program-2',
+    startDate: '2024-03-01',
+    endDate: '2024-07-01',
+    maxPlaces: 10,
+    currentPlaces: 0,
+    status: 'draft',
+    mentor: 'mentor-1',
+    interns: [],
+  }
+];

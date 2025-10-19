@@ -11,6 +11,7 @@ const initialState = {
       overallRating: 9.0,
       qualityRating: 9.2,
       speedRating: 8.8,
+      communicationRating: 8.5,
       experience: 2, // в месяцах
       tasksCompleted: 12,
       tasksOnTime: 11,
@@ -30,6 +31,7 @@ const initialState = {
       overallRating: 7.6,
       qualityRating: 8.1,
       speedRating: 7.1,
+      communicationRating: 7.5,
       experience: 5,
       tasksCompleted: 8,
       tasksOnTime: 6,
@@ -49,6 +51,7 @@ const initialState = {
       overallRating: 9.4,
       qualityRating: 9.6,
       speedRating: 9.2,
+      communicationRating: 9.0,
       experience: 3,
       tasksCompleted: 15,
       tasksOnTime: 14,
@@ -68,6 +71,7 @@ const initialState = {
       overallRating: 5.6,
       qualityRating: 6.2,
       speedRating: 5.0,
+      communicationRating: 5.5,
       experience: 3,
       tasksCompleted: 6,
       tasksOnTime: 4,
@@ -87,6 +91,7 @@ const initialState = {
       overallRating: 9.0,
       qualityRating: 9.3,
       speedRating: 8.7,
+      communicationRating: 8.8,
       experience: 3,
       tasksCompleted: 10,
       tasksOnTime: 9,
@@ -106,6 +111,7 @@ const initialState = {
       overallRating: 9.0,
       qualityRating: 8.9,
       speedRating: 9.1,
+      communicationRating: 8.7,
       experience: 3,
       tasksCompleted: 11,
       tasksOnTime: 10,
@@ -189,5 +195,9 @@ export const {
 } = ratingSlice.actions;
 
 export default ratingSlice.reducer;
+
+
+
+
 
 

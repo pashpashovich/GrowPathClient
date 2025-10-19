@@ -137,7 +137,7 @@ const AuthForm = () => {
       } else if (userData.user.role === 'hr') {
         navigate('/hr'); // HR перенаправляется на свой дашборд
       } else if (userData.user.role === 'admin') {
-        navigate('/mentor'); // Админ пока использует менторский интерфейс
+        navigate('/admin'); // Админ перенаправляется на свой дашборд
       } else {
         navigate('/mentor'); // По умолчанию для других ролей
       }
@@ -157,28 +157,31 @@ const AuthForm = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: 'white',
         px: 2,
       }}
     >
-      {/* Заголовок */}
-      <Box sx={{ mb: 4, textAlign: 'center' }}>
+      {/* Заголовок формы */}
+      <Box sx={{ mb: 6, textAlign: 'center', width: '100%', maxWidth: 400 }}>
         <Typography
           variant="h3"
           component="h1"
           sx={{
             fontWeight: 'bold',
-            color: '#2c3e50',
+            color: '#000',
             mb: 1,
+            fontSize: '2.5rem',
           }}
         >
           Войдите
         </Typography>
+        
         <Typography
           variant="h6"
           sx={{
-            color: '#7f8c8d',
+            color: '#000',
             fontWeight: 400,
+            fontSize: '1.1rem',
           }}
         >
           В свой аккаунт
@@ -192,10 +195,6 @@ const AuthForm = () => {
         sx={{
           width: '100%',
           maxWidth: 400,
-          backgroundColor: 'white',
-          borderRadius: 2,
-          p: 4,
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
         }}
       >
         {/* Ошибка */}
@@ -209,37 +208,41 @@ const AuthForm = () => {
         <TextField
           fullWidth
           type="email"
-          label="E-mail"
+          placeholder="@ E-mail"
           value={formData.email}
           onChange={(e) => handleInputChange('email', e.target.value)}
           disabled={loading}
           sx={{
             mb: 3,
             '& .MuiOutlinedInput-root': {
-              borderRadius: 1,
-              backgroundColor: '#f8f9fa',
+              borderRadius: 3,
+              backgroundColor: '#f5f5f5',
+              height: '56px',
               '& fieldset': {
-                borderColor: '#e9ecef',
+                border: 'none',
               },
               '&:hover fieldset': {
-                borderColor: '#007bff',
+                border: 'none',
               },
               '&.Mui-focused fieldset': {
-                borderColor: '#007bff',
-                borderWidth: 2,
+                border: 'none',
               },
             },
-            '& .MuiInputLabel-root': {
-              color: '#6c757d',
-              '&.Mui-focused': {
-                color: '#007bff',
+            '& .MuiInputBase-input': {
+              padding: '16px 14px',
+              fontSize: '16px',
+              '&::placeholder': {
+                color: '#999',
+                opacity: 1,
               },
             },
           }}
           InputProps={{
             startAdornment: (
-              <InputAdornment position="start">
-                <Email sx={{ color: '#6c757d' }} />
+              <InputAdornment position="start" sx={{ ml: 1 }}>
+                <Typography sx={{ color: '#000', fontSize: '18px', fontWeight: 'bold' }}>
+                  @
+                </Typography>
               </InputAdornment>
             ),
           }}
@@ -249,45 +252,48 @@ const AuthForm = () => {
         <TextField
           fullWidth
           type={showPassword ? 'text' : 'password'}
-          label="Password"
+          placeholder="Password"
           value={formData.password}
           onChange={(e) => handleInputChange('password', e.target.value)}
           disabled={loading}
           sx={{
             mb: 4,
             '& .MuiOutlinedInput-root': {
-              borderRadius: 1,
-              backgroundColor: '#f8f9fa',
+              borderRadius: 3,
+              backgroundColor: '#f5f5f5',
+              height: '56px',
               '& fieldset': {
-                borderColor: '#e9ecef',
+                border: 'none',
               },
               '&:hover fieldset': {
-                borderColor: '#007bff',
+                border: 'none',
               },
               '&.Mui-focused fieldset': {
-                borderColor: '#007bff',
-                borderWidth: 2,
+                border: 'none',
               },
             },
-            '& .MuiInputLabel-root': {
-              color: '#6c757d',
-              '&.Mui-focused': {
-                color: '#007bff',
+            '& .MuiInputBase-input': {
+              padding: '16px 14px',
+              fontSize: '16px',
+              '&::placeholder': {
+                color: '#999',
+                opacity: 1,
               },
             },
           }}
           InputProps={{
             startAdornment: (
-              <InputAdornment position="start">
-                <Lock sx={{ color: '#6c757d' }} />
+              <InputAdornment position="start" sx={{ ml: 1 }}>
+                <Lock sx={{ color: '#000', fontSize: '20px' }} />
               </InputAdornment>
             ),
             endAdornment: (
-              <InputAdornment position="end">
+              <InputAdornment position="end" sx={{ mr: 1 }}>
                 <IconButton
                   onClick={handleTogglePasswordVisibility}
                   edge="end"
                   disabled={loading}
+                  sx={{ color: '#000' }}
                 >
                   {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
@@ -303,17 +309,19 @@ const AuthForm = () => {
           variant="contained"
           disabled={loading || !formData.email || !formData.password}
           sx={{
-            py: 1.5,
-            borderRadius: 1,
-            backgroundColor: '#2c3e50',
-            fontSize: '1.1rem',
-            fontWeight: 600,
+            py: 2,
+            borderRadius: 3,
+            backgroundColor: '#1976d2',
+            fontSize: '16px',
+            fontWeight: 'bold',
             textTransform: 'none',
+            height: '56px',
             '&:hover': {
-              backgroundColor: '#34495e',
+              backgroundColor: '#1565c0',
             },
             '&:disabled': {
-              backgroundColor: '#6c757d',
+              backgroundColor: '#ccc',
+              color: '#666',
             },
           }}
         >
@@ -325,20 +333,20 @@ const AuthForm = () => {
         </Button>
 
         {/* Подсказка для тестирования */}
-        <Box sx={{ mt: 3, p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
-          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+        <Box sx={{ mt: 4, p: 2, backgroundColor: '#f9f9f9', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+          <Typography variant="caption" color="#666" display="block" sx={{ mb: 1, fontWeight: 'bold' }}>
             Тестовые аккаунты:
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="caption" color="#666" display="block" sx={{ fontSize: '12px' }}>
             • mentor@example.com / mentor123 (Ментор)
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="caption" color="#666" display="block" sx={{ fontSize: '12px' }}>
             • intern@example.com / intern123 (Стажер)
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="caption" color="#666" display="block" sx={{ fontSize: '12px' }}>
             • hr@example.com / hr123 (HR менеджер)
           </Typography>
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="caption" color="#666" display="block" sx={{ fontSize: '12px' }}>
             • admin@example.com / admin123 (Админ)
           </Typography>
         </Box>

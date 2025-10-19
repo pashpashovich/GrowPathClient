@@ -18,10 +18,6 @@ const RoadmapPage = ({ canEdit = true }) => {
     setStageToEdit(null);
   };
 
-  const handleAddInternship = () => {
-    // TODO: Реализовать создание новой стажировки
-    console.log('Создание новой стажировки');
-  };
 
   const handleEditInternship = (internship) => {
     // TODO: Реализовать редактирование стажировки
@@ -30,8 +26,7 @@ const RoadmapPage = ({ canEdit = true }) => {
 
   return (
     <Box>
-      <InternshipSelector 
-        onAddInternship={handleAddInternship}
+      <InternshipSelector
         onEditInternship={handleEditInternship}
         canEdit={canEdit}
       />

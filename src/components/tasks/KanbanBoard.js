@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -20,6 +20,12 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Paper,
+  Popover,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   MoreVert,
@@ -33,7 +39,7 @@ import {
   DragIndicator,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { setCurrentTask, updateTask } from '../../store/slices/taskSlice';
+import { setCurrentTask, updateTask, setFilters } from '../../store/slices/taskSlice';
 import TaskForm from './TaskForm';
 import TaskDetails from './TaskDetails';
 
@@ -41,6 +47,9 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.task.tasks);
   const interns = useSelector((state) => state.intern.interns);
+  const internships = useSelector((state) => state.roadmap.internships);
+  const programs = useSelector((state) => state.internshipProgram.programs);
+  const filters = useSelector((state) => state.task.filters);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -49,6 +58,7 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const [editingTask, setEditingTask] = useState(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState('');
+  const buttonRef = useRef(null);
 
   const columns = [
     { id: 'pending', title: 'Доступно', color: '#9E9E9E' },
@@ -81,6 +91,11 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     return intern ? intern.name : `Стажер ${internId}`;
   };
 
+  const getInternshipName = (internshipId) => {
+    const internship = internships.find(i => i.id === internshipId);
+    return internship ? internship.title : `Стажировка ${internshipId}`;
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
       day: '2-digit',
@@ -90,11 +105,26 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   };
 
   const handleMenuOpen = (event, task) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedTask(task);
+    event.preventDefault();
+    event.stopPropagation();
+    console.log('Opening menu for task:', task.title, 'anchorEl:', event.currentTarget);
+    console.log('Button position:', event.currentTarget.getBoundingClientRect());
+    console.log('Button in document:', document.contains(event.currentTarget));
+    
+    // Сохраняем ссылку на кнопку
+    buttonRef.current = event.currentTarget;
+    
+    // Убеждаемся, что элемент находится в DOM
+    if (document.contains(event.currentTarget)) {
+      setAnchorEl(event.currentTarget);
+      setSelectedTask(task);
+    } else {
+      console.error('Button not in document!');
+    }
   };
 
   const handleMenuClose = () => {
+    console.log('Closing menu, anchorEl was:', anchorEl);
     setAnchorEl(null);
     setSelectedTask(null);
   };
@@ -131,11 +161,36 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     setNewStatus('');
   };
 
-  const getTasksByStatus = (status) => {
-    return tasks.filter(task => task.status === status);
+  const handleInternshipFilterChange = (internshipId) => {
+    dispatch(setFilters({
+      ...filters,
+      internshipId: internshipId
+    }));
   };
 
-  const TaskCard = ({ task }) => (
+  const getTasksByStatus = (status) => {
+    return tasks.filter(task => {
+      const statusMatch = task.status === status;
+      const internshipMatch = !filters.internshipId || task.internshipId === filters.internshipId;
+      return statusMatch && internshipMatch;
+    });
+  };
+
+  // Функция для получения цели задачи
+  const getTaskGoal = (task) => {
+    if (!task.goalId) return null;
+    
+    for (const program of programs) {
+      const goal = program.goals?.find(g => g.id === task.goalId);
+      if (goal) return goal;
+    }
+    return null;
+  };
+
+  const TaskCard = ({ task }) => {
+    const taskGoal = getTaskGoal(task);
+    
+    return (
     <Card 
       sx={{ 
         mb: 2, 
@@ -158,9 +213,12 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
             {task.title}
           </Typography>
           <IconButton
+            id={`task-menu-button-${task.id}`}
             size="small"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
+              console.log('Button clicked for task:', task.title, 'event:', e, 'currentTarget:', e.currentTarget);
               handleMenuOpen(e, task);
             }}
           >
@@ -173,15 +231,36 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
           {task.description.substring(0, 60)}...
         </Typography>
 
-        {/* Приоритет */}
-        <Box sx={{ mb: 1 }}>
+        {/* Приоритет и стажировка */}
+        <Box sx={{ mb: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
           <Chip
             label={getPriorityLabel(task.priority || 'medium')}
             color={getPriorityColor(task.priority || 'medium')}
             size="small"
             sx={{ fontSize: '0.65rem', height: 18 }}
           />
+          {task.internshipId && (
+            <Chip
+              label={getInternshipName(task.internshipId)}
+              variant="outlined"
+              size="small"
+              sx={{ fontSize: '0.6rem', height: 18 }}
+            />
+          )}
         </Box>
+
+        {/* Цель программы стажировки */}
+        {taskGoal && (
+          <Box sx={{ mb: 1 }}>
+            <Chip
+              label={taskGoal.title}
+              color="primary"
+              variant="outlined"
+              size="small"
+              sx={{ fontSize: '0.6rem', height: 18 }}
+            />
+          </Box>
+        )}
 
         {/* Назначенные стажеры */}
         {task.assignedInterns && task.assignedInterns.length > 0 && (
@@ -231,13 +310,47 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
         )}
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
         Доска задач
       </Typography>
+
+      {/* Фильтр по стажировкам */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="subtitle1" fontWeight="bold">
+            Фильтр по стажировкам:
+          </Typography>
+          <FormControl sx={{ minWidth: 300 }}>
+            <InputLabel>Выберите стажировку</InputLabel>
+            <Select
+              value={filters.internshipId || ''}
+              label="Выберите стажировку"
+              onChange={(e) => handleInternshipFilterChange(e.target.value)}
+            >
+              <MenuItem value="">
+                <em>Все стажировки</em>
+              </MenuItem>
+              {internships.map((internship) => (
+                <MenuItem key={internship.id} value={internship.id}>
+                  {internship.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {filters.internshipId && (
+            <Chip
+              label={`Активен: ${getInternshipName(filters.internshipId)}`}
+              color="primary"
+              onDelete={() => handleInternshipFilterChange('')}
+            />
+          )}
+        </Box>
+      </Paper>
 
       {/* Канбан доска */}
       <Box sx={{ 
@@ -246,6 +359,7 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
         overflowX: 'auto', 
         pb: 2, 
         minWidth: 'fit-content',
+        position: 'relative',
         '&::-webkit-scrollbar': {
           height: 8,
         },
@@ -329,14 +443,28 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
-        onClick={handleMenuClose}
         anchorOrigin={{
           vertical: 'bottom',
-          horizontal: 'right',
+          horizontal: 'left',
         }}
         transformOrigin={{
           vertical: 'top',
-          horizontal: 'right',
+          horizontal: 'left',
+        }}
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: 180,
+              zIndex: 1300,
+              mt: 0.5,
+            }
+          }
+        }}
+        disableScrollLock={true}
+        disablePortal={true}
+        keepMounted={false}
+        MenuListProps={{
+          'aria-labelledby': 'task-menu-button',
         }}
       >
         <MenuItem onClick={(e) => {

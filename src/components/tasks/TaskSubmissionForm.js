@@ -19,7 +19,7 @@ import { submitTask } from '../../store/slices/taskSlice';
 
 const TaskSubmissionForm = ({ task, onClose }) => {
   const dispatch = useDispatch();
-  const currentUser = useSelector((state) => state.auth.user); // Предполагаем, что есть текущий пользователь
+  const currentUser = useSelector((state) => state.auth.user); 
 
   const [submissionFiles, setSubmissionFiles] = useState([]);
   const [submissionLinks, setSubmissionLinks] = useState(['']);
@@ -101,12 +101,12 @@ const TaskSubmissionForm = ({ task, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // В реальном приложении здесь будет загрузка файлов на сервер
+      // При интеграции с API будет загрузка файлов на сервер
       const processedFiles = submissionFiles.map(file => ({
         name: file.name,
         size: file.size,
         type: file.type,
-        url: file.url // В реальном приложении это будет URL с сервера
+        url: file.url // При интеграции с API  это будет URL с сервера
       }));
 
       const processedLinks = submissionLinks.filter(link => link.trim());

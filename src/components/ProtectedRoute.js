@@ -8,7 +8,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
 
   // Если пользователь не авторизован, перенаправляем на страницу входа
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   // Если требуется определенная роль, проверяем её
@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     } else if (user?.role === 'hr') {
       return <Navigate to="/hr" replace />; // HR перенаправляется на свой дашборд
     } else if (user?.role === 'admin') {
-      return <Navigate to="/mentor" replace />; // Админ использует менторский интерфейс
+      return <Navigate to="/admin" replace />; // Админ перенаправляется на свой дашборд
     } else {
       return <Navigate to="/mentor" replace />; // По умолчанию
     }

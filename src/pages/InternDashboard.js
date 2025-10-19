@@ -123,7 +123,7 @@ const InternDashboard = () => {
         </Box>
 
         {/* Основной контент */}
-        <Box sx={{ py: 3, px: 3, overflowX: 'auto' }}>
+        <Box sx={{ py: 3, px: 3, overflowX: 'auto', width: '100%', maxWidth: 'none' }}>
           {getCurrentPage()}
         </Box>
       </Box>

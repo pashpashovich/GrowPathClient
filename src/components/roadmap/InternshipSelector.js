@@ -15,7 +15,6 @@ import {
   Alert,
 } from '@mui/material';
 import {
-  Add,
   Edit,
   Delete,
   School,
@@ -27,7 +26,7 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 import { setCurrentInternship } from '../../store/slices/roadmapSlice';
 
-const InternshipSelector = ({ onAddInternship, onEditInternship, canEdit = true }) => {
+const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
   const dispatch = useDispatch();
   const { internships, currentInternshipId } = useSelector((state) => state.roadmap);
   const currentUser = useSelector((state) => state.auth.user);
@@ -115,16 +114,6 @@ const InternshipSelector = ({ onAddInternship, onEditInternship, canEdit = true 
         <Typography variant="h6" component="h2">
           {isIntern ? 'Моя стажировка' : 'Выбор стажировки'}
         </Typography>
-        {canEdit && !isIntern && (
-          <Button
-            variant="outlined"
-            startIcon={<Add />}
-            onClick={() => onAddInternship()}
-            size="small"
-          >
-            Создать стажировку
-          </Button>
-        )}
       </Box>
 
       {/* Селектор стажировок только для менторов */}

@@ -40,13 +40,11 @@ const RatingTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState('rank');
 
-  // Фильтруем рейтинги по выбранной стажировке
   const filteredRatings = useMemo(() => {
     if (!selectedInternshipId) return ratings;
     return ratings.filter(rating => rating.internshipId === selectedInternshipId);
   }, [ratings, selectedInternshipId]);
 
-  // Сортируем рейтинги
   const sortedRatings = useMemo(() => {
     const sorted = [...filteredRatings];
     switch (sortBy) {
@@ -329,5 +327,3 @@ const RatingTable = () => {
 };
 
 export default RatingTable;
-
-

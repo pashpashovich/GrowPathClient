@@ -32,18 +32,15 @@ const InternRating = () => {
   const currentUser = useSelector((state) => state.auth.user);
   const { internships } = useSelector((state) => state.roadmap);
 
-  // Находим рейтинг текущего стажера
   const internRating = useMemo(() => {
     return ratings.find(rating => rating.internId === currentUser?.id);
   }, [ratings, currentUser?.id]);
 
-  // Находим стажировку стажера
   const internInternship = useMemo(() => {
     if (!internRating) return null;
     return internships.find(internship => internship.id === internRating.internshipId);
   }, [internRating, internships]);
 
-  // Вычисляем статистику среди всех стажеров
   const overallStats = useMemo(() => {
     const totalInterns = ratings.length;
     const betterThan = ratings.filter(r => r.overallRating < internRating?.overallRating).length;
@@ -96,14 +93,13 @@ const InternRating = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ width: '100%' }}>
       <Typography variant="h4" component="h1" gutterBottom>
         Мой рейтинг
       </Typography>
 
-      <Grid container spacing={3}>
-        {/* Основная информация */}
-        <Grid item xs={12} lg={8}>
+      <Grid container spacing={3} sx={{ maxWidth: 'none' }}>
+        <Grid item xs={12} lg={4}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
@@ -135,7 +131,6 @@ const InternRating = () => {
 
               <Divider sx={{ my: 2 }} />
 
-              {/* Основной рейтинг */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 <Typography variant="h4" component="span">
                   {internRating.overallRating.toFixed(1)}
@@ -153,7 +148,6 @@ const InternRating = () => {
                 </Box>
               </Box>
 
-              {/* Детальные показатели */}
               <Grid container spacing={2}>
                 <Grid item xs={6} md={3}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
@@ -199,7 +193,6 @@ const InternRating = () => {
             </CardContent>
           </Card>
 
-          {/* Прогресс выполнения задач */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -237,7 +230,6 @@ const InternRating = () => {
             </CardContent>
           </Card>
 
-          {/* Рекомендации для улучшения */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -294,9 +286,7 @@ const InternRating = () => {
           </Card>
         </Grid>
 
-        {/* Боковая панель */}
         <Grid item xs={12} lg={4}>
-          {/* Сравнение с другими */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -344,7 +334,6 @@ const InternRating = () => {
             </CardContent>
           </Card>
 
-          {/* Достижения */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -400,7 +389,6 @@ const InternRating = () => {
             </CardContent>
           </Card>
 
-          {/* Дополнительная статистика */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -442,6 +430,108 @@ const InternRating = () => {
                   <ListItemText
                     primary="Средний рейтинг команды"
                     secondary={`${overallStats.averageRating.toFixed(1)}/10`}
+                  />
+                </ListItem>
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} lg={4}>
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Детальная статистика
+              </Typography>
+              
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Качество работы
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={(internRating.qualityRating || 0) * 10}
+                  color="success"
+                  sx={{ height: 8, borderRadius: 4 }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {(internRating.qualityRating || 0).toFixed(1)}/10
+                </Typography>
+              </Box>
+
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Скорость выполнения
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={(internRating.speedRating || 0) * 10}
+                  color="warning"
+                  sx={{ height: 8, borderRadius: 4 }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {(internRating.speedRating || 0).toFixed(1)}/10
+                </Typography>
+              </Box>
+
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Коммуникация
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={(internRating.communicationRating || 0) * 10}
+                  color="info"
+                  sx={{ height: 8, borderRadius: 4 }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {(internRating.communicationRating || 0).toFixed(1)}/10
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Прогресс по компетенциям
+              </Typography>
+              
+              <List dense>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircle color="success" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="React.js"
+                    secondary="Освоено"
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircle color="success" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="JavaScript"
+                    secondary="Освоено"
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <Schedule color="warning" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="TypeScript"
+                    secondary="В процессе"
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <Schedule color="warning" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="CSS/SASS"
+                    secondary="В процессе"
                   />
                 </ListItem>
               </List>
