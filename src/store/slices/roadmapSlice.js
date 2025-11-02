@@ -192,7 +192,6 @@ const roadmapSlice = createSlice({
         updatedAt: new Date().toISOString(),
       };
       state.internships.push(newInternship);
-      // Создаем пустой массив этапов для новой стажировки
       state.stages[newInternship.id] = [];
     },
     updateInternship: (state, action) => {
@@ -207,9 +206,7 @@ const roadmapSlice = createSlice({
     },
     removeInternship: (state, action) => {
       state.internships = state.internships.filter(internship => internship.id !== action.payload);
-      // Удаляем этапы стажировки
       delete state.stages[action.payload];
-      // Если удаляемая стажировка была активной, переключаемся на первую доступную
       if (state.currentInternshipId === action.payload) {
         const remainingInternships = state.internships.filter(internship => internship.id !== action.payload);
         state.currentInternshipId = remainingInternships.length > 0 ? remainingInternships[0].id : null;

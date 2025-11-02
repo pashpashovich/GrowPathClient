@@ -1,5 +1,3 @@
-// Мок-данные для демонстрации функциональности
-
 export const mockInterns = [
   {
     id: 'intern-1',

@@ -81,12 +81,10 @@ const MentorWorkload = () => {
 
   const handleExport = () => {
     console.log('Exporting mentor workload data');
-    // После интгеграции с API будет экспорт
   };
 
   const handleViewMentor = (mentorId) => {
     console.log('Viewing mentor profile:', mentorId);
-    // После интгеграции с API будет переход к профилю ментора
   };
 
   return (
@@ -364,3 +362,9 @@ const MentorWorkload = () => {
 };
 
 export default MentorWorkload;
+
+
+
+
+
+

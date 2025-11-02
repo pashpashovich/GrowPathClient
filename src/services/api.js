@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 const api = axios.create({
@@ -9,12 +10,35 @@ const api = axios.create({
   },
 });
 
+let isRefreshing = false;
+let failedQueue = [];
+
+let getStore = null;
+
+export const setStore = (storeInstance) => {
+  getStore = () => storeInstance;
+};
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+      headers: config.headers,
+    });
     return config;
   },
   (error) => {
@@ -23,22 +47,103 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+  (response) => {
+    console.log(`[API Response] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+    console.error(`[API Error] ${error.response?.status || 'NETWORK'} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`, {
+      message: error.message,
+      code: error.code,
+      response: error.response?.data,
+    });
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (originalRequest.url?.includes('/auth/login') || 
+          originalRequest.url?.includes('/auth/refresh')) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (!refreshToken) {
+        isRefreshing = false;
+        if (getStore) {
+          getStore().dispatch({ type: 'auth/logout' });
+        }
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      try {
+        const response = await api.post(
+          '/auth/refresh',
+          { refreshToken }
+        );
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        
+        localStorage.setItem('accessToken', accessToken);
+        if (newRefreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken);
+        }
+
+        if (getStore) {
+          getStore().dispatch({
+            type: 'auth/setTokens',
+            payload: {
+              accessToken,
+              refreshToken: newRefreshToken || refreshToken,
+            },
+          });
+        }
+
+        isRefreshing = false;
+        processQueue(null, accessToken);
+
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        isRefreshing = false;
+        processQueue(refreshError, null);
+        
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        if (getStore) {
+          getStore().dispatch({ type: 'auth/logout' });
+        }
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
     }
+
     return Promise.reject(error);
   }
 );
 
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
-  register: (userData) => api.post('/auth/register', userData),
-  logout: () => api.post('/auth/logout'),
-  getCurrentUser: () => api.get('/auth/me'),
-  refreshToken: () => api.post('/auth/refresh'),
+  logout: (refreshToken) => api.post('/auth/logout', { refreshToken }),
+  refreshToken: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
+  getCurrentUser: () => api.get('/auth/user'),
+  validateToken: () => api.get('/auth/validate'),
 };
 
 export const userAPI = {

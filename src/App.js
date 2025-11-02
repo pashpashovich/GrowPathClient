@@ -4,6 +4,7 @@ import { CssBaseline } from '@mui/material';
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { store } from './store';
+import { setStore } from './services/api';
 import { growPathTheme } from './theme';
 import LoginPage from './pages/LoginPage';
 import MentorDashboard from './pages/MentorDashboard';
@@ -14,7 +15,10 @@ import HRRatingPage from './pages/HRRatingPage';
 import InternRatingPage from './pages/InternRatingPage';
 import TestPage from './pages/TestPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import AuthInitializer from './components/AuthInitializer';
 import './App.css';
+
+setStore(store);
 
 function App() {
   return (
@@ -22,13 +26,12 @@ function App() {
       <ThemeProvider theme={growPathTheme}>
         <CssBaseline />
             <Router>
+              <AuthInitializer>
               <div className="App">
                 <Routes>
-                  {/* Публичные маршруты */}
                   <Route path="/" element={<LoginPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   
-                  {/* Защищенные маршруты */}
                   
                   <Route path="/mentor" element={
                     <ProtectedRoute requiredRole="mentor">
@@ -110,10 +113,10 @@ function App() {
                   
                   <Route path="/test" element={<TestPage />} />
                   
-                  {/* Fallback для несуществующих маршрутов */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </div>
+              </AuthInitializer>
             </Router>
       </ThemeProvider>
     </Provider>

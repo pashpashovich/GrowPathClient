@@ -43,7 +43,6 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
   
   const [errors, setErrors] = useState({});
 
-  // Заполняем форму при редактировании
   useEffect(() => {
     if (taskToEdit) {
       setFormData({
@@ -64,7 +63,6 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
         goalId: taskToEdit.goalId || '',
       });
     } else {
-      // Сбрасываем форму при создании новой задачи
       setFormData({
         title: '',
         description: '',
@@ -80,14 +78,12 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
     setErrors({});
   }, [taskToEdit]);
 
-  // Получаем цели текущей программы стажировки
   const currentProgram = programs.find(program => 
     program.internships?.includes(currentInternshipId) ||
     program.id === currentInternshipId
   );
   const availableGoals = currentProgram?.goals || [];
 
-  // Отладочная информация
   console.log('TaskForm Debug:', {
     currentInternshipId,
     programs: programs.length,
@@ -95,7 +91,6 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
     availableGoals: availableGoals.length
   });
 
-  // Mock data для стажеров
   const mockInterns = [
     { id: 1, name: 'Иван Иванов', department: 'Разработка' },
     { id: 2, name: 'Петр Петров', department: 'ML' },
@@ -109,7 +104,6 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
       [field]: value
     }));
     
-    // Очищаем ошибку при изменении поля
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -192,7 +186,6 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
       newErrors.assignees = 'Выберите хотя бы одного стажера';
     }
     
-    // Проверяем чек-лист
     const emptyChecklistItems = formData.checklist.filter(item => !item.text.trim());
     if (emptyChecklistItems.length > 0) {
       newErrors.checklist = 'Все пункты чек-листа должны быть заполнены';
@@ -205,7 +198,6 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
   const handleSubmit = () => {
     if (validateForm()) {
       if (taskToEdit) {
-        // Редактирование существующей задачи
         const updatedTask = {
           ...taskToEdit,
           title: formData.title,
@@ -220,9 +212,8 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
         
         dispatch(updateTask(updatedTask));
       } else {
-        // Создание новой задачи
         const newTask = {
-          id: Date.now(), // Временный ID
+          id: Date.now(),
           title: formData.title,
           description: formData.description,
           priority: formData.priority,
@@ -233,13 +224,12 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
           dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
           status: 'pending',
           createdAt: new Date().toISOString(),
-          createdBy: 'current-user-id', // В реальном приложении из auth
+          createdBy: 'current-user-id',
         };
         
         dispatch(addTask(newTask));
       }
       
-      // Сброс формы
       setFormData({
         title: '',
         description: '',

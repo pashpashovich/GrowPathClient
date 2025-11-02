@@ -31,7 +31,6 @@ const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
   const { internships, currentInternshipId } = useSelector((state) => state.roadmap);
   const currentUser = useSelector((state) => state.auth.user);
   
-  // Для стажеров находим их стажировку
   const isIntern = currentUser?.role === 'intern';
   const internInternship = isIntern 
     ? internships.find(internship => 
@@ -83,19 +82,16 @@ const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
     dispatch(setCurrentInternship(event.target.value));
   };
 
-  // Определяем текущую стажировку
   const currentInternship = isIntern 
     ? internInternship 
     : internships.find(i => i.id === currentInternshipId);
 
-  // Автоматически устанавливаем стажировку для стажера
   React.useEffect(() => {
     if (isIntern && internInternship && currentInternshipId !== internInternship.id) {
       dispatch(setCurrentInternship(internInternship.id));
     }
   }, [isIntern, internInternship, currentInternshipId, dispatch]);
 
-  // Если стажер не найден в стажировках
   if (isIntern && !internInternship) {
     return (
       <Box sx={{ mb: 3 }}>
@@ -116,7 +112,6 @@ const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
         </Typography>
       </Box>
 
-      {/* Селектор стажировок только для менторов */}
       {!isIntern && (
         <FormControl fullWidth sx={{ mb: 2 }}>
           <InputLabel>Активная стажировка</InputLabel>
@@ -151,7 +146,6 @@ const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
         </FormControl>
       )}
 
-      {/* Информация о текущей стажировке */}
       {currentInternship && (
         <Card sx={{ mb: 2 }}>
           <CardContent>
@@ -197,7 +191,6 @@ const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
         </Card>
       )}
 
-      {/* Список всех стажировок только для менторов */}
       {!isIntern && internships.length > 1 && (
         <Box>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>

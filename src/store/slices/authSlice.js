@@ -1,5 +1,5 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { mockCurrentUser } from '../../data/mockData';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { authAPI } from '../../services/api';
 
 const initialState = {
   user: null,
@@ -10,22 +10,91 @@ const initialState = {
   isAuthenticated: !!localStorage.getItem('accessToken'),
   isLoading: false,
   error: null,
-  role: null, // 'intern', 'mentor', 'hr', 'admin'
+  role: null,
 };
+
+export const loginAsync = createAsyncThunk(
+  'auth/login',
+  async (credentials, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.login(credentials);
+      const { accessToken, refreshToken } = response.data;
+      
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      
+      const userResponse = await authAPI.getCurrentUser();
+      const user = userResponse.data;
+      
+      return { tokens: { accessToken, refreshToken }, user };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Ошибка при входе в систему'
+      );
+    }
+  }
+);
+
+export const logoutAsync = createAsyncThunk(
+  'auth/logout',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const refreshToken = getState().auth.tokens.refreshToken;
+      if (refreshToken) {
+        await authAPI.logout(refreshToken);
+      }
+      
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      return null;
+    } catch (error) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      return rejectWithValue(
+        error.response?.data?.message || 'Ошибка при выходе'
+      );
+    }
+  }
+);
+
+export const getCurrentUserAsync = createAsyncThunk(
+  'auth/getCurrentUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.getCurrentUser();
+      return response.data;
+    } catch (error) {
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('CORS') || !error.response) {
+        console.warn('CORS error or network error - backend may not be running');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        return rejectWithValue('Сервер недоступен или CORS не настроен');
+      }
+      return rejectWithValue(
+        error.response?.data?.message || 'Ошибка при получении информации о пользователе'
+      );
+    }
+  }
+);
+
+export const validateTokenAsync = createAsyncThunk(
+  'auth/validateToken',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.validateToken();
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Токен невалиден'
+      );
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    login: (state, action) => {
-      state.isAuthenticated = true;
-      state.user = action.payload.user;
-      state.tokens = action.payload.tokens;
-      state.role = action.payload.user.role;
-      state.error = null;
-      localStorage.setItem('accessToken', action.payload.tokens.accessToken);
-      localStorage.setItem('refreshToken', action.payload.tokens.refreshToken);
-    },
     logout: (state) => {
       state.isAuthenticated = false;
       state.user = null;
@@ -37,13 +106,17 @@ const authSlice = createSlice({
     },
     setUser: (state, action) => {
       state.user = action.payload;
-      state.role = action.payload.role;
+      state.role = action.payload?.role || null;
     },
     setTokens: (state, action) => {
       state.tokens = action.payload;
       state.isAuthenticated = true;
-      localStorage.setItem('accessToken', action.payload.accessToken);
-      localStorage.setItem('refreshToken', action.payload.refreshToken);
+      if (action.payload.accessToken) {
+        localStorage.setItem('accessToken', action.payload.accessToken);
+      }
+      if (action.payload.refreshToken) {
+        localStorage.setItem('refreshToken', action.payload.refreshToken);
+      }
     },
     clearError: (state) => {
       state.error = null;
@@ -55,7 +128,74 @@ const authSlice = createSlice({
       state.isLoading = action.payload;
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loginAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(loginAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        state.tokens = action.payload.tokens;
+        state.user = action.payload.user;
+        state.role = action.payload.user?.role || null;
+        state.error = null;
+      })
+      .addCase(loginAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = false;
+        state.error = action.payload;
+      })
+      .addCase(logoutAsync.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(logoutAsync.fulfilled, (state) => {
+        state.isLoading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.tokens = { accessToken: null, refreshToken: null };
+        state.role = null;
+        state.error = null;
+      })
+      .addCase(logoutAsync.rejected, (state) => {
+        state.isLoading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.tokens = { accessToken: null, refreshToken: null };
+        state.role = null;
+      })
+      .addCase(getCurrentUserAsync.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getCurrentUserAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload;
+        state.role = action.payload?.role || null;
+      })
+      .addCase(getCurrentUserAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        if (action.payload?.includes('401') || action.payload?.includes('токен') || 
+            action.payload?.includes('CORS') || action.payload?.includes('недоступен')) {
+          state.isAuthenticated = false;
+          state.user = null;
+          state.tokens = { accessToken: null, refreshToken: null };
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        }
+      })
+      .addCase(validateTokenAsync.fulfilled, (state) => {
+        state.isAuthenticated = true;
+      })
+      .addCase(validateTokenAsync.rejected, (state) => {
+        state.isAuthenticated = false;
+        state.user = null;
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      });
+  },
 });
 
-export const { login, logout, setUser, setTokens, clearError, setRole, setLoading } = authSlice.actions;
+export const { logout, setUser, setTokens, clearError, setRole, setLoading } = authSlice.actions;
 export default authSlice.reducer;

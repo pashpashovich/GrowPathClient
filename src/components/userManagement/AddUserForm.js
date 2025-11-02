@@ -33,7 +33,6 @@ const AddUserForm = ({ open, onClose }) => {
       [field]: value,
     }));
     
-    // Очищаем ошибку при изменении поля
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -71,16 +70,14 @@ const AddUserForm = ({ open, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // Имитируем отправку данных на сервер
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       dispatch(addUser({
         ...formData,
-        invitedBy: 'current-admin-id', // ID текущего администратора
+        invitedBy: 'current-admin-id',
         invitationSentAt: new Date().toISOString(),
       }));
 
-      // Сброс формы
       setFormData({
         name: '',
         email: '',

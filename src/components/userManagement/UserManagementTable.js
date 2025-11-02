@@ -158,7 +158,6 @@ const UserManagementTable = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    // Исключаем текущего пользователя из списка
     return user.id !== currentUser?.id;
   });
 

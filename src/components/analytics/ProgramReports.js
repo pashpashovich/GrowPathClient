@@ -68,7 +68,6 @@ const ProgramReports = () => {
 
   const handleExport = (report) => {
     console.log('Exporting report for program:', report.programTitle);
-    // В реальном приложении здесь будет логика экспорта в XLSX/CSV
   };
 
   return (
@@ -354,3 +353,9 @@ const ProgramReports = () => {
 };
 
 export default ProgramReports;
+
+
+
+
+
+

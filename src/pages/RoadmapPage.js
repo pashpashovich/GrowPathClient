@@ -20,7 +20,6 @@ const RoadmapPage = ({ canEdit = true }) => {
 
 
   const handleEditInternship = (internship) => {
-    // TODO: Реализовать редактирование стажировки
     console.log('Редактирование стажировки:', internship);
   };
 
@@ -32,7 +31,6 @@ const RoadmapPage = ({ canEdit = true }) => {
       />
       <RoadmapView onEdit={handleOpenForm} canEdit={canEdit} />
 
-      {/* Модальное окно для создания/редактирования этапа */}
       <Modal
         open={openForm}
         onClose={handleCloseForm}

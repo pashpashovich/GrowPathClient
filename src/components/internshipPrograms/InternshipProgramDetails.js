@@ -267,3 +267,4 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
 };
 
 export default InternshipProgramDetails;
+

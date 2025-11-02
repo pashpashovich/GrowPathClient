@@ -29,7 +29,6 @@ const AnalyticsPage = () => {
     setCurrentTab(newValue);
   };
 
-  // Подсчет общей статистики
   const totalTasks = programReports.reduce((sum, report) => sum + report.totalTasks, 0);
   const completedTasks = programReports.reduce((sum, report) => sum + report.completedTasks, 0);
   const overdueTasks = programReports.reduce((sum, report) => sum + report.overdueTasks, 0);
@@ -54,7 +53,6 @@ const AnalyticsPage = () => {
         Аналитика и отчеты
       </Typography>
 
-      {/* Общая статистика */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>
           <Card>
@@ -118,7 +116,6 @@ const AnalyticsPage = () => {
         </Grid>
       </Grid>
 
-      {/* Навигация по разделам */}
       <Paper sx={{ mb: 3 }}>
         <Tabs
           value={currentTab}
@@ -139,11 +136,17 @@ const AnalyticsPage = () => {
         </Tabs>
       </Paper>
 
-      {/* Контент */}
       {getCurrentPage()}
     </Box>
   );
 };
 
 export default AnalyticsPage;
+
+
+
+
+
+
+
 

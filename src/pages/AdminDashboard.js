@@ -12,7 +12,7 @@ import {
   PersonAdd,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
+import { logoutAsync } from '../store/slices/authSlice';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Sidebar from '../components/Sidebar';
@@ -28,8 +28,8 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddUserFormOpen, setIsAddUserFormOpen] = useState(false);
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutAsync());
     navigate('/');
   };
 

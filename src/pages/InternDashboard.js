@@ -11,7 +11,7 @@ import InternRatingPage from './InternRatingPage';
 import Sidebar from '../components/Sidebar';
 import { useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
+import { logoutAsync } from '../store/slices/authSlice';
 import { setCurrentTask } from '../store/slices/taskSlice';
 
 const InternDashboard = () => {
@@ -39,8 +39,8 @@ const InternDashboard = () => {
     setSubmissionTask(null);
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutAsync());
     navigate('/login');
   };
 

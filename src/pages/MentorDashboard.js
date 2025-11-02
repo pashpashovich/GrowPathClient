@@ -12,7 +12,7 @@ import RoadmapPage from './RoadmapPage';
 import Sidebar from '../components/Sidebar';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeTask } from '../store/slices/taskSlice';
-import { logout } from '../store/slices/authSlice';
+import { logoutAsync } from '../store/slices/authSlice';
 import { useLocation } from 'react-router-dom';
 
 const MentorDashboard = () => {
@@ -49,8 +49,8 @@ const MentorDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutAsync());
     navigate('/login');
   };
 

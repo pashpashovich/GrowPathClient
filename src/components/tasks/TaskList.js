@@ -45,7 +45,6 @@ const TaskList = () => {
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // Mock data для демонстрации
   const mockTasks = [
     {
       id: 1,
@@ -181,7 +180,6 @@ const TaskList = () => {
   };
 
   const handleDeleteTask = () => {
-    // В реальном приложении здесь будет вызов API
     console.log('Delete task:', selectedTask.id);
     handleMenuClose();
   };

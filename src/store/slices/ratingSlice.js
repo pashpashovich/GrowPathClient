@@ -12,12 +12,12 @@ const initialState = {
       qualityRating: 9.2,
       speedRating: 8.8,
       communicationRating: 8.5,
-      experience: 2, // в месяцах
+      experience: 2,
       tasksCompleted: 12,
       tasksOnTime: 11,
-      averageTaskTime: 2.5, // дня
+      averageTaskTime: 2.5,
       lastUpdated: '2024-01-25T10:00:00Z',
-      trend: 'up', // up, down, stable
+      trend: 'up',
       previousRating: 8.7,
       rank: 1,
       internshipId: 'internship-1'
@@ -156,7 +156,6 @@ const ratingSlice = createSlice({
       }
     },
     recalculateRanks: (state) => {
-      // Сортируем по общему рейтингу и обновляем ранги
       const sortedRatings = [...state.ratings].sort((a, b) => b.overallRating - a.overallRating);
       sortedRatings.forEach((rating, index) => {
         const originalIndex = state.ratings.findIndex(r => r.id === rating.id);
@@ -172,12 +171,10 @@ const ratingSlice = createSlice({
         lastUpdated: new Date().toISOString(),
       };
       state.ratings.push(newRating);
-      // Пересчитываем ранги
       ratingSlice.caseReducers.recalculateRanks(state);
     },
     removeRating: (state, action) => {
       state.ratings = state.ratings.filter(rating => rating.internId !== action.payload);
-      // Пересчитываем ранги
       ratingSlice.caseReducers.recalculateRanks(state);
     },
   },

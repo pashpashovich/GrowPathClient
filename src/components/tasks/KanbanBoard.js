@@ -111,10 +111,8 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     console.log('Button position:', event.currentTarget.getBoundingClientRect());
     console.log('Button in document:', document.contains(event.currentTarget));
     
-    // Сохраняем ссылку на кнопку
     buttonRef.current = event.currentTarget;
     
-    // Убеждаемся, что элемент находится в DOM
     if (document.contains(event.currentTarget)) {
       setAnchorEl(event.currentTarget);
       setSelectedTask(task);
@@ -176,7 +174,6 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     });
   };
 
-  // Функция для получения цели задачи
   const getTaskGoal = (task) => {
     if (!task.goalId) return null;
     

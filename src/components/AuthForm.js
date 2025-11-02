@@ -16,12 +16,13 @@ import {
   VisibilityOff,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { setUser, setTokens } from '../store/slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginAsync } from '../store/slices/authSlice';
 
 const AuthForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { isLoading, error: authError } = useSelector((state) => state.auth);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -29,79 +30,14 @@ const AuthForm = () => {
   });
   
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Моковые данные для авторизации
-  const mockUsers = {
-    'mentor@example.com': {
-      password: 'mentor123',
-      user: {
-        id: 'mentor-1',
-        name: 'Алексей Менторов',
-        email: 'mentor@example.com',
-        role: 'mentor',
-        department: 'Разработка',
-        avatar: null,
-      },
-      tokens: {
-        accessToken: 'mock-access-token-mentor',
-        refreshToken: 'mock-refresh-token-mentor',
-      }
-    },
-    'intern@example.com': {
-      password: 'intern123',
-      user: {
-        id: 'intern-1',
-        name: 'Иван Стажеров',
-        email: 'intern@example.com',
-        role: 'intern',
-        department: 'Frontend',
-        avatar: null,
-      },
-      tokens: {
-        accessToken: 'mock-access-token-intern',
-        refreshToken: 'mock-refresh-token-intern',
-      }
-    },
-    'hr@example.com': {
-      password: 'hr123',
-      user: {
-        id: 'hr-1',
-        name: 'Мария HR',
-        email: 'hr@example.com',
-        role: 'hr',
-        department: 'HR',
-        avatar: null,
-      },
-      tokens: {
-        accessToken: 'mock-access-token-hr',
-        refreshToken: 'mock-refresh-token-hr',
-      }
-    },
-    'admin@example.com': {
-      password: 'admin123',
-      user: {
-        id: 'admin-1',
-        name: 'Админ Админов',
-        email: 'admin@example.com',
-        role: 'admin', // Админ имеет свою роль
-        department: 'Управление',
-        avatar: null,
-      },
-      tokens: {
-        accessToken: 'mock-access-token-admin',
-        refreshToken: 'mock-refresh-token-admin',
-      }
-    }
-  };
+  const [localError, setLocalError] = useState('');
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-    setError('');
+    setLocalError('');
   };
 
   const handleTogglePasswordVisibility = () => {
@@ -110,44 +46,44 @@ const AuthForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setLocalError('');
+
+    if (!formData.email || !formData.password) {
+      setLocalError('Пожалуйста, заполните все поля');
+      return;
+    }
 
     try {
-      // Имитация задержки API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await dispatch(loginAsync({
+        username: formData.email,
+        password: formData.password,
+      }));
 
-      const userData = mockUsers[formData.email];
-      
-      if (!userData || userData.password !== formData.password) {
-        setError('Неверный email или пароль');
-        setLoading(false);
-        return;
-      }
+      if (loginAsync.fulfilled.match(result)) {
+        const user = result.payload.user;
+        const role = user?.role;
 
-      // Сохраняем данные пользователя и токены в Redux
-      dispatch(setUser(userData.user));
-      dispatch(setTokens(userData.tokens));
-
-      // Перенаправляем в зависимости от роли
-      if (userData.user.role === 'mentor') {
-        navigate('/mentor');
-      } else if (userData.user.role === 'intern') {
-        navigate('/intern');
-      } else if (userData.user.role === 'hr') {
-        navigate('/hr'); // HR перенаправляется на свой дашборд
-      } else if (userData.user.role === 'admin') {
-        navigate('/admin'); // Админ перенаправляется на свой дашборд
+        if (role === 'mentor') {
+          navigate('/mentor');
+        } else if (role === 'intern') {
+          navigate('/intern');
+        } else if (role === 'hr') {
+          navigate('/hr');
+        } else if (role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/mentor');
+        }
       } else {
-        navigate('/mentor'); // По умолчанию для других ролей
+        setLocalError(result.payload || 'Неверный email или пароль');
       }
-
     } catch (err) {
-      setError('Произошла ошибка при авторизации');
-    } finally {
-      setLoading(false);
+      setLocalError('Произошла ошибка при авторизации');
     }
   };
+
+  const error = localError || authError;
+  const loading = isLoading;
 
   return (
     <Box
@@ -161,8 +97,7 @@ const AuthForm = () => {
         px: 2,
       }}
     >
-      {/* Заголовок формы */}
-      <Box sx={{ mb: 6, textAlign: 'center', width: '100%', maxWidth: 400 }}>
+        <Box sx={{ mb: 6, textAlign: 'center', width: '100%', maxWidth: 400 }}>
         <Typography
           variant="h3"
           component="h1"
@@ -188,7 +123,6 @@ const AuthForm = () => {
         </Typography>
       </Box>
 
-      {/* Форма */}
       <Box
         component="form"
         onSubmit={handleSubmit}
@@ -197,14 +131,12 @@ const AuthForm = () => {
           maxWidth: 400,
         }}
       >
-        {/* Ошибка */}
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
 
-        {/* Email поле */}
         <TextField
           fullWidth
           type="email"
@@ -248,7 +180,6 @@ const AuthForm = () => {
           }}
         />
 
-        {/* Пароль поле */}
         <TextField
           fullWidth
           type={showPassword ? 'text' : 'password'}
@@ -302,7 +233,6 @@ const AuthForm = () => {
           }}
         />
 
-        {/* Кнопка входа */}
         <Button
           type="submit"
           fullWidth
@@ -332,24 +262,6 @@ const AuthForm = () => {
           )}
         </Button>
 
-        {/* Подсказка для тестирования */}
-        <Box sx={{ mt: 4, p: 2, backgroundColor: '#f9f9f9', borderRadius: 2, border: '1px solid #e0e0e0' }}>
-          <Typography variant="caption" color="#666" display="block" sx={{ mb: 1, fontWeight: 'bold' }}>
-            Тестовые аккаунты:
-          </Typography>
-          <Typography variant="caption" color="#666" display="block" sx={{ fontSize: '12px' }}>
-            • mentor@example.com / mentor123 (Ментор)
-          </Typography>
-          <Typography variant="caption" color="#666" display="block" sx={{ fontSize: '12px' }}>
-            • intern@example.com / intern123 (Стажер)
-          </Typography>
-          <Typography variant="caption" color="#666" display="block" sx={{ fontSize: '12px' }}>
-            • hr@example.com / hr123 (HR менеджер)
-          </Typography>
-          <Typography variant="caption" color="#666" display="block" sx={{ fontSize: '12px' }}>
-            • admin@example.com / admin123 (Админ)
-          </Typography>
-        </Box>
       </Box>
     </Box>
   );

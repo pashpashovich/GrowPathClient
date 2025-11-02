@@ -43,7 +43,6 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
   const { stages, currentInternshipId, internships } = useSelector((state) => state.roadmap);
   const currentUser = useSelector((state) => state.auth.user);
   
-  // Получаем этапы текущей стажировки
   const currentStages = currentInternshipId ? stages[currentInternshipId] || [] : [];
   const currentInternship = internships.find(i => i.id === currentInternshipId);
 
@@ -182,7 +181,6 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
 
   return (
     <Box>
-      {/* Заголовок и статистика */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Box>
@@ -207,7 +205,6 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
           )}
         </Box>
 
-        {/* Общий прогресс */}
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
             <Typography variant="h6">Общий прогресс</Typography>
@@ -225,7 +222,6 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
           </Typography>
         </Box>
 
-        {/* Статистика по статусам */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
           {['pending', 'in_progress', 'completed', 'delayed'].map(status => {
             const count = currentStages.filter(s => s.status === status).length;
@@ -244,7 +240,6 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
         </Box>
       </Box>
 
-      {/* Список этапов */}
       {!currentInternshipId ? (
         <Alert severity="info">
           Выберите стажировку для просмотра дорожной карты.
@@ -359,7 +354,6 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
         </Box>
       )}
 
-      {/* Меню действий */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -387,7 +381,6 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
         </MenuItem>
       </Menu>
 
-      {/* Диалог изменения статуса */}
       <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Изменить статус этапа: {selectedStage?.title}</DialogTitle>
         <DialogContent>

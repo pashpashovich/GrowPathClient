@@ -101,12 +101,11 @@ const TaskSubmissionForm = ({ task, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // При интеграции с API будет загрузка файлов на сервер
       const processedFiles = submissionFiles.map(file => ({
         name: file.name,
         size: file.size,
         type: file.type,
-        url: file.url // При интеграции с API  это будет URL с сервера
+        url: file.url
       }));
 
       const processedLinks = submissionLinks.filter(link => link.trim());

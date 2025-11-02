@@ -10,7 +10,7 @@ const initialState = {
     status: '',
     assignee: '',
     priority: '',
-    internshipId: '', // Фильтр по стажировкам
+    internshipId: '',
   },
   pagination: {
     page: 1,
@@ -64,7 +64,6 @@ const taskSlice = createSlice({
     setLoading: (state, action) => {
       state.isLoading = action.payload;
     },
-    // Новые действия для стажеров
     takeTask: (state, action) => {
       const { taskId, internId } = action.payload;
       const task = state.tasks.find(t => t.id === taskId);
@@ -79,7 +78,6 @@ const taskSlice = createSlice({
           changedAt: new Date().toISOString(),
           comment: 'Задача взята в работу'
         });
-        // Обновляем currentTask если это текущая задача
         if (state.currentTask && state.currentTask.id === taskId) {
           state.currentTask = task;
         }
@@ -102,7 +100,6 @@ const taskSlice = createSlice({
           changedAt: new Date().toISOString(),
           comment: comment || 'Задача сдана на проверку'
         });
-        // Обновляем currentTask если это текущая задача
         if (state.currentTask && state.currentTask.id === taskId) {
           state.currentTask = task;
         }
@@ -127,7 +124,6 @@ const taskSlice = createSlice({
           comment: comment || 'Задача проверена',
           rating: rating
         });
-        // Обновляем currentTask если это текущая задача
         if (state.currentTask && state.currentTask.id === taskId) {
           state.currentTask = task;
         }
@@ -144,7 +140,6 @@ const taskSlice = createSlice({
           comment,
           createdAt: new Date().toISOString()
         });
-        // Обновляем currentTask если это текущая задача
         if (state.currentTask && state.currentTask.id === taskId) {
           state.currentTask = task;
         }

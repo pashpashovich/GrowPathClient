@@ -5,11 +5,6 @@ import internReducer from './slices/internSlice';
 import mentorReducer from './slices/mentorSlice';
 import hrReducer from './slices/hrSlice';
 import taskReducer from './slices/taskSlice';
-import roadmapReducer from './slices/roadmapSlice';
-import ratingReducer from './slices/ratingSlice';
-import userManagementReducer from './slices/userManagementSlice';
-import internshipProgramReducer from './slices/internshipProgramSlice';
-import analyticsReducer from './slices/analyticsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -19,10 +14,5 @@ export const store = configureStore({
     mentor: mentorReducer,
     hr: hrReducer,
     task: taskReducer,
-    roadmap: roadmapReducer,
-    rating: ratingReducer,
-    userManagement: userManagementReducer,
-    internshipProgram: internshipProgramReducer,
-    analytics: analyticsReducer,
   },
 });

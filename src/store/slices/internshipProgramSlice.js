@@ -231,7 +231,6 @@ const internshipProgramSlice = createSlice({
       const program = state.programs.find(p => p.id === programId);
       if (program) {
         program.selectionStages = program.selectionStages.filter(s => s.id !== stageId);
-        // Пересчитываем порядок
         program.selectionStages.forEach((stage, index) => {
           stage.order = index + 1;
         });

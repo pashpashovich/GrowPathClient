@@ -269,3 +269,4 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
 };
 
 export default InternshipProgramsList;
+

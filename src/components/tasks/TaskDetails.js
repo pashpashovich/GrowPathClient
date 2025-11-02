@@ -37,22 +37,8 @@ import { useSelector } from 'react-redux';
 
 const TaskDetails = ({ open, onClose, onEdit, canEdit = true }) => {
   const { currentTask } = useSelector((state) => state.task);
-  const programs = useSelector((state) => state.internshipProgram.programs);
 
   if (!currentTask) return null;
-
-  // Получаем цель задачи
-  const getTaskGoal = () => {
-    if (!currentTask.goalId) return null;
-    
-    for (const program of programs) {
-      const goal = program.goals?.find(g => g.id === currentTask.goalId);
-      if (goal) return goal;
-    }
-    return null;
-  };
-
-  const taskGoal = getTaskGoal();
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -124,21 +110,6 @@ const TaskDetails = ({ open, onClose, onEdit, canEdit = true }) => {
                     size="small"
                   />
                 </Box>
-
-                {taskGoal && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Assignment fontSize="small" color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      Цель программы:
-                    </Typography>
-                    <Chip
-                      label={taskGoal.title}
-                      color="primary"
-                      variant="outlined"
-                      size="small"
-                    />
-                  </Box>
-                )}
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Assignment fontSize="small" color="action" />

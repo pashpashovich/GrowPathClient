@@ -3,7 +3,7 @@ import { Box, Typography, AppBar, Toolbar, IconButton, Button, Paper } from '@mu
 import { Logout, Add } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
+import { logoutAsync } from '../store/slices/authSlice';
 import { setPrograms } from '../store/slices/internshipProgramSlice';
 import Logo from '../components/Logo';
 import Sidebar from '../components/Sidebar';
@@ -24,16 +24,14 @@ const HRDashboard = () => {
   const [editingProgram, setEditingProgram] = useState(null);
   const [viewingProgram, setViewingProgram] = useState(null);
 
-  // Инициализация программ стажировок при загрузке
   useEffect(() => {
     if (programs.length === 0) {
-      // Программы уже инициализированы в slice, но можно добавить дополнительную логику
       console.log('HR Dashboard loaded, programs:', programs.length);
     }
   }, [programs.length]);
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutAsync());
     navigate('/login');
   };
 
@@ -63,7 +61,6 @@ const HRDashboard = () => {
     
     return (
       <Box>
-        {/* Панель управления */}
         <Paper sx={{ p: 2, mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h5" component="h1">
@@ -79,7 +76,6 @@ const HRDashboard = () => {
           </Box>
         </Paper>
 
-        {/* Список программ */}
         <InternshipProgramsList
           onEdit={handleEditProgram}
           onView={handleViewProgram}
@@ -90,7 +86,6 @@ const HRDashboard = () => {
 
   return (
     <Box>
-      {/* Глобальный хедер */}
       <AppBar position="fixed" sx={{ zIndex: 1300 }}>
         <Toolbar>
           <Logo size="medium" />
@@ -120,21 +115,18 @@ const HRDashboard = () => {
             backgroundColor: '#f5f5f5',
           }}
         >
-          {/* Основной контент */}
           <Box sx={{ py: 3, px: 3, overflowX: 'auto' }}>
             {getCurrentPage()}
           </Box>
         </Box>
       </Box>
 
-      {/* Форма создания/редактирования программы */}
       <InternshipProgramForm
         open={isProgramFormOpen}
         onClose={() => setIsProgramFormOpen(false)}
         programToEdit={editingProgram}
       />
 
-      {/* Детальный просмотр программы */}
       <InternshipProgramDetails
         open={isProgramDetailsOpen}
         onClose={() => setIsProgramDetailsOpen(false)}

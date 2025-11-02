@@ -37,7 +37,6 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
 
   const [errors, setErrors] = useState({});
 
-  // Заполняем форму при редактировании
   useEffect(() => {
     if (stageToEdit) {
       setFormData({
@@ -50,7 +49,6 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
         comments: stageToEdit.comments || '',
       });
     } else {
-      // Сбрасываем форму при создании новой задачи
       setFormData({
         title: '',
         description: '',
@@ -101,7 +99,6 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
   const handleSubmit = () => {
     if (validateForm()) {
       if (stageToEdit) {
-        // Редактирование существующего этапа
         const updatedStage = {
           ...stageToEdit,
           title: formData.title,
@@ -118,7 +115,6 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
           internshipId: currentInternshipId,
         }));
       } else {
-        // Создание нового этапа
         const newStage = {
           title: formData.title,
           description: formData.description,
@@ -135,7 +131,6 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
         dispatch(addStage(newStage));
       }
 
-      // Сброс формы
       setFormData({
         title: '',
         description: '',

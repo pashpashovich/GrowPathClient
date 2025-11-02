@@ -153,7 +153,6 @@ const TaskReviewPanel = ({ onViewTask }) => {
   };
 
   const filteredTasks = tasks.filter(task => {
-    // Показываем только задачи на ревью и завершенные
     const isReviewable = task.status === 'submitted' || task.status === 'completed';
     if (!isReviewable) return false;
     
