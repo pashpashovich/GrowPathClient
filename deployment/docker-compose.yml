@@ -1,0 +1,19 @@
+services:
+  growpath-client:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080/api}
+    container_name: growpath-client
+    ports:
+      - "${CLIENT_PORT:-3000}:80"
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8080/api}
+    restart: unless-stopped
+    networks:
+      - growpath-network
+
+networks:
+  growpath-network:
+    driver: bridge
