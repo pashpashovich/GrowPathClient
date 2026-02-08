@@ -21,13 +21,20 @@ import {
 } from '@mui/material';
 import { Add, Delete, AttachFile, Link } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { addTask, updateTask } from '../../store/slices/taskSlice';
+import { addTask, updateTask, createTaskAsync, updateTaskAsync } from '../../store/slices/taskSlice';
+import { fetchInternsAsync } from '../../store/slices/internSlice';
 
 const TaskForm = ({ open, onClose, taskToEdit }) => {
   const dispatch = useDispatch();
   const { interns } = useSelector((state) => state.intern);
   const programs = useSelector((state) => state.internshipProgram.programs);
   const currentInternshipId = useSelector((state) => state.roadmap.currentInternshipId);
+
+  useEffect(() => {
+    if (open && interns.length === 0) {
+      dispatch(fetchInternsAsync());
+    }
+  }, [open, dispatch, interns.length]);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -91,12 +98,6 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
     availableGoals: availableGoals.length
   });
 
-  const mockInterns = [
-    { id: 1, name: 'Иван Иванов', department: 'Разработка' },
-    { id: 2, name: 'Петр Петров', department: 'ML' },
-    { id: 3, name: 'Анна Сидорова', department: 'QA' },
-    { id: 4, name: 'Мария Козлова', department: 'Frontend' },
-  ];
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -352,7 +353,7 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {selected.map((value) => {
-                    const intern = mockInterns.find(i => i.id === value);
+                    const intern = interns.find(i => i.id === value);
                     return (
                       <Chip 
                         key={value} 
@@ -364,7 +365,7 @@ const TaskForm = ({ open, onClose, taskToEdit }) => {
                 </Box>
               )}
             >
-              {mockInterns.map((intern) => (
+              {interns.map((intern) => (
                 <MenuItem key={intern.id} value={intern.id}>
                   <Box>
                     <Typography variant="body2">{intern.name}</Typography>

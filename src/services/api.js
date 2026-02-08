@@ -189,6 +189,11 @@ export const taskAPI = {
   updateTask: (id, data) => api.put(`/tasks/${id}`, data),
   deleteTask: (id) => api.delete(`/tasks/${id}`),
   completeTask: (id) => api.patch(`/tasks/${id}/complete`),
+  takeTask: (id) => api.post(`/tasks/${id}/take`),
+  submitTask: (id, data) => api.post(`/tasks/${id}/submit`, data),
+  reviewTask: (id, data) => api.post(`/tasks/${id}/review`, data),
+  addComment: (id, data) => api.post(`/tasks/${id}/comments`, data),
+  getComments: (id) => api.get(`/tasks/${id}/comments`),
 };
 
 export const assessmentAPI = {
@@ -208,5 +213,3 @@ export const departmentAPI = {
 };
 
 export default api;
-
-

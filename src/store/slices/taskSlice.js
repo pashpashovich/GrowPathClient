@@ -1,8 +1,117 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { mockTasks } from '../../data/mockData';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { taskAPI } from '../../services/api';
+
+// Async Thunks
+export const fetchTasksAsync = createAsyncThunk(
+  'task/fetchTasks',
+  async (params, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.getTasks(params);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке задач');
+    }
+  }
+);
+
+export const fetchTaskByIdAsync = createAsyncThunk(
+  'task/fetchTaskById',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.getTaskById(id);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке задачи');
+    }
+  }
+);
+
+export const createTaskAsync = createAsyncThunk(
+  'task/createTask',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.createTask(data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при создании задачи');
+    }
+  }
+);
+
+export const updateTaskAsync = createAsyncThunk(
+  'task/updateTask',
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.updateTask(id, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при обновлении задачи');
+    }
+  }
+);
+
+export const deleteTaskAsync = createAsyncThunk(
+  'task/deleteTask',
+  async (id, { rejectWithValue }) => {
+    try {
+      await taskAPI.deleteTask(id);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при удалении задачи');
+    }
+  }
+);
+
+export const takeTaskAsync = createAsyncThunk(
+  'task/takeTask',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.takeTask(id);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при взятии задачи');
+    }
+  }
+);
+
+export const submitTaskAsync = createAsyncThunk(
+  'task/submitTask',
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.submitTask(id, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при отправке задачи');
+    }
+  }
+);
+
+export const reviewTaskAsync = createAsyncThunk(
+  'task/reviewTask',
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.reviewTask(id, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при проверке задачи');
+    }
+  }
+);
+
+export const addCommentAsync = createAsyncThunk(
+  'task/addComment',
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.addComment(id, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при добавлении комментария');
+    }
+  }
+);
 
 const initialState = {
-  tasks: mockTasks,
+  tasks: [],
   currentTask: null,
   isLoading: false,
   error: null,
@@ -145,6 +254,170 @@ const taskSlice = createSlice({
         }
       }
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      // Fetch Tasks
+      .addCase(fetchTasksAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchTasksAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.tasks = action.payload.data || action.payload;
+        if (action.payload.pagination) {
+          state.pagination = action.payload.pagination;
+        }
+      })
+      .addCase(fetchTasksAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Fetch Task By ID
+      .addCase(fetchTaskByIdAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchTaskByIdAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.currentTask = action.payload;
+        // Обновляем задачу в списке, если она там есть
+        const index = state.tasks.findIndex(task => task.id === action.payload.id);
+        if (index !== -1) {
+          state.tasks[index] = action.payload;
+        }
+      })
+      .addCase(fetchTaskByIdAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Create Task
+      .addCase(createTaskAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createTaskAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.tasks.unshift(action.payload);
+      })
+      .addCase(createTaskAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Update Task
+      .addCase(updateTaskAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateTaskAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.tasks.findIndex(task => task.id === action.payload.id);
+        if (index !== -1) {
+          state.tasks[index] = action.payload;
+        }
+        if (state.currentTask && state.currentTask.id === action.payload.id) {
+          state.currentTask = action.payload;
+        }
+      })
+      .addCase(updateTaskAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Delete Task
+      .addCase(deleteTaskAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteTaskAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.tasks = state.tasks.filter(task => task.id !== action.payload);
+        if (state.currentTask && state.currentTask.id === action.payload) {
+          state.currentTask = null;
+        }
+      })
+      .addCase(deleteTaskAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Take Task
+      .addCase(takeTaskAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(takeTaskAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.tasks.findIndex(task => task.id === action.payload.id);
+        if (index !== -1) {
+          state.tasks[index] = action.payload;
+        }
+        if (state.currentTask && state.currentTask.id === action.payload.id) {
+          state.currentTask = action.payload;
+        }
+      })
+      .addCase(takeTaskAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Submit Task
+      .addCase(submitTaskAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(submitTaskAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.tasks.findIndex(task => task.id === action.payload.id);
+        if (index !== -1) {
+          state.tasks[index] = action.payload;
+        }
+        if (state.currentTask && state.currentTask.id === action.payload.id) {
+          state.currentTask = action.payload;
+        }
+      })
+      .addCase(submitTaskAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Review Task
+      .addCase(reviewTaskAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(reviewTaskAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.tasks.findIndex(task => task.id === action.payload.id);
+        if (index !== -1) {
+          state.tasks[index] = action.payload;
+        }
+        if (state.currentTask && state.currentTask.id === action.payload.id) {
+          state.currentTask = action.payload;
+        }
+      })
+      .addCase(reviewTaskAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Add Comment
+      .addCase(addCommentAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(addCommentAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const taskId = action.payload.taskId;
+        const task = state.tasks.find(t => t.id === taskId);
+        if (task) {
+          task.comments = task.comments || [];
+          task.comments.push(action.payload);
+        }
+        if (state.currentTask && state.currentTask.id === taskId) {
+          state.currentTask.comments = state.currentTask.comments || [];
+          state.currentTask.comments.push(action.payload);
+        }
+      })
+      .addCase(addCommentAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      });
   },
 });
 

@@ -22,8 +22,8 @@ import { useSelector } from 'react-redux';
 
 const AnalyticsPage = () => {
   const [currentTab, setCurrentTab] = useState(0);
-  const programReports = useSelector((state) => state.analytics.programReports);
-  const mentorWorkload = useSelector((state) => state.analytics.mentorWorkload);
+  const programReports = useSelector((state) => state.analytics?.programReports || []);
+  const mentorWorkload = useSelector((state) => state.analytics?.mentorWorkload || []);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -142,11 +142,3 @@ const AnalyticsPage = () => {
 };
 
 export default AnalyticsPage;
-
-
-
-
-
-
-
-

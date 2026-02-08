@@ -1,6 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI } from '../../services/api';
 
+function getNormalizedRole(user) {
+  const roles = user?.roles;
+  if (roles && Array.isArray(roles) && roles.length > 0) {
+    const r = roles[0];
+    if (typeof r === 'string') return r.replace(/^ROLE_/, '').toLowerCase();
+  }
+  return user?.role ?? null;
+}
+
 const initialState = {
   user: null,
   tokens: {
@@ -41,7 +50,12 @@ export const logoutAsync = createAsyncThunk(
     try {
       const refreshToken = getState().auth.tokens.refreshToken;
       if (refreshToken) {
-        await authAPI.logout(refreshToken);
+        try {
+          await authAPI.logout(refreshToken);
+        } catch (error) {
+          // Игнорируем ошибки при выходе, все равно очищаем локальное хранилище
+          console.warn('Logout API error:', error);
+        }
       }
       
       localStorage.removeItem('accessToken');
@@ -64,11 +78,9 @@ export const getCurrentUserAsync = createAsyncThunk(
       const response = await authAPI.getCurrentUser();
       return response.data;
     } catch (error) {
-      if (error.code === 'ERR_NETWORK' || error.message?.includes('CORS') || !error.response) {
-        console.warn('CORS error or network error - backend may not be running');
+      if (error.response?.status === 401) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        return rejectWithValue('Сервер недоступен или CORS не настроен');
       }
       return rejectWithValue(
         error.response?.data?.message || 'Ошибка при получении информации о пользователе'
@@ -105,8 +117,10 @@ const authSlice = createSlice({
       localStorage.removeItem('refreshToken');
     },
     setUser: (state, action) => {
-      state.user = action.payload;
-      state.role = action.payload?.role || null;
+      const user = action.payload;
+      const role = getNormalizedRole(user);
+      state.user = user ? { ...user, role } : null;
+      state.role = role;
     },
     setTokens: (state, action) => {
       state.tokens = action.payload;
@@ -135,11 +149,13 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginAsync.fulfilled, (state, action) => {
+        const user = action.payload.user;
+        const role = getNormalizedRole(user);
         state.isLoading = false;
         state.isAuthenticated = true;
         state.tokens = action.payload.tokens;
-        state.user = action.payload.user;
-        state.role = action.payload.user?.role || null;
+        state.user = user ? { ...user, role } : null;
+        state.role = role;
         state.error = null;
       })
       .addCase(loginAsync.rejected, (state, action) => {
@@ -169,15 +185,16 @@ const authSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(getCurrentUserAsync.fulfilled, (state, action) => {
+        const user = action.payload;
+        const role = getNormalizedRole(user);
         state.isLoading = false;
-        state.user = action.payload;
-        state.role = action.payload?.role || null;
+        state.user = user ? { ...user, role } : null;
+        state.role = role;
       })
       .addCase(getCurrentUserAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-        if (action.payload?.includes('401') || action.payload?.includes('токен') || 
-            action.payload?.includes('CORS') || action.payload?.includes('недоступен')) {
+        if (action.payload?.includes('401') || action.payload?.includes('токен')) {
           state.isAuthenticated = false;
           state.user = null;
           state.tokens = { accessToken: null, refreshToken: null };

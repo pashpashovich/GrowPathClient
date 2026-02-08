@@ -1,63 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  users: [
-    {
-      id: 'user-1',
-      email: 'mentor@example.com',
-      name: 'Алексей Козлов',
-      role: 'mentor',
-      status: 'active', // active, blocked, pending
-      createdAt: '2024-01-10T10:00:00Z',
-      lastLogin: '2024-01-25T09:15:00Z',
-      invitedBy: null,
-      invitationSentAt: null,
-    },
-    {
-      id: 'user-2',
-      email: 'intern@example.com',
-      name: 'Анна Петрова',
-      role: 'intern',
-      status: 'active',
-      createdAt: '2024-01-15T10:00:00Z',
-      lastLogin: '2024-01-25T08:30:00Z',
-      invitedBy: 'user-1',
-      invitationSentAt: '2024-01-14T15:00:00Z',
-    },
-    {
-      id: 'user-3',
-      email: 'hr@example.com',
-      name: 'Мария Волкова',
-      role: 'hr',
-      status: 'active',
-      createdAt: '2024-01-20T10:00:00Z',
-      lastLogin: '2024-01-25T10:00:00Z',
-      invitedBy: 'user-1',
-      invitationSentAt: '2024-01-19T14:00:00Z',
-    },
-    {
-      id: 'user-4',
-      email: 'newuser@example.com',
-      name: 'Иван Сидоров',
-      role: 'intern',
-      status: 'pending', // Ожидает активации
-      createdAt: '2024-01-24T10:00:00Z',
-      lastLogin: null,
-      invitedBy: 'user-1',
-      invitationSentAt: '2024-01-24T10:00:00Z',
-    },
-    {
-      id: 'user-5',
-      email: 'blocked@example.com',
-      name: 'Петр Заблокированный',
-      role: 'intern',
-      status: 'blocked',
-      createdAt: '2024-01-15T10:00:00Z',
-      lastLogin: '2024-01-20T10:00:00Z',
-      invitedBy: 'user-1',
-      invitationSentAt: '2024-01-14T15:00:00Z',
-    }
-  ],
+  users: [],
   currentUser: null,
   isLoading: false,
   error: null,

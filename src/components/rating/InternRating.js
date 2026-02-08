@@ -28,9 +28,9 @@ import {
 import { useSelector } from 'react-redux';
 
 const InternRating = () => {
-  const { ratings } = useSelector((state) => state.rating);
-  const currentUser = useSelector((state) => state.auth.user);
-  const { internships } = useSelector((state) => state.roadmap);
+  const { ratings = [] } = useSelector((state) => state.rating || {});
+  const currentUser = useSelector((state) => state.auth?.user);
+  const { internships = [] } = useSelector((state) => state.roadmap || {});
 
   const internRating = useMemo(() => {
     return ratings.find(rating => rating.internId === currentUser?.id);

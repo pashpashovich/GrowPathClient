@@ -10,7 +10,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  Email,
   Lock,
   Visibility,
   VisibilityOff,
@@ -61,18 +60,20 @@ const AuthForm = () => {
 
       if (loginAsync.fulfilled.match(result)) {
         const user = result.payload.user;
-        const role = user?.role;
-
-        if (role === 'mentor') {
+        const roles = user?.roles;
+        const resolvedRole = (roles && roles[0])
+          ? String(roles[0]).replace(/^ROLE_/, '').toLowerCase()
+          : user?.role;
+        if (resolvedRole === 'mentor') {
           navigate('/mentor');
-        } else if (role === 'intern') {
+        } else if (resolvedRole === 'intern') {
           navigate('/intern');
-        } else if (role === 'hr') {
+        } else if (resolvedRole === 'hr') {
           navigate('/hr');
-        } else if (role === 'admin') {
+        } else if (resolvedRole === 'admin') {
           navigate('/admin');
         } else {
-          navigate('/mentor');
+          navigate('/');
         }
       } else {
         setLocalError(result.payload || 'Неверный email или пароль');
@@ -261,7 +262,6 @@ const AuthForm = () => {
             'Войти'
           )}
         </Button>
-
       </Box>
     </Box>
   );

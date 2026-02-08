@@ -45,11 +45,11 @@ import TaskDetails from './TaskDetails';
 
 const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const dispatch = useDispatch();
-  const tasks = useSelector((state) => state.task.tasks);
-  const interns = useSelector((state) => state.intern.interns);
-  const internships = useSelector((state) => state.roadmap.internships);
-  const programs = useSelector((state) => state.internshipProgram.programs);
-  const filters = useSelector((state) => state.task.filters);
+  const tasks = useSelector((state) => state.task?.tasks || []);
+  const interns = useSelector((state) => state.intern?.interns || []);
+  const internships = useSelector((state) => state.roadmap?.internships || []);
+  const programs = useSelector((state) => state.internshipProgram?.programs || []);
+  const filters = useSelector((state) => state.task?.filters || {});
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);

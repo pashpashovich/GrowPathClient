@@ -34,7 +34,7 @@ import {
 import { useSelector } from 'react-redux';
 
 const ProgramReports = () => {
-  const programReports = useSelector((state) => state.analytics.programReports);
+  const programReports = useSelector((state) => state.analytics?.programReports || []);
   const [selectedProgram, setSelectedProgram] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
 
@@ -353,9 +353,3 @@ const ProgramReports = () => {
 };
 
 export default ProgramReports;
-
-
-
-
-
-

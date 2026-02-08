@@ -45,8 +45,8 @@ import {
 
 const UserManagementTable = () => {
   const dispatch = useDispatch();
-  const users = useSelector((state) => state.userManagement.users);
-  const currentUser = useSelector((state) => state.auth.user);
+  const users = useSelector((state) => state.userManagement?.users || []);
+  const currentUser = useSelector((state) => state.auth?.user);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);

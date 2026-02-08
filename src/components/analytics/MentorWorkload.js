@@ -38,7 +38,7 @@ import {
 import { useSelector } from 'react-redux';
 
 const MentorWorkload = () => {
-  const mentorWorkload = useSelector((state) => state.analytics.mentorWorkload);
+  const mentorWorkload = useSelector((state) => state.analytics?.mentorWorkload || []);
   const [selectedProgram, setSelectedProgram] = useState('');
   const [workloadFilter, setWorkloadFilter] = useState('all');
 

@@ -34,8 +34,8 @@ import { setSelectedInternship, recalculateRanks } from '../../store/slices/rati
 
 const RatingTable = () => {
   const dispatch = useDispatch();
-  const { ratings, selectedInternshipId } = useSelector((state) => state.rating);
-  const { internships } = useSelector((state) => state.roadmap);
+  const { ratings = [], selectedInternshipId } = useSelector((state) => state.rating || {});
+  const { internships = [] } = useSelector((state) => state.roadmap || {});
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState('rank');

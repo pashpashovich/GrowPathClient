@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -31,13 +31,13 @@ import {
   Flag,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { setFilters, setCurrentTask } from '../../store/slices/taskSlice';
+import { setFilters, setCurrentTask, fetchTasksAsync } from '../../store/slices/taskSlice';
 import TaskForm from './TaskForm';
 import TaskDetails from './TaskDetails';
 
 const TaskList = () => {
   const dispatch = useDispatch();
-  const { tasks, filters } = useSelector((state) => state.task);
+  const { tasks, filters, isLoading } = useSelector((state) => state.task);
   
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -45,79 +45,10 @@ const TaskList = () => {
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  const mockTasks = [
-    {
-      id: 1,
-      title: 'Реализовать REST API для пользователей',
-      description: 'Создать CRUD операции для управления пользователями с валидацией данных',
-      priority: 'high',
-      status: 'in_progress',
-      assignees: [
-        { id: 1, name: 'Иван Иванов', avatar: '' },
-        { id: 2, name: 'Петр Петров', avatar: '' },
-      ],
-      progress: 65,
-      dueDate: '2024-01-15',
-      createdAt: '2024-01-10',
-      checklist: [
-        { id: 1, text: 'Создать модель User', completed: true },
-        { id: 2, text: 'Реализовать контроллер', completed: true },
-        { id: 3, text: 'Добавить валидацию', completed: false },
-        { id: 4, text: 'Написать тесты', completed: false },
-      ],
-      attachments: [
-        { id: 1, name: 'API_specification.pdf' },
-        { id: 2, name: 'database_schema.sql' },
-      ],
-      links: [
-        { id: 1, title: 'Spring Boot Documentation', url: 'https://spring.io/projects/spring-boot' },
-      ],
-    },
-    {
-      id: 2,
-      title: 'Написать unit тесты для сервиса',
-      description: 'Покрыть тестами все методы сервиса с различными сценариями',
-      priority: 'medium',
-      status: 'assigned',
-      assignees: [
-        { id: 3, name: 'Анна Сидорова', avatar: '' },
-      ],
-      progress: 0,
-      dueDate: '2024-01-20',
-      createdAt: '2024-01-12',
-      checklist: [
-        { id: 1, text: 'Настроить тестовую среду', completed: false },
-        { id: 2, text: 'Написать тесты для CRUD операций', completed: false },
-        { id: 3, text: 'Добавить тесты для валидации', completed: false },
-      ],
-      attachments: [],
-      links: [],
-    },
-    {
-      id: 3,
-      title: 'Создать документацию API',
-      description: 'Написать подробную документацию с примерами использования',
-      priority: 'low',
-      status: 'completed',
-      assignees: [
-        { id: 4, name: 'Мария Козлова', avatar: '' },
-      ],
-      progress: 100,
-      dueDate: '2024-01-08',
-      createdAt: '2024-01-05',
-      checklist: [
-        { id: 1, text: 'Описать все endpoints', completed: true },
-        { id: 2, text: 'Добавить примеры запросов', completed: true },
-        { id: 3, text: 'Создать диаграммы', completed: true },
-      ],
-      attachments: [
-        { id: 1, name: 'API_Documentation.md' },
-      ],
-      links: [
-        { id: 1, title: 'Swagger UI', url: 'http://localhost:8080/swagger-ui.html' },
-      ],
-    },
-  ];
+  useEffect(() => {
+    dispatch(fetchTasksAsync(filters));
+  }, [dispatch, filters.status, filters.priority, filters.assignee, filters.internshipId]);
+
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -188,10 +119,11 @@ const TaskList = () => {
     dispatch(setFilters({ [field]: value }));
   };
 
-  const filteredTasks = mockTasks.filter(task => {
+  const filteredTasks = tasks.filter(task => {
     if (filters.status && task.status !== filters.status) return false;
     if (filters.priority && task.priority !== filters.priority) return false;
-    if (filters.assignee && !task.assignees.some(a => a.id === parseInt(filters.assignee))) return false;
+    if (filters.assignee && task.assigneeId !== filters.assignee) return false;
+    if (filters.internshipId && task.internshipId !== filters.internshipId) return false;
     return true;
   });
 
