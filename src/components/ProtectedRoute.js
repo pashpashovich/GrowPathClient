@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate, useLocation } from 'react-router-dom';
+import { Box, CircularProgress } from '@mui/material';
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -10,7 +11,15 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && user?.role !== requiredRole) {
+  if (!user) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (requiredRole && user.role !== requiredRole) {
     if (user?.role === 'mentor') {
       return <Navigate to="/mentor" replace />;
     } else if (user?.role === 'intern') {

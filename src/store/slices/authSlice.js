@@ -78,13 +78,15 @@ export const getCurrentUserAsync = createAsyncThunk(
       const response = await authAPI.getCurrentUser();
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
+      const status = error.response?.status;
+      if (status === 401) {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
       }
-      return rejectWithValue(
-        error.response?.data?.message || 'Ошибка при получении информации о пользователе'
-      );
+      return rejectWithValue({
+        message: error.response?.data?.message || 'Ошибка при получении информации о пользователе',
+        status,
+      });
     }
   }
 );
@@ -193,11 +195,13 @@ const authSlice = createSlice({
       })
       .addCase(getCurrentUserAsync.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
-        if (action.payload?.includes('401') || action.payload?.includes('токен')) {
+        const payload = action.payload;
+        state.error = typeof payload === 'object' && payload?.message ? payload.message : payload;
+        if (payload?.status === 401) {
           state.isAuthenticated = false;
           state.user = null;
           state.tokens = { accessToken: null, refreshToken: null };
+          state.role = null;
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
         }

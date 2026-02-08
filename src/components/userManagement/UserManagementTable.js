@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -16,14 +16,14 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   Box,
   Typography,
   Avatar,
-  Tooltip,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   MoreVert,
@@ -32,21 +32,34 @@ import {
   Email,
   Edit,
   Delete,
-  Person,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  blockUser,
-  unblockUser,
-  changeUserRole,
-  sendInvitation,
-  deleteUser,
+  fetchUsersAsync,
+  blockUserAsync,
+  unblockUserAsync,
+  changeUserRoleAsync,
+  inviteUserAsync,
+  deleteUserAsync,
+  setFilters,
+  clearError,
 } from '../../store/slices/userManagementSlice';
 
 const UserManagementTable = () => {
   const dispatch = useDispatch();
-  const users = useSelector((state) => state.userManagement?.users || []);
+  const { users, isLoading, error, filters } = useSelector((state) => state.userManagement || {});
+  const usersList = users || [];
   const currentUser = useSelector((state) => state.auth?.user);
+
+  useEffect(() => {
+    dispatch(fetchUsersAsync({
+      page: 1,
+      limit: 100,
+      ...(filters?.role && { role: filters.role }),
+      ...(filters?.status && { status: filters.status }),
+      ...(filters?.search && { search: filters.search }),
+    }));
+  }, [dispatch, filters?.role, filters?.status, filters?.search]);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -104,65 +117,62 @@ const UserManagementTable = () => {
   };
 
   const handleBlockUser = () => {
-    if (selectedUser) {
-      dispatch(blockUser(selectedUser.id));
-    }
+    if (selectedUser) dispatch(blockUserAsync(selectedUser.id));
     handleMenuClose();
   };
 
   const handleUnblockUser = () => {
-    if (selectedUser) {
-      dispatch(unblockUser(selectedUser.id));
-    }
+    if (selectedUser) dispatch(unblockUserAsync(selectedUser.id));
     handleMenuClose();
   };
 
   const handleChangeRole = () => {
     if (selectedUser) {
-      setNewRole(selectedUser.role);
+      setNewRole(selectedUser.role || '');
       setIsRoleDialogOpen(true);
     }
     handleMenuClose();
   };
 
   const handleSendInvitation = () => {
-    if (selectedUser) {
-      setIsInviteDialogOpen(true);
-    }
+    if (selectedUser) setIsInviteDialogOpen(true);
     handleMenuClose();
   };
 
   const handleDeleteUser = () => {
     if (selectedUser && window.confirm('Вы уверены, что хотите удалить этого пользователя?')) {
-      dispatch(deleteUser(selectedUser.id));
+      dispatch(deleteUserAsync(selectedUser.id));
     }
     handleMenuClose();
   };
 
   const handleRoleUpdate = () => {
     if (selectedUser && newRole) {
-      dispatch(changeUserRole({
-        userId: selectedUser.id,
-        newRole: newRole,
-      }));
+      dispatch(changeUserRoleAsync({ id: selectedUser.id, role: newRole }));
     }
     setIsRoleDialogOpen(false);
     setNewRole('');
   };
 
   const handleInviteSend = () => {
-    if (selectedUser) {
-      dispatch(sendInvitation({ userId: selectedUser.id }));
-    }
+    if (selectedUser) dispatch(inviteUserAsync(selectedUser.id));
     setIsInviteDialogOpen(false);
   };
 
-  const filteredUsers = users.filter(user => {
-    return user.id !== currentUser?.id;
-  });
+  const filteredUsers = usersList.filter((user) => user.id !== currentUser?.sub && user.id !== currentUser?.id);
 
   return (
     <Box>
+      {error && (
+        <Alert severity="error" onClose={() => dispatch(clearError())} sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {isLoading && !usersList.length ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -182,10 +192,10 @@ const UserManagementTable = () => {
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Avatar sx={{ width: 32, height: 32 }}>
-                      {user.name.split(' ').map(n => n[0]).join('')}
+                      {(user.name || user.email || '?').toString().split(' ').map((n) => n[0]).join('').slice(0, 2)}
                     </Avatar>
                     <Typography variant="body2">
-                      {user.name}
+                      {user.name || user.email || '—'}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -220,6 +230,7 @@ const UserManagementTable = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      )}
 
       {/* Меню действий */}
       <Menu

@@ -15,7 +15,7 @@ import {
   Alert,
 } from '@mui/material';
 import { useDispatch } from 'react-redux';
-import { addUser } from '../../store/slices/userManagementSlice';
+import { createUserAsync } from '../../store/slices/userManagementSlice';
 
 const AddUserForm = ({ open, onClose }) => {
   const dispatch = useDispatch();
@@ -26,6 +26,7 @@ const AddUserForm = ({ open, onClose }) => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -63,33 +64,27 @@ const AddUserForm = ({ open, onClose }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setSubmitError('');
 
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    const result = await dispatch(
+      createUserAsync({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        role: formData.role,
+      })
+    );
 
-      dispatch(addUser({
-        ...formData,
-        invitedBy: 'current-admin-id',
-        invitationSentAt: new Date().toISOString(),
-      }));
-
-      setFormData({
-        name: '',
-        email: '',
-        role: 'intern',
-      });
+    if (createUserAsync.fulfilled.match(result)) {
+      setFormData({ name: '', email: '', role: 'intern' });
       setErrors({});
       onClose();
-    } catch (error) {
-      console.error('Ошибка при создании пользователя:', error);
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      setSubmitError(result.payload || 'Не удалось создать пользователя');
     }
+    setIsSubmitting(false);
   };
 
   const handleClose = () => {
@@ -109,6 +104,11 @@ const AddUserForm = ({ open, onClose }) => {
       <DialogTitle>Добавить нового пользователя</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
+          {submitError && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError('')}>
+              {submitError}
+            </Alert>
+          )}
           <Alert severity="info" sx={{ mb: 2 }}>
             Новый пользователь будет создан со статусом "Ожидает активации". 
             Приглашение будет отправлено автоматически.
