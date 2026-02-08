@@ -120,9 +120,11 @@ const initialState = {
   isLoading: false,
   error: null,
   filters: {
-    status: '',
-    role: '',
     search: '',
+    role: '',
+    status: '',
+    page: 1,
+    limit: 10,
   },
 };
 

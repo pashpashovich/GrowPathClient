@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  TextField,
   FormControl,
   InputLabel,
   Select,
@@ -24,6 +25,9 @@ import {
   Avatar,
   Alert,
   CircularProgress,
+  TablePagination,
+  InputAdornment,
+  Grid,
 } from '@mui/material';
 import {
   MoreVert,
@@ -32,6 +36,7 @@ import {
   Email,
   Edit,
   Delete,
+  Search,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -45,21 +50,66 @@ import {
   clearError,
 } from '../../store/slices/userManagementSlice';
 
+const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
+
 const UserManagementTable = () => {
   const dispatch = useDispatch();
-  const { users, isLoading, error, filters } = useSelector((state) => state.userManagement || {});
+  const { users, isLoading, error, filters, pagination } = useSelector((state) => state.userManagement || {});
   const usersList = users || [];
   const currentUser = useSelector((state) => state.auth?.user);
 
-  useEffect(() => {
+  const [searchInput, setSearchInput] = useState('');
+  const [roleInput, setRoleInput] = useState('');
+  const [statusInput, setStatusInput] = useState('');
+
+  const page = filters?.page ?? 1;
+  const limit = filters?.limit ?? 10;
+  const total = pagination?.total ?? 0;
+  const totalPages = pagination?.totalPages ?? 0;
+
+  const loadUsers = useCallback(() => {
     dispatch(fetchUsersAsync({
-      page: 1,
-      limit: 100,
+      page,
+      limit,
+      ...(filters?.search && { search: filters.search }),
       ...(filters?.role && { role: filters.role }),
       ...(filters?.status && { status: filters.status }),
-      ...(filters?.search && { search: filters.search }),
     }));
-  }, [dispatch, filters?.role, filters?.status, filters?.search]);
+  }, [dispatch, page, limit, filters?.search, filters?.role, filters?.status]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  const handleApplyFilters = () => {
+    dispatch(setFilters({
+      search: searchInput.trim(),
+      role: roleInput || '',
+      status: statusInput || '',
+      page: 1,
+    }));
+  };
+
+  const handleResetFilters = () => {
+    setSearchInput('');
+    setRoleInput('');
+    setStatusInput('');
+    dispatch(setFilters({
+      search: '',
+      role: '',
+      status: '',
+      page: 1,
+    }));
+  };
+
+  const handlePageChange = (_, newPage) => {
+    dispatch(setFilters({ page: newPage + 1 }));
+  };
+
+  const handleRowsPerPageChange = (e) => {
+    const newLimit = parseInt(e.target.value, 10);
+    dispatch(setFilters({ limit: newLimit, page: 1 }));
+  };
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -168,6 +218,90 @@ const UserManagementTable = () => {
           {error}
         </Alert>
       )}
+
+      {/* Панель фильтров */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2,
+          mb: 2,
+          backgroundColor: '#f5f5f5',
+          borderRadius: 2,
+        }}
+      >
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Введите ФИО"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="small" sx={{ color: 'text.secondary' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ backgroundColor: 'white', borderRadius: 1 }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth size="small" sx={{ backgroundColor: 'white', borderRadius: 1 }}>
+              <InputLabel>Роль</InputLabel>
+              <Select
+                value={roleInput}
+                label="Роль"
+                onChange={(e) => setRoleInput(e.target.value)}
+              >
+                <MenuItem value="">Все</MenuItem>
+                <MenuItem value="admin">Администратор</MenuItem>
+                <MenuItem value="hr">HR</MenuItem>
+                <MenuItem value="mentor">Ментор</MenuItem>
+                <MenuItem value="intern">Стажер</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <FormControl fullWidth size="small" sx={{ backgroundColor: 'white', borderRadius: 1 }}>
+              <InputLabel>Статус</InputLabel>
+              <Select
+                value={statusInput}
+                label="Статус"
+                onChange={(e) => setStatusInput(e.target.value)}
+              >
+                <MenuItem value="">Все</MenuItem>
+                <MenuItem value="active">Активен</MenuItem>
+                <MenuItem value="pending">Ожидает активации</MenuItem>
+                <MenuItem value="blocked">Заблокирован</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2}>
+            <Button
+              variant="contained"
+              size="medium"
+              onClick={handleApplyFilters}
+              sx={{ borderRadius: 1 }}
+            >
+              Применить
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2} sx={{ display: 'flex', justifyContent: { md: 'flex-end' } }}>
+            <Button
+              variant="outlined"
+              size="medium"
+              onClick={handleResetFilters}
+              sx={{ borderRadius: 1, borderColor: 'primary.main', color: 'primary.main' }}
+            >
+              Сбросить
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
+
       {isLoading && !usersList.length ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress />
@@ -229,6 +363,18 @@ const UserManagementTable = () => {
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          component="div"
+          count={total}
+          page={page - 1}
+          onPageChange={handlePageChange}
+          rowsPerPage={limit}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+          labelRowsPerPage="Строк на странице:"
+          labelDisplayedRows={({ from, to, count }) => `${from}–${to} из ${count !== -1 ? count : `более ${to}`}`}
+          sx={{ borderTop: 1, borderColor: 'divider' }}
+        />
       </TableContainer>
       )}
 
