@@ -17,10 +17,21 @@ export const fetchUsersAsync = createAsyncThunk(
 
 export const createUserAsync = createAsyncThunk(
   'userManagement/createUser',
-  async (data, { rejectWithValue }) => {
+  async (data, { rejectWithValue, dispatch, getState }) => {
     try {
-      const response = await userAPI.createUser(data);
-      return response.data;
+      await userAPI.createUser(data);
+      const { filters } = getState().userManagement;
+      dispatch(setFilters({ page: 1 }));
+      await dispatch(
+        fetchUsersAsync({
+          page: 1,
+          limit: filters.limit,
+          ...(filters.search && { search: filters.search }),
+          ...(filters.role && { role: filters.role }),
+          ...(filters.status && { status: filters.status }),
+        })
+      );
+      return null;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Ошибка при создании пользователя'
@@ -160,9 +171,6 @@ const userManagementSlice = createSlice({
       .addCase(fetchUsersAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-      })
-      .addCase(createUserAsync.fulfilled, (state, action) => {
-        state.users.unshift(action.payload);
       })
       .addCase(createUserAsync.rejected, (state, action) => {
         state.error = action.payload;

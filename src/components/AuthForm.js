@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -14,14 +14,24 @@ import {
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginAsync } from '../store/slices/authSlice';
 
 const AuthForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { isLoading, error: authError } = useSelector((state) => state.auth);
+
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.registrationComplete) {
+      setRegistrationSuccess(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -132,6 +142,11 @@ const AuthForm = () => {
           maxWidth: 400,
         }}
       >
+        {registrationSuccess && (
+          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setRegistrationSuccess(false)}>
+            Регистрация завершена. Войдите с указанным в письме email и новым паролем.
+          </Alert>
+        )}
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}

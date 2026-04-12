@@ -115,6 +115,9 @@ const UserManagementTable = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteTargetUser, setInviteTargetUser] = useState(null);
+  const [isInviteLoading, setIsInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState('');
   const [newRole, setNewRole] = useState('');
 
   const getStatusColor = (status) => {
@@ -143,6 +146,13 @@ const UserManagementTable = () => {
       case 'admin': return 'Администратор';
       default: return role;
     }
+  };
+
+  const getDisplayName = (user) => {
+    if (!user) return '';
+    if (user.name?.trim()) return user.name.trim();
+    const parts = [user.lastName, user.firstName, user.patronymicName].filter(Boolean);
+    return parts.length ? parts.join(' ').trim() : '';
   };
 
   const formatDate = (dateString) => {
@@ -185,7 +195,11 @@ const UserManagementTable = () => {
   };
 
   const handleSendInvitation = () => {
-    if (selectedUser) setIsInviteDialogOpen(true);
+    if (selectedUser) {
+      setInviteError('');
+      setInviteTargetUser(selectedUser);
+      setIsInviteDialogOpen(true);
+    }
     handleMenuClose();
   };
 
@@ -204,9 +218,26 @@ const UserManagementTable = () => {
     setNewRole('');
   };
 
-  const handleInviteSend = () => {
-    if (selectedUser) dispatch(inviteUserAsync(selectedUser.id));
-    setIsInviteDialogOpen(false);
+  const handleInviteSend = async () => {
+    if (!inviteTargetUser) return;
+    setIsInviteLoading(true);
+    setInviteError('');
+    const result = await dispatch(inviteUserAsync(inviteTargetUser.id));
+    setIsInviteLoading(false);
+    if (inviteUserAsync.fulfilled.match(result)) {
+      setIsInviteDialogOpen(false);
+      setInviteTargetUser(null);
+    } else {
+      setInviteError(result.payload || 'Не удалось отправить приглашение');
+    }
+  };
+
+  const handleInviteDialogClose = () => {
+    if (!isInviteLoading) {
+      setIsInviteDialogOpen(false);
+      setInviteTargetUser(null);
+      setInviteError('');
+    }
   };
 
   const filteredUsers = usersList.filter((user) => user.id !== currentUser?.sub && user.id !== currentUser?.id);
@@ -326,10 +357,10 @@ const UserManagementTable = () => {
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Avatar sx={{ width: 32, height: 32 }}>
-                      {(user.name || user.email || '?').toString().split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                      {(getDisplayName(user) || user.email || '?').toString().split(/\s+/).map((n) => n[0]).join('').slice(0, 2)}
                     </Avatar>
                     <Typography variant="body2">
-                      {user.name || user.email || '—'}
+                      {getDisplayName(user) || user.email || '—'}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -451,22 +482,27 @@ const UserManagementTable = () => {
       </Dialog>
 
       {/* Диалог отправки приглашения */}
-      <Dialog open={isInviteDialogOpen} onClose={() => setIsInviteDialogOpen(false)}>
+      <Dialog open={isInviteDialogOpen} onClose={handleInviteDialogClose}>
         <DialogTitle>Отправить приглашение</DialogTitle>
         <DialogContent>
+          {inviteError && (
+            <Alert severity="error" onClose={() => setInviteError('')} sx={{ mb: 2 }}>
+              {inviteError}
+            </Alert>
+          )}
           <Typography variant="body2" color="text.secondary">
-            Отправить приглашение пользователю <strong>{selectedUser?.name}</strong> на email <strong>{selectedUser?.email}</strong>?
+            Отправить приглашение пользователю <strong>{getDisplayName(inviteTargetUser) || inviteTargetUser?.email}</strong> на email <strong>{inviteTargetUser?.email}</strong>?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             Приглашение будет содержать уникальную ссылку для активации аккаунта, действительную в течение 24 часов.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsInviteDialogOpen(false)}>
+          <Button onClick={handleInviteDialogClose} disabled={isInviteLoading}>
             Отмена
           </Button>
-          <Button variant="contained" onClick={handleInviteSend}>
-            Отправить приглашение
+          <Button variant="contained" onClick={handleInviteSend} disabled={isInviteLoading}>
+            {isInviteLoading ? <CircularProgress size={24} /> : 'Отправить приглашение'}
           </Button>
         </DialogActions>
       </Dialog>

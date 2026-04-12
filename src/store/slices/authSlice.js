@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI } from '../../services/api';
+import { getLoginErrorMessage } from '../../utils/getLoginErrorMessage';
 
 function getNormalizedRole(user) {
   const roles = user?.roles;
@@ -37,9 +38,7 @@ export const loginAsync = createAsyncThunk(
       
       return { tokens: { accessToken, refreshToken }, user };
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Ошибка при входе в систему'
-      );
+      return rejectWithValue(getLoginErrorMessage(error));
     }
   }
 );

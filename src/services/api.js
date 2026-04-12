@@ -2,6 +2,12 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
+/** Полный путь в OpenAPI: /api/v1/auth/... — при base .../api → /v1/auth/..., при .../api/v1 → /auth/... */
+const authV1Suffix = (pathAfterV1Auth) => {
+  const base = API_BASE_URL.replace(/\/$/, '');
+  return base.endsWith('/v1') ? pathAfterV1Auth : `/v1${pathAfterV1Auth}`;
+};
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -60,8 +66,9 @@ api.interceptors.response.use(
     });
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.url?.includes('/auth/login') || 
-          originalRequest.url?.includes('/auth/refresh')) {
+      if (originalRequest.url?.includes('/auth/login') ||
+          originalRequest.url?.includes('/auth/refresh') ||
+          originalRequest.url?.includes('complete-registration')) {
         return Promise.reject(error);
       }
 
@@ -144,18 +151,22 @@ export const authAPI = {
   refreshToken: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
   getCurrentUser: () => api.get('/auth/user'),
   validateToken: () => api.get('/auth/validate'),
+  /** Публичный вызов: токен из письма в теле запроса. */
+  completeRegistration: (payload) =>
+    api.post(authV1Suffix('/auth/complete-registration'), payload),
 };
 
+const usersBase = '/users';
 export const userAPI = {
-  getUsers: (params) => api.get(`/users`, { params }),
-  getUserById: (id) => api.get(`/users/${id}`),
-  createUser: (data) => api.post('/users', data),
-  updateUser: (id, data) => api.put(`/users/${id}`, data),
-  deleteUser: (id) => api.delete(`/users/${id}`),
-  blockUser: (id) => api.post(`/users/${id}/block`),
-  unblockUser: (id) => api.post(`/users/${id}/unblock`),
-  inviteUser: (id) => api.post(`/users/${id}/invite`),
-  changeUserRole: (id, role) => api.patch(`/users/${id}/role`, { role }),
+  getUsers: (params) => api.get(usersBase, { params }),
+  getUserById: (id) => api.get(`${usersBase}/${id}`),
+  createUser: (data) => api.post(usersBase, data),
+  updateUser: (id, data) => api.put(`${usersBase}/${id}`, data),
+  deleteUser: (id) => api.delete(`${usersBase}/${id}`),
+  blockUser: (id) => api.post(`${usersBase}/${id}/block`),
+  unblockUser: (id) => api.post(`${usersBase}/${id}/unblock`),
+  inviteUser: (id) => api.post(`${usersBase}/${id}/invite`),
+  changeUserRole: (id, role) => api.patch(`${usersBase}/${id}/role`, { role }),
 };
 
 export const internAPI = {

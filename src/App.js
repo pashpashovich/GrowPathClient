@@ -7,6 +7,7 @@ import { store } from './store';
 import { setStore } from './services/api';
 import { growPathTheme } from './theme';
 import LoginPage from './pages/LoginPage';
+import RegisterConfirmPage from './pages/RegisterConfirmPage';
 import MentorDashboard from './pages/MentorDashboard';
 import InternDashboard from './pages/InternDashboard';
 import HRDashboard from './pages/HRDashboard';
@@ -31,6 +32,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<LoginPage />} />
                   <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterConfirmPage />} />
                   
                   
                   <Route path="/mentor" element={

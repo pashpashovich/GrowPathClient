@@ -20,7 +20,9 @@ import { createUserAsync } from '../../store/slices/userManagementSlice';
 const AddUserForm = ({ open, onClose }) => {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
+    patronymicName: '',
     email: '',
     role: 'intern',
   });
@@ -45,8 +47,11 @@ const AddUserForm = ({ open, onClose }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Имя обязательно для заполнения';
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Фамилия обязательна';
+    }
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'Имя обязательно';
     }
 
     if (!formData.email.trim()) {
@@ -69,16 +74,27 @@ const AddUserForm = ({ open, onClose }) => {
     setIsSubmitting(true);
     setSubmitError('');
 
-    const result = await dispatch(
-      createUserAsync({
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        role: formData.role,
-      })
-    );
+    const patronymic = formData.patronymicName.trim();
+    const payload = {
+      email: formData.email.trim(),
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      role: formData.role,
+    };
+    if (patronymic) {
+      payload.patronymicName = patronymic;
+    }
+
+    const result = await dispatch(createUserAsync(payload));
 
     if (createUserAsync.fulfilled.match(result)) {
-      setFormData({ name: '', email: '', role: 'intern' });
+      setFormData({
+        firstName: '',
+        lastName: '',
+        patronymicName: '',
+        email: '',
+        role: 'intern',
+      });
       setErrors({});
       onClose();
     } else {
@@ -90,7 +106,9 @@ const AddUserForm = ({ open, onClose }) => {
   const handleClose = () => {
     if (!isSubmitting) {
       setFormData({
-        name: '',
+        firstName: '',
+        lastName: '',
+        patronymicName: '',
         email: '',
         role: 'intern',
       });
@@ -116,13 +134,33 @@ const AddUserForm = ({ open, onClose }) => {
 
           <TextField
             fullWidth
-            label="ФИО"
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            error={!!errors.name}
-            helperText={errors.name}
+            label="Фамилия"
+            value={formData.lastName}
+            onChange={(e) => handleInputChange('lastName', e.target.value)}
+            error={!!errors.lastName}
+            helperText={errors.lastName}
             margin="normal"
             required
+          />
+
+          <TextField
+            fullWidth
+            label="Имя"
+            value={formData.firstName}
+            onChange={(e) => handleInputChange('firstName', e.target.value)}
+            error={!!errors.firstName}
+            helperText={errors.firstName}
+            margin="normal"
+            required
+          />
+
+          <TextField
+            fullWidth
+            label="Отчество"
+            value={formData.patronymicName}
+            onChange={(e) => handleInputChange('patronymicName', e.target.value)}
+            margin="normal"
+            helperText="Необязательно"
           />
 
           <TextField
