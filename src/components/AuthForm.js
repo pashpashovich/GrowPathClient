@@ -17,6 +17,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginAsync } from '../store/slices/authSlice';
+import { getNormalizedRole } from '../utils/resolveAppRole';
 
 const AuthForm = () => {
   const navigate = useNavigate();
@@ -70,10 +71,7 @@ const AuthForm = () => {
 
       if (loginAsync.fulfilled.match(result)) {
         const user = result.payload.user;
-        const roles = user?.roles;
-        const resolvedRole = (roles && roles[0])
-          ? String(roles[0]).replace(/^ROLE_/, '').toLowerCase()
-          : user?.role;
+        const resolvedRole = getNormalizedRole(user);
         if (resolvedRole === 'mentor') {
           navigate('/mentor');
         } else if (resolvedRole === 'intern') {

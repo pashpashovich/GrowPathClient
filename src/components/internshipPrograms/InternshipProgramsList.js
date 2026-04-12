@@ -14,13 +14,8 @@ import {
   DialogContent,
   DialogActions,
   Grid,
-  Paper,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Tooltip,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   MoreVert,
@@ -35,11 +30,16 @@ import {
   Cancel,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { deleteProgram, setCurrentProgram } from '../../store/slices/internshipProgramSlice';
+import {
+  deleteInternshipProgramAsync,
+  setCurrentProgram,
+} from '../../store/slices/internshipProgramSlice';
 
 const InternshipProgramsList = ({ onEdit, onView }) => {
   const dispatch = useDispatch();
   const programs = useSelector((state) => state.internshipProgram.programs);
+  const isLoading = useSelector((state) => state.internshipProgram.isLoading);
+  const error = useSelector((state) => state.internshipProgram.error);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -114,16 +114,36 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
     handleMenuClose();
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedProgram) {
-      dispatch(deleteProgram(selectedProgram.id));
+      await dispatch(deleteInternshipProgramAsync(selectedProgram.id));
     }
     setIsDeleteDialogOpen(false);
     setSelectedProgram(null);
   };
 
+  if (isLoading && programs.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {!isLoading && programs.length === 0 && (
+        <Typography color="text.secondary" sx={{ py: 2 }}>
+          Программ пока нет. Создайте первую программу стажировки.
+        </Typography>
+      )}
+
       <Grid container spacing={3}>
         {programs.map((program) => (
           <Grid item xs={12} md={6} lg={4} key={program.id}>
@@ -144,6 +164,12 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   {program.description}
                 </Typography>
+
+                {program.itDirection && (
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                    Направление: {program.itDirection}
+                  </Typography>
+                )}
 
                 <Box sx={{ mb: 2 }}>
                   <Chip
@@ -177,12 +203,12 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                   </Box>
                 </Box>
 
-                {program.requirements.length > 0 && (
+                {(program.requirements || []).length > 0 && (
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                       Требования:
                     </Typography>
-                    {program.requirements.slice(0, 3).map((requirement, index) => (
+                    {(program.requirements || []).slice(0, 3).map((requirement, index) => (
                       <Chip
                         key={index}
                         label={requirement}
@@ -191,26 +217,26 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                         sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem' }}
                       />
                     ))}
-                    {program.requirements.length > 3 && (
+                    {(program.requirements || []).length > 3 && (
                       <Typography variant="caption" color="text.secondary">
-                        +{program.requirements.length - 3} еще
+                        +{(program.requirements || []).length - 3} еще
                       </Typography>
                     )}
                   </Box>
                 )}
 
-                {program.goals.length > 0 && (
+                {(program.goals || []).length > 0 && (
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="caption" color="text.secondary">
-                      Целей: {program.goals.length}
+                      Целей: {(program.goals || []).length}
                     </Typography>
                   </Box>
                 )}
 
-                {program.selectionStages.length > 0 && (
+                {(program.selectionStages || []).length > 0 && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">
-                      Этапов отбора: {program.selectionStages.length}
+                      Этапов отбора: {(program.selectionStages || []).length}
                     </Typography>
                   </Box>
                 )}

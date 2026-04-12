@@ -23,6 +23,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Autocomplete,
 } from '@mui/material';
 import {
   Add,
@@ -31,7 +32,12 @@ import {
   DragIndicator,
 } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
-import { addProgram, updateProgram } from '../../store/slices/internshipProgramSlice';
+import {
+  createInternshipProgramAsync,
+  updateInternshipProgramAsync,
+} from '../../store/slices/internshipProgramSlice';
+import { buildInternshipProgramPayload } from '../../utils/internshipProgramApi';
+import { hrAPI } from '../../services/api';
 
 const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   const dispatch = useDispatch();
@@ -41,9 +47,10 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
     startDate: '',
     duration: 3,
     maxPlaces: 10,
+    itDirection: '',
+    competencyIds: [],
     requirements: [],
     goals: [],
-    competencies: [],
     selectionStages: [
       {
         name: 'Подача заявки',
@@ -73,8 +80,36 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newRequirement, setNewRequirement] = useState('');
   const [newGoal, setNewGoal] = useState({ title: '', description: '' });
-  const [newCompetency, setNewCompetency] = useState('');
   const [newStage, setNewStage] = useState({ name: '', description: '' });
+  const [submitError, setSubmitError] = useState('');
+  const [competencyOptions, setCompetencyOptions] = useState([]);
+  const [competenciesLoading, setCompetenciesLoading] = useState(false);
+  const [competenciesError, setCompetenciesError] = useState(null);
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+    let cancelled = false;
+    setCompetenciesLoading(true);
+    setCompetenciesError(null);
+    hrAPI
+      .getCompetencies()
+      .then(({ data }) => {
+        const list = Array.isArray(data?.data) ? data.data : [];
+        if (!cancelled) setCompetencyOptions(list);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCompetenciesError('Не удалось загрузить список компетенций');
+          setCompetencyOptions([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCompetenciesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   React.useEffect(() => {
     if (programToEdit) {
@@ -83,10 +118,13 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
         description: programToEdit.description || '',
         startDate: programToEdit.startDate || '',
         duration: programToEdit.duration || 3,
-        maxPlaces: programToEdit.maxPlaces || 10,
+        maxPlaces: programToEdit.maxPlaces ?? 10,
+        itDirection: programToEdit.itDirection || '',
+        competencyIds: Array.isArray(programToEdit.competencyIds)
+          ? programToEdit.competencyIds.map((n) => (typeof n === 'number' ? n : parseInt(n, 10))).filter((n) => Number.isInteger(n))
+          : [],
         requirements: programToEdit.requirements || [],
         goals: programToEdit.goals || [],
-        competencies: programToEdit.competencies || [],
         selectionStages: programToEdit.selectionStages || [],
         status: programToEdit.status || 'draft',
       });
@@ -97,9 +135,10 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
         startDate: '',
         duration: 3,
         maxPlaces: 10,
+        itDirection: '',
+        competencyIds: [],
         requirements: [],
         goals: [],
-        competencies: [],
         selectionStages: [
           {
             name: 'Подача заявки',
@@ -126,6 +165,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
       });
     }
     setErrors({});
+    setSubmitError('');
   }, [programToEdit, open]);
 
   const handleInputChange = (field, value) => {
@@ -157,8 +197,12 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
       newErrors.startDate = 'Дата начала обязательна';
     }
 
-    if (!formData.maxPlaces || formData.maxPlaces < 1) {
-      newErrors.maxPlaces = 'Количество мест должно быть больше 0';
+    if (formData.maxPlaces == null || Number(formData.maxPlaces) < 1) {
+      newErrors.maxPlaces = 'Укажите число мест не меньше 1';
+    }
+
+    if (!String(formData.itDirection || '').trim()) {
+      newErrors.itDirection = 'Укажите направление (IT)';
     }
 
     if (formData.requirements.length === 0) {
@@ -175,25 +219,31 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
     }
 
     setIsSubmitting(true);
+    setSubmitError('');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const payload = buildInternshipProgramPayload(formData);
 
       if (programToEdit) {
-        dispatch(updateProgram({
-          id: programToEdit.id,
-          ...formData,
-        }));
+        const result = await dispatch(
+          updateInternshipProgramAsync({ id: programToEdit.id, data: payload })
+        );
+        if (updateInternshipProgramAsync.fulfilled.match(result)) {
+          onClose();
+        } else {
+          setSubmitError(result.payload || 'Не удалось сохранить программу');
+        }
       } else {
-        dispatch(addProgram({
-          ...formData,
-          createdBy: 'current-hr-id',
-        }));
+        const result = await dispatch(createInternshipProgramAsync(payload));
+        if (createInternshipProgramAsync.fulfilled.match(result)) {
+          onClose();
+        } else {
+          setSubmitError(result.payload || 'Не удалось создать программу');
+        }
       }
-
-      onClose();
     } catch (error) {
       console.error('Ошибка при сохранении программы:', error);
+      setSubmitError('Ошибка сети или сервера');
     } finally {
       setIsSubmitting(false);
     }
@@ -239,23 +289,6 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
     }));
   };
 
-  const addCompetency = () => {
-    if (newCompetency.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        competencies: [...prev.competencies, newCompetency.trim()],
-      }));
-      setNewCompetency('');
-    }
-  };
-
-  const removeCompetency = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      competencies: prev.competencies.filter((_, i) => i !== index),
-    }));
-  };
-
   const addStage = () => {
     if (newStage.name.trim() && newStage.description.trim()) {
       setFormData(prev => ({
@@ -281,8 +314,15 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
       <DialogContent>
         <Box sx={{ pt: 1 }}>
           <Alert severity="info" sx={{ mb: 2 }}>
-            Заполните основную информацию о программе стажировки. Все поля обязательны для заполнения.
+            Заполните основную информацию о программе стажировки. Обязательные поля отмечены; данные отправляются на
+            сервер.
           </Alert>
+
+          {submitError && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError('')}>
+              {submitError}
+            </Alert>
+          )}
 
           <Accordion defaultExpanded>
             <AccordionSummary expandIcon={<ExpandMore />}>
@@ -338,7 +378,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                   label="Количество мест"
                   type="number"
                   value={formData.maxPlaces}
-                  onChange={(e) => handleInputChange('maxPlaces', parseInt(e.target.value) || 10)}
+                  onChange={(e) => handleInputChange('maxPlaces', parseInt(e.target.value, 10) || 10)}
                   error={!!errors.maxPlaces}
                   helperText={errors.maxPlaces}
                   margin="normal"
@@ -346,6 +386,17 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                   required
                 />
               </Box>
+
+              <TextField
+                fullWidth
+                label="Направление в IT (itDirection)"
+                value={formData.itDirection}
+                onChange={(e) => handleInputChange('itDirection', e.target.value)}
+                error={!!errors.itDirection}
+                helperText={errors.itDirection || 'Например: Frontend, Backend, QA'}
+                margin="normal"
+                required
+              />
 
               <FormControl fullWidth margin="normal">
                 <InputLabel>Статус</InputLabel>
@@ -452,32 +503,35 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
               <Typography variant="h6">Компетенции</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Добавить компетенцию"
-                  value={newCompetency}
-                  onChange={(e) => setNewCompetency(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addCompetency()}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={addCompetency}
-                  disabled={!newCompetency.trim()}
-                >
-                  Добавить
-                </Button>
-              </Box>
-
-              {formData.competencies.map((competency, index) => (
-                <Chip
-                  key={index}
-                  label={competency}
-                  onDelete={() => removeCompetency(index)}
-                  sx={{ m: 0.5 }}
-                />
-              ))}
+              {competenciesError && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {competenciesError}
+                </Alert>
+              )}
+              <Autocomplete
+                multiple
+                options={competencyOptions}
+                getOptionLabel={(option) => option.name || String(option.id)}
+                isOptionEqualToValue={(a, b) => Number(a.id) === Number(b.id)}
+                value={competencyOptions.filter((c) =>
+                  (formData.competencyIds || []).some((id) => Number(id) === Number(c.id))
+                )}
+                onChange={(_, newValue) =>
+                  handleInputChange(
+                    'competencyIds',
+                    newValue.map((item) => item.id)
+                  )
+                }
+                loading={competenciesLoading}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Выберите компетенции"
+                    margin="normal"
+                    helperText="Данные из /api/v1/competencies. Поле необязательное."
+                  />
+                )}
+              />
             </AccordionDetails>
           </Accordion>
 

@@ -4,7 +4,10 @@ import { Logout, Add } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutAsync } from '../store/slices/authSlice';
-import { setPrograms } from '../store/slices/internshipProgramSlice';
+import {
+  fetchInternshipProgramsAsync,
+  fetchInternshipProgramByIdAsync,
+} from '../store/slices/internshipProgramSlice';
 import Logo from '../components/Logo';
 import Sidebar from '../components/Sidebar';
 import HRRatingPage from './HRRatingPage';
@@ -17,18 +20,26 @@ const HRDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const programs = useSelector((state) => state.internshipProgram.programs);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isProgramFormOpen, setIsProgramFormOpen] = useState(false);
   const [isProgramDetailsOpen, setIsProgramDetailsOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
   const [viewingProgram, setViewingProgram] = useState(null);
 
+  const isProgramsTab =
+    !location.pathname.includes('/hr/rating') && !location.pathname.includes('/hr/analytics');
+
   useEffect(() => {
-    if (programs.length === 0) {
-      console.log('HR Dashboard loaded, programs:', programs.length);
+    if (isProgramsTab) {
+      dispatch(
+        fetchInternshipProgramsAsync({
+          page: 1,
+          limit: 100,
+          includeArchived: false,
+        })
+      );
     }
-  }, [programs.length]);
+  }, [dispatch, isProgramsTab]);
 
   const handleLogout = async () => {
     await dispatch(logoutAsync());
@@ -40,13 +51,23 @@ const HRDashboard = () => {
     setIsProgramFormOpen(true);
   };
 
-  const handleEditProgram = (program) => {
-    setEditingProgram(program);
+  const handleEditProgram = async (program) => {
+    const result = await dispatch(fetchInternshipProgramByIdAsync(program.id));
+    if (fetchInternshipProgramByIdAsync.fulfilled.match(result)) {
+      setEditingProgram(result.payload);
+    } else {
+      setEditingProgram(program);
+    }
     setIsProgramFormOpen(true);
   };
 
-  const handleViewProgram = (program) => {
-    setViewingProgram(program);
+  const handleViewProgram = async (program) => {
+    const result = await dispatch(fetchInternshipProgramByIdAsync(program.id));
+    if (fetchInternshipProgramByIdAsync.fulfilled.match(result)) {
+      setViewingProgram(result.payload);
+    } else {
+      setViewingProgram(program);
+    }
     setIsProgramDetailsOpen(true);
   };
 

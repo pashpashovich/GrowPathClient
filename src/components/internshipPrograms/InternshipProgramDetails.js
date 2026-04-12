@@ -33,6 +33,11 @@ import {
 const InternshipProgramDetails = ({ open, onClose, program }) => {
   if (!program) return null;
 
+  const requirements = program.requirements || [];
+  const goals = program.goals || [];
+  const selectionStages = program.selectionStages || [];
+  const competencies = program.competencies || [];
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active': return 'success';
@@ -64,6 +69,7 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
@@ -95,6 +101,11 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
             <Typography variant="body1">
               {program.description}
             </Typography>
+            {program.itDirection && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Направление: {program.itDirection}
+              </Typography>
+            )}
           </Paper>
 
           <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -145,7 +156,7 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
                 <CardContent sx={{ textAlign: 'center' }}>
                   <Assignment sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
                   <Typography variant="h6" gutterBottom>
-                    {program.requirements.length}
+                    {requirements.length}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Требований
@@ -160,7 +171,7 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
               Требования к кандидатам
             </Typography>
             <List>
-              {program.requirements.map((requirement, index) => (
+              {requirements.map((requirement, index) => (
                 <ListItem key={index}>
                   <ListItemIcon>
                     <CheckCircle color="success" />
@@ -171,20 +182,20 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
             </List>
           </Paper>
 
-          {program.goals.length > 0 && (
+          {goals.length > 0 && (
             <Paper sx={{ p: 2, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Цели стажировки
               </Typography>
               <List>
-                {program.goals.map((goal, index) => (
-                  <ListItem key={goal.id || index}>
+                {goals.map((goal, index) => (
+                  <ListItem key={typeof goal === 'object' && goal?.id ? goal.id : index}>
                     <ListItemIcon>
                       <EmojiEvents color="primary" />
                     </ListItemIcon>
                     <ListItemText
-                      primary={goal.title}
-                      secondary={goal.description}
+                      primary={typeof goal === 'string' ? goal : goal.title}
+                      secondary={typeof goal === 'string' ? undefined : goal.description}
                     />
                   </ListItem>
                 ))}
@@ -192,13 +203,13 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
             </Paper>
           )}
 
-          {program.competencies.length > 0 && (
+          {competencies.length > 0 && (
             <Paper sx={{ p: 2, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Компетенции
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {program.competencies.map((competency, index) => (
+                {competencies.map((competency, index) => (
                   <Chip
                     key={index}
                     label={competency}
@@ -215,23 +226,29 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
               Этапы отбора
             </Typography>
             <List>
-              {program.selectionStages.map((stage, index) => (
-                <React.Fragment key={stage.id || index}>
+              {selectionStages.map((stage, index) => (
+                <React.Fragment key={typeof stage === 'object' && stage?.id ? stage.id : index}>
                   <ListItem>
                     <ListItemIcon>
                       <Timeline color="primary" />
                     </ListItemIcon>
                     <ListItemText
-                      primary={`${index + 1}. ${stage.name}`}
-                      secondary={stage.description}
+                      primary={
+                        typeof stage === 'string'
+                          ? `${index + 1}. ${stage}`
+                          : `${index + 1}. ${stage.name}`
+                      }
+                      secondary={typeof stage === 'string' ? undefined : stage.description}
                     />
-                    <Chip
-                      label={stage.isActive ? 'Активен' : 'Неактивен'}
-                      color={stage.isActive ? 'success' : 'default'}
-                      size="small"
-                    />
+                    {typeof stage === 'object' && (
+                      <Chip
+                        label={stage.isActive ? 'Активен' : 'Неактивен'}
+                        color={stage.isActive ? 'success' : 'default'}
+                        size="small"
+                      />
+                    )}
                   </ListItem>
-                  {index < program.selectionStages.length - 1 && <Divider />}
+                  {index < selectionStages.length - 1 && <Divider />}
                 </React.Fragment>
               ))}
             </List>

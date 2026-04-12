@@ -1,15 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI } from '../../services/api';
 import { getLoginErrorMessage } from '../../utils/getLoginErrorMessage';
-
-function getNormalizedRole(user) {
-  const roles = user?.roles;
-  if (roles && Array.isArray(roles) && roles.length > 0) {
-    const r = roles[0];
-    if (typeof r === 'string') return r.replace(/^ROLE_/, '').toLowerCase();
-  }
-  return user?.role ?? null;
-}
+import { getNormalizedRole } from '../../utils/resolveAppRole';
 
 const initialState = {
   user: null,

@@ -2,11 +2,19 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
-/** Полный путь в OpenAPI: /api/v1/auth/... — при base .../api → /v1/auth/..., при .../api/v1 → /auth/... */
 const authV1Suffix = (pathAfterV1Auth) => {
   const base = API_BASE_URL.replace(/\/$/, '');
   return base.endsWith('/v1') ? pathAfterV1Auth : `/v1${pathAfterV1Auth}`;
 };
+
+const v1ResourcePath = (relativePath) => {
+  const base = API_BASE_URL.replace(/\/$/, '');
+  const p = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  return base.endsWith('/v1') ? p : `/v1${p}`;
+};
+
+const internshipProgramsPath = v1ResourcePath('/internship-programs');
+const competenciesPath = v1ResourcePath('/competencies');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -190,10 +198,12 @@ export const mentorAPI = {
 };
 
 export const hrAPI = {
-  getInternshipPrograms: (params) => api.get('/internship-programs', { params }),
-  createInternshipProgram: (data) => api.post('/internship-programs', data),
-  updateInternshipProgram: (id, data) => api.put(`/internship-programs/${id}`, data),
-  deleteInternshipProgram: (id) => api.delete(`/internship-programs/${id}`),
+  getCompetencies: () => api.get(competenciesPath),
+  getInternshipPrograms: (params) => api.get(internshipProgramsPath, { params }),
+  getInternshipProgramById: (id) => api.get(`${internshipProgramsPath}/${id}`),
+  createInternshipProgram: (data) => api.post(internshipProgramsPath, data),
+  updateInternshipProgram: (id, data) => api.put(`${internshipProgramsPath}/${id}`, data),
+  deleteInternshipProgram: (id) => api.delete(`${internshipProgramsPath}/${id}`),
   getReports: (params) => api.get('/reports', { params }),
   getDashboardData: () => api.get('/dashboard'),
 };
