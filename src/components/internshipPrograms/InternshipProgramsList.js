@@ -16,6 +16,7 @@ import {
   Grid,
   CircularProgress,
   Alert,
+  Tooltip,
 } from '@mui/material';
 import {
   MoreVert,
@@ -34,6 +35,10 @@ import {
   deleteInternshipProgramAsync,
   setCurrentProgram,
 } from '../../store/slices/internshipProgramSlice';
+import {
+  isInternshipProgramEditable,
+  getInternshipProgramEditLockReason,
+} from '../../utils/internshipProgramApi';
 
 const InternshipProgramsList = ({ onEdit, onView }) => {
   const dispatch = useDispatch();
@@ -266,10 +271,23 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
           <Visibility sx={{ mr: 1 }} />
           Просмотр
         </MenuItem>
-        <MenuItem onClick={handleEdit}>
-          <Edit sx={{ mr: 1 }} />
-          Редактировать
-        </MenuItem>
+        <Tooltip
+          title={
+            selectedProgram && !isInternshipProgramEditable(selectedProgram)
+              ? getInternshipProgramEditLockReason(selectedProgram)
+              : ''
+          }
+        >
+          <span>
+            <MenuItem
+              onClick={handleEdit}
+              disabled={selectedProgram ? !isInternshipProgramEditable(selectedProgram) : true}
+            >
+              <Edit sx={{ mr: 1 }} />
+              Редактировать
+            </MenuItem>
+          </span>
+        </Tooltip>
         <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
           <Delete sx={{ mr: 1 }} />
           Удалить

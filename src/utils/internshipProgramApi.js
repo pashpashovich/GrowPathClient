@@ -144,3 +144,33 @@ export function buildUpdateInternshipProgramPayload(formData) {
 
   return payload;
 }
+
+export function isInternshipProgramStartDateReached(startDateStr) {
+  if (!startDateStr || typeof startDateStr !== 'string') return false;
+  const parts = startDateStr.trim().split('-').map((x) => parseInt(x, 10));
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return false;
+  const [y, m, d] = parts;
+  const start = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+  return start <= today;
+}
+
+export function isInternshipProgramEditable(program) {
+  if (!program) return true;
+  if (program.status !== 'draft') return false;
+  if (isInternshipProgramStartDateReached(program.startDate)) return false;
+  return true;
+}
+
+export function getInternshipProgramEditLockReason(program) {
+  if (!program) return '';
+  if (program.status !== 'draft') {
+    return 'Редактирование доступно только у программ в статусе «Черновик» до наступления даты начала.';
+  }
+  if (isInternshipProgramStartDateReached(program.startDate)) {
+    return 'Дата начала уже наступила: программа считается начавшейся, обновление запрещено.';
+  }
+  return '';
+}

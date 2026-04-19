@@ -13,7 +13,6 @@ import {
   Box,
   Typography,
   Alert,
-  IconButton,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -32,6 +31,8 @@ import {
   buildCreateInternshipProgramPayload,
   buildUpdateInternshipProgramPayload,
   extractDataArray,
+  isInternshipProgramEditable,
+  getInternshipProgramEditLockReason,
 } from '../../utils/internshipProgramApi';
 import { hrAPI } from '../../services/api';
 
@@ -57,6 +58,7 @@ function createdEntityId(response) {
 const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   const dispatch = useDispatch();
   const isEdit = Boolean(programToEdit);
+  const updateLocked = isEdit && programToEdit && !isInternshipProgramEditable(programToEdit);
   const [formData, setFormData] = useState(emptyForm);
 
   const [errors, setErrors] = useState({});
@@ -152,6 +154,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   };
 
   const handleSubmit = async () => {
+    if (isEdit && programToEdit && !isInternshipProgramEditable(programToEdit)) return;
     if (!validateForm()) return;
     setIsSubmitting(true);
     setSubmitError('');
@@ -178,6 +181,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   };
 
   const openQuickAdd = (type) => {
+    if (updateLocked) return;
     setQuickForm(
       type === 'itDirection'
         ? { code: '', displayName: '' }
@@ -289,15 +293,19 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   return (
     <Dialog open={open} onClose={() => !isSubmitting && onClose()} maxWidth="md" fullWidth>
       <DialogTitle>
-        {isEdit ? 'Редактировать программу стажировки' : 'Создать программу стажировки'}
+        {isEdit && updateLocked
+          ? 'Просмотр программы стажировки'
+          : isEdit
+            ? 'Редактировать программу стажировки'
+            : 'Создать программу стажировки'}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Программа ссылается на записи справочников (направление, компетенции, требования, цели, этапы). Можно
-            выбрать существующие или добавить новые через «Добавить в справочник».
-          </Alert>
-
+          {updateLocked && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {getInternshipProgramEditLockReason(programToEdit)}
+            </Alert>
+          )}
           {submitError && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError('')}>
               {submitError}
@@ -330,6 +338,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                 helperText={errors.title}
                 margin="normal"
                 required
+                disabled={updateLocked}
               />
               <TextField
                 fullWidth
@@ -342,6 +351,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                 helperText={errors.description}
                 margin="normal"
                 required
+                disabled={updateLocked}
               />
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
                 <TextField
@@ -353,6 +363,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                   helperText={errors.startDate}
                   InputLabelProps={{ shrink: true }}
                   required
+                  disabled={updateLocked}
                 />
                 <TextField
                   label="Длительность (мес.)"
@@ -362,6 +373,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                   error={!!errors.duration}
                   helperText={errors.duration || '1–12'}
                   inputProps={{ min: 1, max: 12 }}
+                  disabled={updateLocked}
                 />
                 <TextField
                   label="Мест"
@@ -371,10 +383,11 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                   error={!!errors.maxPlaces}
                   helperText={errors.maxPlaces}
                   inputProps={{ min: 0 }}
+                  disabled={updateLocked}
                 />
               </Box>
 
-              <FormControl fullWidth margin="normal">
+              <FormControl fullWidth margin="normal" disabled={updateLocked}>
                 <InputLabel>Статус</InputLabel>
                 <Select
                   value={formData.status}
@@ -405,6 +418,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                   sx={{ flex: 1, minWidth: 260 }}
                   options={itDirections}
                   loading={catalogsLoading}
+                  disabled={updateLocked}
                   getOptionLabel={(o) => (o.displayName && o.code ? `${o.displayName} (${o.code})` : o.code || o.displayName || '')}
                   isOptionEqualToValue={(a, b) => Number(a?.id) === Number(b?.id)}
                   value={selectedItDir}
@@ -413,7 +427,12 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                     <TextField {...params} label="Направление" placeholder="Выберите из справочника" />
                   )}
                 />
-                <Button startIcon={<Add />} variant="outlined" onClick={() => openQuickAdd('itDirection')}>
+                <Button
+                  startIcon={<Add />}
+                  variant="outlined"
+                  disabled={updateLocked}
+                  onClick={() => openQuickAdd('itDirection')}
+                >
                   Новое направление
                 </Button>
               </Box>
@@ -429,7 +448,12 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                <Button startIcon={<Add />} size="small" onClick={() => openQuickAdd('requirement')}>
+                <Button
+                  startIcon={<Add />}
+                  size="small"
+                  disabled={updateLocked}
+                  onClick={() => openQuickAdd('requirement')}
+                >
                   Добавить в справочник
                 </Button>
               </Box>
@@ -437,6 +461,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                 multiple
                 options={requirements}
                 loading={catalogsLoading}
+                disabled={updateLocked}
                 getOptionLabel={(o) => o.requirementText || String(o.id)}
                 isOptionEqualToValue={(a, b) => Number(a.id) === Number(b.id)}
                 value={requirements.filter((r) =>
@@ -454,7 +479,12 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                <Button startIcon={<Add />} size="small" onClick={() => openQuickAdd('goal')}>
+                <Button
+                  startIcon={<Add />}
+                  size="small"
+                  disabled={updateLocked}
+                  onClick={() => openQuickAdd('goal')}
+                >
                   Добавить в справочник
                 </Button>
               </Box>
@@ -462,6 +492,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                 multiple
                 options={goalDefinitions}
                 loading={catalogsLoading}
+                disabled={updateLocked}
                 getOptionLabel={(o) => o.title || String(o.id)}
                 isOptionEqualToValue={(a, b) => Number(a.id) === Number(b.id)}
                 value={goalDefinitions.filter((g) =>
@@ -479,7 +510,12 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                <Button startIcon={<Add />} size="small" onClick={() => openQuickAdd('competency')}>
+                <Button
+                  startIcon={<Add />}
+                  size="small"
+                  disabled={updateLocked}
+                  onClick={() => openQuickAdd('competency')}
+                >
                   Добавить в справочник
                 </Button>
               </Box>
@@ -487,6 +523,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                 multiple
                 options={competencies}
                 loading={catalogsLoading}
+                disabled={updateLocked}
                 getOptionLabel={(o) => o.name || String(o.id)}
                 isOptionEqualToValue={(a, b) => Number(a.id) === Number(b.id)}
                 value={competencies.filter((c) =>
@@ -504,7 +541,12 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                <Button startIcon={<Add />} size="small" onClick={() => openQuickAdd('stage')}>
+                <Button
+                  startIcon={<Add />}
+                  size="small"
+                  disabled={updateLocked}
+                  onClick={() => openQuickAdd('stage')}
+                >
                   Добавить в справочник
                 </Button>
               </Box>
@@ -512,6 +554,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                 multiple
                 options={stageDefinitions}
                 loading={catalogsLoading}
+                disabled={updateLocked}
                 getOptionLabel={(o) => o.name || String(o.id)}
                 isOptionEqualToValue={(a, b) => Number(a.id) === Number(b.id)}
                 value={stageDefinitions.filter((s) =>
@@ -528,7 +571,11 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
         <Button onClick={onClose} disabled={isSubmitting}>
           Отмена
         </Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={isSubmitting || catalogsLoading}>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={isSubmitting || catalogsLoading || updateLocked}
+        >
           {isSubmitting ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Создать'}
         </Button>
       </DialogActions>
