@@ -15,6 +15,10 @@ const v1ResourcePath = (relativePath) => {
 
 const internshipProgramsPath = v1ResourcePath('/internship-programs');
 const competenciesPath = v1ResourcePath('/competencies');
+const itDirectionsPath = v1ResourcePath('/it-directions');
+const programRequirementDefinitionsPath = v1ResourcePath('/program-requirement-definitions');
+const programGoalDefinitionsPath = v1ResourcePath('/program-goal-definitions');
+const programSelectionStageDefinitionsPath = v1ResourcePath('/program-selection-stage-definitions');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -46,7 +50,13 @@ const processQueue = (error, token = null) => {
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    let token = localStorage.getItem('accessToken');
+    if (!token && getStore) {
+      try {
+        token = getStore().getState()?.auth?.tokens?.accessToken || null;
+      } catch {
+      }
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -74,9 +84,12 @@ api.interceptors.response.use(
     });
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (originalRequest.url?.includes('/auth/login') ||
-          originalRequest.url?.includes('/auth/refresh') ||
-          originalRequest.url?.includes('complete-registration')) {
+      const reqUrl = originalRequest.url || '';
+      if (
+        reqUrl.includes('/auth/login') ||
+        reqUrl.includes('/auth/refresh') ||
+        reqUrl.includes('complete-registration')
+      ) {
         return Promise.reject(error);
       }
 
@@ -109,7 +122,7 @@ api.interceptors.response.use(
 
       try {
         const response = await api.post(
-          '/auth/refresh',
+          authV1Suffix('/auth/refresh'),
           { refreshToken }
         );
 
@@ -154,11 +167,11 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  logout: (refreshToken) => api.post('/auth/logout', { refreshToken }),
-  refreshToken: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
-  getCurrentUser: () => api.get('/auth/user'),
-  validateToken: () => api.get('/auth/validate'),
+  login: (credentials) => api.post(authV1Suffix('/auth/login'), credentials),
+  logout: (refreshToken) => api.post(authV1Suffix('/auth/logout'), { refreshToken }),
+  refreshToken: (refreshToken) => api.post(authV1Suffix('/auth/refresh'), { refreshToken }),
+  getCurrentUser: () => api.get(authV1Suffix('/auth/user')),
+  validateToken: () => api.get(authV1Suffix('/auth/validate')),
   /** Публичный вызов: токен из письма в теле запроса. */
   completeRegistration: (payload) =>
     api.post(authV1Suffix('/auth/complete-registration'), payload),
@@ -199,6 +212,30 @@ export const mentorAPI = {
 
 export const hrAPI = {
   getCompetencies: () => api.get(competenciesPath),
+  createCompetency: (data) => api.post(competenciesPath, data),
+  updateCompetency: (id, data) => api.put(`${competenciesPath}/${id}`, data),
+
+  getItDirections: () => api.get(itDirectionsPath),
+  createItDirection: (data) => api.post(itDirectionsPath, data),
+  updateItDirection: (id, data) => api.put(`${itDirectionsPath}/${id}`, data),
+
+  getProgramRequirementDefinitions: () => api.get(programRequirementDefinitionsPath),
+  createProgramRequirementDefinition: (data) =>
+    api.post(programRequirementDefinitionsPath, data),
+  updateProgramRequirementDefinition: (id, data) =>
+    api.put(`${programRequirementDefinitionsPath}/${id}`, data),
+
+  getProgramGoalDefinitions: () => api.get(programGoalDefinitionsPath),
+  createProgramGoalDefinition: (data) => api.post(programGoalDefinitionsPath, data),
+  updateProgramGoalDefinition: (id, data) =>
+    api.put(`${programGoalDefinitionsPath}/${id}`, data),
+
+  getProgramSelectionStageDefinitions: () => api.get(programSelectionStageDefinitionsPath),
+  createProgramSelectionStageDefinition: (data) =>
+    api.post(programSelectionStageDefinitionsPath, data),
+  updateProgramSelectionStageDefinition: (id, data) =>
+    api.put(`${programSelectionStageDefinitionsPath}/${id}`, data),
+
   getInternshipPrograms: (params) => api.get(internshipProgramsPath, { params }),
   getInternshipProgramById: (id) => api.get(`${internshipProgramsPath}/${id}`),
   createInternshipProgram: (data) => api.post(internshipProgramsPath, data),

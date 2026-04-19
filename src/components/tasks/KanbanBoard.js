@@ -178,7 +178,9 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     if (!task.goalId) return null;
     
     for (const program of programs) {
-      const goal = program.goals?.find(g => g.id === task.goalId);
+      const goal = program.goals?.find(
+        (g) => Number(g.id) === Number(task.goalId)
+      );
       if (goal) return goal;
     }
     return null;

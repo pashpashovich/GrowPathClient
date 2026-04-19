@@ -50,6 +50,7 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
       case 'draft': return 'warning';
       case 'completed': return 'info';
       case 'cancelled': return 'error';
+      case 'archived': return 'default';
       default: return 'default';
     }
   };
@@ -60,6 +61,7 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
       case 'draft': return 'Черновик';
       case 'completed': return 'Завершена';
       case 'cancelled': return 'Отменена';
+      case 'archived': return 'В архиве';
       default: return status;
     }
   };
@@ -70,6 +72,7 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
       case 'draft': return <Schedule />;
       case 'completed': return <CheckCircle />;
       case 'cancelled': return <Cancel />;
+      case 'archived': return <Schedule />;
       default: return <Schedule />;
     }
   };
@@ -165,9 +168,9 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                   {program.description}
                 </Typography>
 
-                {program.itDirection && (
+                {(program.itDirectionRef?.displayName || program.itDirection) && (
                   <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                    Направление: {program.itDirection}
+                    Направление: {program.itDirectionRef?.displayName || program.itDirection}
                   </Typography>
                 )}
 

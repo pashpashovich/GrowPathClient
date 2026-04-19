@@ -44,6 +44,7 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
       case 'draft': return 'warning';
       case 'completed': return 'info';
       case 'cancelled': return 'error';
+      case 'archived': return 'default';
       default: return 'default';
     }
   };
@@ -54,6 +55,7 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
       case 'draft': return 'Черновик';
       case 'completed': return 'Завершена';
       case 'cancelled': return 'Отменена';
+      case 'archived': return 'В архиве';
       default: return status;
     }
   };
@@ -64,6 +66,7 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
       case 'draft': return <Schedule />;
       case 'completed': return <CheckCircle />;
       case 'cancelled': return <Cancel />;
+      case 'archived': return <Schedule />;
       default: return <Schedule />;
     }
   };
@@ -101,9 +104,11 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
             <Typography variant="body1">
               {program.description}
             </Typography>
-            {program.itDirection && (
+            {(program.itDirectionRef?.displayName || program.itDirection) && (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                Направление: {program.itDirection}
+                Направление:{' '}
+                {program.itDirectionRef?.displayName || program.itDirection}
+                {program.itDirectionRef?.code ? ` (${program.itDirectionRef.code})` : ''}
               </Typography>
             )}
           </Paper>
