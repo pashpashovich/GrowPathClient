@@ -436,9 +436,6 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                   Новое направление
                 </Button>
               </Box>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-                Опционально. В API: <code>itDirectionId</code>.
-              </Typography>
             </AccordionDetails>
           </Accordion>
 
