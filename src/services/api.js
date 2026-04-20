@@ -14,6 +14,7 @@ const v1ResourcePath = (relativePath) => {
 };
 
 const internshipProgramsPath = v1ResourcePath('/internship-programs');
+const internshipsPath = v1ResourcePath('/internships');
 const competenciesPath = v1ResourcePath('/competencies');
 const itDirectionsPath = v1ResourcePath('/it-directions');
 const programRequirementDefinitionsPath = v1ResourcePath('/program-requirement-definitions');
@@ -243,6 +244,32 @@ export const hrAPI = {
   deleteInternshipProgram: (id) => api.delete(`${internshipProgramsPath}/${id}`),
   getReports: (params) => api.get('/reports', { params }),
   getDashboardData: () => api.get('/dashboard'),
+};
+
+export const roadmapAPI = {
+  getInternshipsByProgram: (programId) =>
+    api.get(`${internshipProgramsPath}/${programId}/internships`),
+  getInternships: (params) => api.get(internshipsPath, { params }),
+  getInternshipsProfile: () => api.get(`${internshipsPath}/profile`),
+  createInternship: (data) => api.post(internshipsPath, data),
+  getInternshipById: (internshipId) => api.get(`${internshipsPath}/${internshipId}`),
+  getInternshipRoadmap: (internshipId) =>
+    api.get(`${internshipsPath}/${internshipId}/roadmap`),
+  updateInternship: (internshipId, data) =>
+    api.put(`${internshipsPath}/${internshipId}`, data),
+  deleteInternship: (internshipId) => api.delete(`${internshipsPath}/${internshipId}`),
+
+  getStages: (internshipId) => api.get(`${internshipsPath}/${internshipId}/stages`),
+  createStage: (internshipId, data) =>
+    api.post(`${internshipsPath}/${internshipId}/stages`, data),
+  updateStage: (internshipId, stageId, data) =>
+    api.put(`${internshipsPath}/${internshipId}/stages/${stageId}`, data),
+  deleteStage: (internshipId, stageId) =>
+    api.delete(`${internshipsPath}/${internshipId}/stages/${stageId}`),
+  reorderStages: (internshipId, stageIds) =>
+    api.put(`${internshipsPath}/${internshipId}/stages/order`, { stageIds }),
+  changeStageStatus: (internshipId, stageId, data) =>
+    api.patch(`${internshipsPath}/${internshipId}/stages/${stageId}/status`, data),
 };
 
 export const taskAPI = {

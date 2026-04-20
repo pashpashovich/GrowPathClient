@@ -36,13 +36,16 @@ import {
   Timeline,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeStage, updateStageStatus, setCurrentStage } from '../../store/slices/roadmapSlice';
+import {
+  deleteStageAsync,
+  changeStageStatusAsync,
+  reorderStagesAsync,
+} from '../../store/slices/roadmapSlice';
 
 const RoadmapView = ({ onEdit, canEdit = true }) => {
   const dispatch = useDispatch();
-  const { stages, currentInternshipId, internships } = useSelector((state) => state.roadmap);
-  const currentUser = useSelector((state) => state.auth.user);
-  
+  const { stages, currentInternshipId, internships, isLoading, error } = useSelector((state) => state.roadmap);
+
   const currentStages = currentInternshipId ? stages[currentInternshipId] || [] : [];
   const currentInternship = internships.find(i => i.id === currentInternshipId);
 
@@ -137,9 +140,9 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
     handleMenuClose();
   };
 
-  const handleDeleteStage = () => {
+  const handleDeleteStage = async () => {
     if (selectedStage && window.confirm('Вы уверены, что хотите удалить этот этап?')) {
-      dispatch(removeStage({ 
+      await dispatch(deleteStageAsync({ 
         internshipId: currentInternshipId, 
         stageId: selectedStage.id 
       }));
@@ -147,18 +150,18 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
     handleMenuClose();
   };
 
-  const handleChangeStatus = () => {
-    if (selectedStage) {
-      setNewStatus(selectedStage.status);
-      setStatusComments(selectedStage.comments || '');
-      setStatusDialogOpen(true);
-    }
-    handleMenuClose();
+  const openStatusDialog = (stage) => {
+    if (!stage) return;
+    setSelectedStage(stage);
+    setNewStatus(stage.status);
+    setStatusComments(stage.comments || '');
+    setStatusDialogOpen(true);
+    setAnchorEl(null);
   };
 
-  const handleStatusUpdate = () => {
+  const handleStatusUpdate = async () => {
     if (selectedStage && newStatus) {
-      dispatch(updateStageStatus({
+      await dispatch(changeStageStatusAsync({
         internshipId: currentInternshipId,
         stageId: selectedStage.id,
         status: newStatus,
@@ -177,6 +180,27 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
     const diffTime = end - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const handleReorderByOrder = async (orderedStages) => {
+    if (!currentInternshipId) return;
+    await dispatch(
+      reorderStagesAsync({
+        internshipId: currentInternshipId,
+        stageIds: orderedStages.map((s) => s.id),
+      })
+    );
+  };
+
+  const moveStage = async (stageId, direction) => {
+    const idx = currentStages.findIndex((s) => s.id === stageId);
+    if (idx === -1) return;
+    const next = idx + direction;
+    if (next < 0 || next >= currentStages.length) return;
+    const reordered = [...currentStages];
+    const [item] = reordered.splice(idx, 1);
+    reordered.splice(next, 0, item);
+    await handleReorderByOrder(reordered);
   };
 
   return (
@@ -240,10 +264,13 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
         </Box>
       </Box>
 
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {!currentInternshipId ? (
         <Alert severity="info">
           Выберите стажировку для просмотра дорожной карты.
         </Alert>
+      ) : isLoading && currentStages.length === 0 ? (
+        <Alert severity="info">Загрузка этапов...</Alert>
       ) : currentStages.length === 0 ? (
         <Alert severity="info">
           Дорожная карта пуста. Добавьте первый этап стажировки.
@@ -341,11 +368,13 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
                   <CardActions>
                     <Button
                       size="small"
-                      onClick={() => handleChangeStatus()}
+                      onClick={() => openStatusDialog(stage)}
                       startIcon={<Timeline />}
                     >
                       Изменить статус
                     </Button>
+                    <Button size="small" onClick={() => moveStage(stage.id, -1)}>Вверх</Button>
+                    <Button size="small" onClick={() => moveStage(stage.id, 1)}>Вниз</Button>
                   </CardActions>
                 )}
               </Card>
@@ -371,7 +400,7 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
           <Edit sx={{ mr: 1 }} />
           Редактировать
         </MenuItem>
-        <MenuItem onClick={handleChangeStatus}>
+        <MenuItem onClick={() => openStatusDialog(selectedStage)}>
           <Timeline sx={{ mr: 1 }} />
           Изменить статус
         </MenuItem>

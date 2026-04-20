@@ -47,6 +47,7 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
   const error = useSelector((state) => state.internshipProgram.error);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedProgram, setSelectedProgram] = useState(null);
+  const [programToDelete, setProgramToDelete] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const getStatusColor = (status) => {
@@ -117,17 +118,18 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
 
   const handleDelete = () => {
     if (selectedProgram) {
+      setProgramToDelete(selectedProgram);
       setIsDeleteDialogOpen(true);
     }
     handleMenuClose();
   };
 
   const confirmDelete = async () => {
-    if (selectedProgram) {
-      await dispatch(deleteInternshipProgramAsync(selectedProgram.id));
+    if (programToDelete) {
+      await dispatch(deleteInternshipProgramAsync(programToDelete.id));
     }
     setIsDeleteDialogOpen(false);
-    setSelectedProgram(null);
+    setProgramToDelete(null);
   };
 
   if (isLoading && programs.length === 0) {
@@ -294,16 +296,27 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
         </MenuItem>
       </Menu>
 
-      <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)}>
+      <Dialog
+        open={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setProgramToDelete(null);
+        }}
+      >
         <DialogTitle>Удалить программу стажировки</DialogTitle>
         <DialogContent>
           <Typography>
-            Вы уверены, что хотите удалить программу "{selectedProgram?.title}"?
+            Вы уверены, что хотите удалить программу "{programToDelete?.title}"?
             Это действие нельзя отменить.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsDeleteDialogOpen(false)}>
+          <Button
+            onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setProgramToDelete(null);
+            }}
+          >
             Отмена
           </Button>
           <Button variant="contained" color="error" onClick={confirmDelete}>

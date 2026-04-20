@@ -18,11 +18,10 @@ import {
   Chip,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { addStage, updateStage } from '../../store/slices/roadmapSlice';
+import { createStageAsync, updateStageAsync } from '../../store/slices/roadmapSlice';
 
 const StageForm = ({ open, onClose, stageToEdit }) => {
   const dispatch = useDispatch();
-  const currentUser = useSelector((state) => state.auth.user);
   const { currentInternshipId } = useSelector((state) => state.roadmap);
 
   const [formData, setFormData] = useState({
@@ -36,6 +35,7 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (stageToEdit) {
@@ -96,57 +96,49 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    if (!currentInternshipId) return;
+
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      priority: formData.priority,
+      isCheckpoint: formData.isCheckpoint,
+      comments: formData.comments,
+      order: stageToEdit?.order ?? 0,
+    };
+
+    setIsSubmitting(true);
+    try {
       if (stageToEdit) {
-        const updatedStage = {
-          ...stageToEdit,
-          title: formData.title,
-          description: formData.description,
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          priority: formData.priority,
-          isCheckpoint: formData.isCheckpoint,
-          comments: formData.comments,
-        };
-
-        dispatch(updateStage({
-          ...updatedStage,
-          internshipId: currentInternshipId,
-        }));
+        const result = await dispatch(
+          updateStageAsync({
+            internshipId: currentInternshipId,
+            stageId: stageToEdit.id,
+            data: payload,
+          })
+        );
+        if (!updateStageAsync.fulfilled.match(result)) return;
       } else {
-        const newStage = {
-          title: formData.title,
-          description: formData.description,
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          priority: formData.priority,
-          isCheckpoint: formData.isCheckpoint,
-          comments: formData.comments,
-          status: 'pending',
-          createdBy: currentUser?.id || 'mentor-1',
-          internshipId: currentInternshipId,
-        };
-
-        dispatch(addStage(newStage));
+        const result = await dispatch(
+          createStageAsync({
+            internshipId: currentInternshipId,
+            data: payload,
+          })
+        );
+        if (!createStageAsync.fulfilled.match(result)) return;
       }
-
-      setFormData({
-        title: '',
-        description: '',
-        startDate: '',
-        endDate: '',
-        priority: 'medium',
-        isCheckpoint: false,
-        comments: '',
-      });
-      setErrors({});
-
-      onClose();
+      handleClose();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
+    if (isSubmitting) return;
     setFormData({
       title: '',
       description: '',
@@ -302,9 +294,9 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>Отмена</Button>
-        <Button onClick={handleSubmit} variant="contained">
-          {stageToEdit ? 'Сохранить изменения' : 'Добавить этап'}
+        <Button onClick={handleClose} disabled={isSubmitting}>Отмена</Button>
+        <Button onClick={handleSubmit} variant="contained" disabled={isSubmitting}>
+          {isSubmitting ? 'Сохранение...' : stageToEdit ? 'Сохранить изменения' : 'Добавить этап'}
         </Button>
       </DialogActions>
     </Dialog>

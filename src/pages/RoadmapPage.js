@@ -1,12 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Modal } from '@mui/material';
+import { useDispatch, useSelector } from 'react-redux';
 import RoadmapView from '../components/roadmap/RoadmapView';
 import StageForm from '../components/roadmap/StageForm';
 import InternshipSelector from '../components/roadmap/InternshipSelector';
+import {
+  fetchInternshipsAsync,
+  fetchInternshipsProfileAsync,
+  fetchStagesAsync,
+} from '../store/slices/roadmapSlice';
 
 const RoadmapPage = ({ canEdit = true }) => {
+  const dispatch = useDispatch();
+  const currentUser = useSelector((state) => state.auth.user);
+  const currentInternshipId = useSelector((state) => state.roadmap.currentInternshipId);
   const [openForm, setOpenForm] = useState(false);
   const [stageToEdit, setStageToEdit] = useState(null);
+  useEffect(() => {
+    if (currentUser?.role === 'intern' || currentUser?.role === 'mentor') {
+      dispatch(fetchInternshipsProfileAsync());
+    } else {
+      dispatch(fetchInternshipsAsync());
+    }
+  }, [dispatch, currentUser?.role]);
+
+  useEffect(() => {
+    if (currentInternshipId) {
+      dispatch(fetchStagesAsync(currentInternshipId));
+    }
+  }, [dispatch, currentInternshipId]);
 
   const handleOpenForm = (stage = null) => {
     setStageToEdit(stage);
