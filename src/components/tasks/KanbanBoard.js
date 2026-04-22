@@ -362,17 +362,26 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>
-        Доска задач
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Перетащите карточку в другую колонку, чтобы запросить смену статуса на сервере (доступные переходы
-        зависят от роли и текущего состояния задачи).
-      </Typography>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        maxWidth: '100%',
+      }}
+    >
+      <Box sx={{ flexShrink: 0 }}>
+        <Typography variant="h4" gutterBottom>
+          Доска задач
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Перетащите карточку в другую колонку, чтобы запросить смену статуса на сервере (доступные переходы
+          зависят от роли и текущего состояния задачи).
+        </Typography>
+      </Box>
 
       {/* Фильтр по стажировкам */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ p: 2, mb: 2, flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="subtitle1" fontWeight="bold">
             Фильтр по стажировкам:
@@ -404,37 +413,55 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
         </Box>
       </Paper>
 
-      {/* Канбан доска */}
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 2, 
-        overflowX: 'auto', 
-        pb: 2, 
-        minWidth: 'fit-content',
-        position: 'relative',
-        '&::-webkit-scrollbar': {
-          height: 8,
-        },
-        '&::-webkit-scrollbar-track': {
-          backgroundColor: '#f1f1f1',
-          borderRadius: 4,
-        },
-        '&::-webkit-scrollbar-thumb': {
-          backgroundColor: '#c1c1c1',
-          borderRadius: 4,
-          '&:hover': {
-            backgroundColor: '#a8a8a8',
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: '100%',
+          height: { xs: 'calc(100dvh - 288px)', sm: 'calc(100dvh - 268px)', md: 'calc(100dvh - 248px)' },
+          minHeight: { xs: 280, sm: 300, md: 320 },
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          pb: 1,
+          scrollbarGutter: 'stable',
+          '&::-webkit-scrollbar': {
+            height: 10,
           },
-        },
-      }}>
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'action.hover',
+            borderRadius: 5,
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'action.selected',
+            borderRadius: 5,
+            '&:hover': {
+              backgroundColor: 'text.disabled',
+            },
+          },
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            alignItems: 'stretch',
+            height: '100%',
+            minHeight: '100%',
+            width: 'max-content',
+            minWidth: '100%',
+            pr: 1,
+          }}
+        >
         {columns.map((column) => (
           <Box
             key={column.id}
             onDragOver={handleColumnDragOver}
             onDrop={handleColumnDrop(column.id)}
             sx={{
+              display: 'flex',
+              flexDirection: 'column',
               minWidth: 250,
               width: 250,
+              maxHeight: '100%',
               backgroundColor: '#f5f5f5',
               borderRadius: 2,
               p: 1.5,
@@ -464,20 +491,34 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
               </Box>
             </Box>
 
-            {/* Задачи в колонке */}
-            <Box sx={{ minHeight: 300 }}>
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                pr: 0.5,
+                '&::-webkit-scrollbar': {
+                  width: 8,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: 'divider',
+                  borderRadius: 4,
+                },
+              }}
+            >
               {getTasksByStatus(column.id).map((task) => (
                 <TaskCard key={task.id} task={task} />
               ))}
-              
+
               {getTasksByStatus(column.id).length === 0 && (
                 <Box
                   sx={{
-                    height: 80,
+                    minHeight: 120,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '2px dashed #ccc',
+                    border: '2px dashed',
+                    borderColor: 'divider',
                     borderRadius: 1,
                     color: 'text.secondary',
                   }}
@@ -490,9 +531,9 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
             </Box>
           </Box>
         ))}
+        </Box>
       </Box>
 
-      {/* Меню действий */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}

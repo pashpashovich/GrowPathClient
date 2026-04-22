@@ -110,6 +110,10 @@ const MentorDashboard = () => {
             ml: sidebarOpen ? '280px' : '80px',
             transition: 'margin-left 0.3s ease',
             minHeight: 'calc(100vh - 64px)',
+            maxHeight: 'calc(100vh - 64px)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
             backgroundColor: '#f5f5f5',
           }}
         >
@@ -123,7 +127,8 @@ const MentorDashboard = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           mb: 2,
-          mt: 2
+          mt: 2,
+          flexShrink: 0,
         }}>
           <Typography variant="h6" component="div">
             {location.pathname === '/mentor/roadmap' ? 'Дорожная карта' :
@@ -140,8 +145,19 @@ const MentorDashboard = () => {
           </Button>
         </Box>
 
-        {/* Основной контент */}
-        <Box sx={{ py: 3, px: 3, overflowX: 'auto' }}>
+        {/* Основной контент: flex-1 чтобы дочерние экраны (канбан) могли занять высоту и скроллить внутри себя */}
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            py: 3,
+            px: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+          }}
+        >
           {getCurrentPage()}
         </Box>
       </Box>
