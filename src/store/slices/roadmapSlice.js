@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { roadmapAPI } from '../../services/api';
+import { roadmapAPI, iprAPI } from '../../services/api';
 
 const toArray = (body) => (Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : []);
 
@@ -7,8 +7,16 @@ const normalizeInternship = (x) => ({
   ...x,
   id: String(x.id),
   programId: x.programId != null ? Number(x.programId) : null,
+  templateId: x.templateId != null ? Number(x.templateId) : null,
   mentorId: x.mentorId != null ? Number(x.mentorId) : null,
-  internIds: Array.isArray(x.internIds) ? x.internIds : [],
+  internId: x.internId != null ? Number(x.internId) : null,
+  internIds: Array.isArray(x.internIds)
+    ? x.internIds
+    : x.internId != null
+      ? [String(x.internId)]
+      : [],
+  startDate: x.startDate || null,
+  endDate: x.endDate || null,
 });
 
 const normalizeStage = (x) => ({
@@ -35,7 +43,7 @@ export const fetchInternshipsProfileAsync = createAsyncThunk(
   'roadmap/fetchInternshipsProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await roadmapAPI.getInternshipsProfile();
+      const response = await iprAPI.getMyIprs();
       return toArray(response.data).map(normalizeInternship);
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки стажировок профиля');
@@ -55,16 +63,31 @@ export const fetchInternshipsByProgramAsync = createAsyncThunk(
   }
 );
 
+export const fetchIprsAsync = createAsyncThunk(
+  'roadmap/fetchIprs',
+  async (params, { rejectWithValue }) => {
+    try {
+      const response = await iprAPI.getIprs(params || {});
+      return toArray(response.data).map(normalizeInternship);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки ИПР');
+    }
+  }
+);
+
 export const createInternshipAsync = createAsyncThunk(
   'roadmap/createInternship',
-  async (payload, { rejectWithValue, dispatch, getState }) => {
+  async ({ data, useIpr = false }, { rejectWithValue, dispatch, getState }) => {
     try {
-      const response = await roadmapAPI.createInternship(payload);
-      const created = normalizeInternship(response.data?.data ?? response.data);
       const role = getState().auth?.user?.role;
-      if (role === 'intern') {
+      const shouldUseIpr = useIpr || role === 'intern';
+      const response = shouldUseIpr
+        ? await iprAPI.createIpr(data)
+        : await roadmapAPI.createInternship(data);
+      const created = normalizeInternship(response.data?.data ?? response.data);
+      if (shouldUseIpr && role === 'intern') {
         await dispatch(fetchInternshipsProfileAsync());
-      } else {
+      } else if (!shouldUseIpr) {
         await dispatch(fetchInternshipsAsync());
       }
       return created;
@@ -76,9 +99,11 @@ export const createInternshipAsync = createAsyncThunk(
 
 export const updateInternshipAsync = createAsyncThunk(
   'roadmap/updateInternship',
-  async ({ internshipId, data }, { rejectWithValue }) => {
+  async ({ internshipId, data, useIpr }, { rejectWithValue }) => {
     try {
-      const response = await roadmapAPI.updateInternship(internshipId, data);
+      const response = useIpr
+        ? await iprAPI.updateIpr(internshipId, data)
+        : await roadmapAPI.updateInternship(internshipId, data);
       return normalizeInternship(response.data?.data ?? response.data);
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка обновления стажировки');
@@ -88,9 +113,13 @@ export const updateInternshipAsync = createAsyncThunk(
 
 export const deleteInternshipAsync = createAsyncThunk(
   'roadmap/deleteInternship',
-  async (internshipId, { rejectWithValue }) => {
+  async ({ internshipId, useIpr }, { rejectWithValue }) => {
     try {
-      await roadmapAPI.deleteInternship(internshipId);
+      if (useIpr) {
+        await iprAPI.deleteIpr(internshipId);
+      } else {
+        await roadmapAPI.deleteInternship(internshipId);
+      }
       return String(internshipId);
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка удаления стажировки');
@@ -100,9 +129,11 @@ export const deleteInternshipAsync = createAsyncThunk(
 
 export const fetchStagesAsync = createAsyncThunk(
   'roadmap/fetchStages',
-  async (internshipId, { rejectWithValue }) => {
+  async ({ internshipId, useIpr }, { rejectWithValue }) => {
     try {
-      const response = await roadmapAPI.getStages(internshipId);
+      const response = useIpr
+        ? await iprAPI.getIprStages(internshipId)
+        : await roadmapAPI.getStages(internshipId);
       const stages = toArray(response.data).map(normalizeStage).sort((a, b) => a.order - b.order);
       return { internshipId: String(internshipId), stages };
     } catch (error) {
@@ -113,9 +144,11 @@ export const fetchStagesAsync = createAsyncThunk(
 
 export const createStageAsync = createAsyncThunk(
   'roadmap/createStage',
-  async ({ internshipId, data }, { rejectWithValue }) => {
+  async ({ internshipId, data, useIpr }, { rejectWithValue }) => {
     try {
-      const response = await roadmapAPI.createStage(internshipId, data);
+      const response = useIpr
+        ? await iprAPI.createIprStage(internshipId, data)
+        : await roadmapAPI.createStage(internshipId, data);
       return { internshipId: String(internshipId), stage: normalizeStage(response.data?.data ?? response.data) };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка создания этапа');
@@ -125,9 +158,11 @@ export const createStageAsync = createAsyncThunk(
 
 export const updateStageAsync = createAsyncThunk(
   'roadmap/updateStage',
-  async ({ internshipId, stageId, data }, { rejectWithValue }) => {
+  async ({ internshipId, stageId, data, useIpr }, { rejectWithValue }) => {
     try {
-      const response = await roadmapAPI.updateStage(internshipId, stageId, data);
+      const response = useIpr
+        ? await iprAPI.updateIprStage(internshipId, stageId, data)
+        : await roadmapAPI.updateStage(internshipId, stageId, data);
       return { internshipId: String(internshipId), stage: normalizeStage(response.data?.data ?? response.data) };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка обновления этапа');
@@ -137,9 +172,13 @@ export const updateStageAsync = createAsyncThunk(
 
 export const deleteStageAsync = createAsyncThunk(
   'roadmap/deleteStage',
-  async ({ internshipId, stageId }, { rejectWithValue }) => {
+  async ({ internshipId, stageId, useIpr }, { rejectWithValue }) => {
     try {
-      await roadmapAPI.deleteStage(internshipId, stageId);
+      if (useIpr) {
+        await iprAPI.deleteIprStage(internshipId, stageId);
+      } else {
+        await roadmapAPI.deleteStage(internshipId, stageId);
+      }
       return { internshipId: String(internshipId), stageId: String(stageId) };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка удаления этапа');
@@ -149,10 +188,14 @@ export const deleteStageAsync = createAsyncThunk(
 
 export const reorderStagesAsync = createAsyncThunk(
   'roadmap/reorderStages',
-  async ({ internshipId, stageIds }, { rejectWithValue, dispatch }) => {
+  async ({ internshipId, stageIds, useIpr }, { rejectWithValue, dispatch }) => {
     try {
-      await roadmapAPI.reorderStages(internshipId, stageIds.map((id) => Number(id)));
-      await dispatch(fetchStagesAsync(internshipId));
+      if (useIpr) {
+        await iprAPI.reorderIprStages(internshipId, stageIds.map((id) => Number(id)));
+      } else {
+        await roadmapAPI.reorderStages(internshipId, stageIds.map((id) => Number(id)));
+      }
+      await dispatch(fetchStagesAsync({ internshipId, useIpr }));
       return { internshipId: String(internshipId) };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка переупорядочивания этапов');
@@ -162,9 +205,11 @@ export const reorderStagesAsync = createAsyncThunk(
 
 export const changeStageStatusAsync = createAsyncThunk(
   'roadmap/changeStageStatus',
-  async ({ internshipId, stageId, status, comments }, { rejectWithValue }) => {
+  async ({ internshipId, stageId, status, comments, useIpr }, { rejectWithValue }) => {
     try {
-      const response = await roadmapAPI.changeStageStatus(internshipId, stageId, { status, comments });
+      const response = useIpr
+        ? await iprAPI.changeIprStageStatus(internshipId, stageId, { status, comments })
+        : await roadmapAPI.changeStageStatus(internshipId, stageId, { status, comments });
       return { internshipId: String(internshipId), stage: normalizeStage(response.data?.data ?? response.data) };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка смены статуса этапа');
@@ -209,6 +254,10 @@ const roadmapSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
+      .addCase(fetchIprsAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(fetchInternshipsAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.internships = action.payload;
@@ -222,6 +271,13 @@ const roadmapSlice = createSlice({
         state.currentInternshipId = action.payload[0]?.id || null;
       })
       .addCase(fetchInternshipsByProgramAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.internships = action.payload;
+        if (!state.currentInternshipId && action.payload.length > 0) {
+          state.currentInternshipId = action.payload[0].id;
+        }
+      })
+      .addCase(fetchIprsAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.internships = action.payload;
         if (!state.currentInternshipId && action.payload.length > 0) {

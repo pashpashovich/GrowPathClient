@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
   Paper,
   Chip,
   Button,
   Card,
   CardContent,
   CardActions,
-  Divider,
   Alert,
 } from '@mui/material';
 import { 
@@ -26,15 +20,13 @@ import {
   Visibility 
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { takeTask } from '../../store/slices/taskSlice';
+import { takeTaskAsync } from '../../store/slices/taskSlice';
 
 const InternTaskList = ({ onViewTask, onSubmitTask }) => {
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.task.tasks);
   const currentUser = useSelector((state) => state.auth.user);
-  const interns = useSelector((state) => state.intern.interns);
-
-  const currentInternId = currentUser?.id || 'intern-1';
+  const currentUserId = currentUser?.id;
 
   const getStatusInfo = (status) => {
     switch (status) {
@@ -66,12 +58,26 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
           icon: <CheckCircle />,
           description: 'Задача выполнена и принята'
         };
-      case 'rejected':
+      case 'on_review':
+        return {
+          label: 'На проверке',
+          color: 'info',
+          icon: <CheckCircle />,
+          description: 'Задача на проверке у ментора',
+        };
+      case 'needs_rework':
         return { 
           label: 'Требует доработки', 
           color: 'error', 
           icon: <Assignment />,
           description: 'Задача требует доработки'
+        };
+      case 'rejected':
+        return {
+          label: 'Отклонена',
+          color: 'error',
+          icon: <Assignment />,
+          description: 'Задача отклонена',
         };
       default:
         return { 
@@ -95,28 +101,21 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
 
   const handleTakeTask = (taskId) => {
     if (window.confirm('Вы уверены, что хотите взять эту задачу в работу?')) {
-      dispatch(takeTask({ taskId, internId: currentInternId }));
+      dispatch(takeTaskAsync(taskId));
     }
   };
 
-  const canTakeTask = (task) => {
-    return task.status === 'pending' && 
-           task.assignedInterns.includes(currentInternId) &&
-           !task.takenBy;
-  };
+  const isAssignee = (task) =>
+    task.assigneeId == null ||
+    currentUserId == null ||
+    Number(task.assigneeId) === Number(currentUserId);
 
-  const canSubmitTask = (task) => {
-    return task.status === 'in_progress' && 
-           task.takenBy === currentInternId;
-  };
+  const canTakeTask = (task) => task.status === 'pending';
 
-  const canViewTask = (task) => {
-    return task.assignedInterns.includes(currentInternId);
-  };
+  const canSubmitTask = (task) =>
+    (task.status === 'in_progress' || task.status === 'needs_rework') && isAssignee(task);
 
-  const assignedTasks = tasks.filter(task => 
-    task.assignedInterns.includes(currentInternId)
-  );
+  const assignedTasks = tasks;
 
   if (assignedTasks.length === 0) {
     return (
@@ -140,7 +139,7 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
         {assignedTasks.map((task) => {
           const statusInfo = getStatusInfo(task.status);
-          const isTakenByMe = task.takenBy === currentInternId;
+          const isTakenByMe = isAssignee(task) && task.status !== 'pending';
           
           return (
             <Card 
@@ -167,14 +166,15 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
                 </Typography>
                 
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  {task.description.substring(0, 100)}...
+                  {(task.description || '').substring(0, 100)}
+                  {(task.description || '').length > 100 ? '...' : ''}
                 </Typography>
 
-                {task.takenBy && (
+                {task.status !== 'pending' && task.assigneeName && (
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
                     <Person fontSize="small" />
                     <Typography variant="caption" color="text.secondary">
-                      {isTakenByMe ? 'Вы взяли в работу' : 'Взято в работу'}
+                      {isTakenByMe ? 'Вы в работе' : task.assigneeName}
                     </Typography>
                   </Box>
                 )}
@@ -236,7 +236,7 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
                   </Button>
                 )}
 
-                {task.status === 'rejected' && isTakenByMe && (
+                {(task.status === 'needs_rework' || task.status === 'rejected') && isTakenByMe && (
                   <Button
                     size="small"
                     variant="outlined"

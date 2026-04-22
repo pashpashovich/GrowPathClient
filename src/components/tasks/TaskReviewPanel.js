@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -45,12 +45,16 @@ import {
   FilterList,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { reviewTask, addTaskComment, setCurrentTask } from '../../store/slices/taskSlice';
+import {
+  reviewTaskAsync,
+  addCommentAsync,
+  setCurrentTask,
+  fetchTasksAsync,
+} from '../../store/slices/taskSlice';
 
 const TaskReviewPanel = ({ onViewTask }) => {
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.task.tasks);
-  const currentUser = useSelector((state) => state.auth.user);
   const interns = useSelector((state) => state.intern.interns);
 
   const [selectedTask, setSelectedTask] = useState(null);
@@ -63,6 +67,10 @@ const TaskReviewPanel = ({ onViewTask }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [internFilter, setInternFilter] = useState('all');
 
+  useEffect(() => {
+    dispatch(fetchTasksAsync({ page: 1, limit: 100 }));
+  }, [dispatch]);
+
   const getStatusInfo = (status) => {
     switch (status) {
       case 'pending':
@@ -70,11 +78,15 @@ const TaskReviewPanel = ({ onViewTask }) => {
       case 'in_progress':
         return { label: 'В работе', color: 'primary' };
       case 'submitted':
-        return { label: 'На ревью', color: 'warning' };
+        return { label: 'Сдано', color: 'warning' };
+      case 'on_review':
+        return { label: 'На проверке', color: 'info' };
       case 'completed':
         return { label: 'Завершено', color: 'success' };
-      case 'rejected':
+      case 'needs_rework':
         return { label: 'Требует доработки', color: 'error' };
+      case 'rejected':
+        return { label: 'Отклонено', color: 'error' };
       default:
         return { label: status, color: 'default' };
     }
@@ -97,13 +109,13 @@ const TaskReviewPanel = ({ onViewTask }) => {
 
   const handleReviewTask = (task) => {
     setSelectedTask(task);
-    setReviewStatus(task.status === 'submitted' ? 'completed' : task.status);
+    setReviewStatus('completed');
     setReviewComment('');
     setReviewRating('');
     setReviewDialogOpen(true);
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (!reviewStatus) {
       alert('Выберите статус для задачи');
       return;
@@ -114,13 +126,27 @@ const TaskReviewPanel = ({ onViewTask }) => {
       return;
     }
 
-    dispatch(reviewTask({
-      taskId: selectedTask.id,
-      mentorId: currentUser?.id || 'current-mentor-id',
-      status: reviewStatus,
-      comment: reviewComment,
-      rating: reviewStatus === 'completed' ? parseInt(reviewRating) : undefined
-    }));
+    if (reviewStatus === 'needs_rework' && !reviewComment.trim()) {
+      alert('Укажите комментарий для возврата на доработку');
+      return;
+    }
+
+    try {
+      await dispatch(
+        reviewTaskAsync({
+          id: selectedTask.id,
+          data: {
+            status: reviewStatus,
+            comment: reviewComment || undefined,
+            rating:
+              reviewStatus === 'completed' ? parseInt(reviewRating, 10) : undefined,
+          },
+        })
+      ).unwrap();
+    } catch (err) {
+      alert(typeof err === 'string' ? err : 'Не удалось сохранить проверку');
+      return;
+    }
 
     setReviewDialogOpen(false);
     setSelectedTask(null);
@@ -135,37 +161,41 @@ const TaskReviewPanel = ({ onViewTask }) => {
     setCommentDialogOpen(true);
   };
 
-  const handleSubmitComment = () => {
+  const handleSubmitComment = async () => {
     if (!newComment.trim()) {
       alert('Введите комментарий');
       return;
     }
 
-    dispatch(addTaskComment({
-      taskId: selectedTask.id,
-      userId: currentUser?.id || 'current-mentor-id',
-      comment: newComment.trim()
-    }));
+    try {
+      await dispatch(
+        addCommentAsync({ id: selectedTask.id, data: { comment: newComment.trim() } })
+      ).unwrap();
+    } catch (err) {
+      alert(typeof err === 'string' ? err : 'Не удалось добавить комментарий');
+      return;
+    }
 
     setCommentDialogOpen(false);
     setSelectedTask(null);
     setNewComment('');
   };
 
-  const filteredTasks = tasks.filter(task => {
-    const isReviewable = task.status === 'submitted' || task.status === 'completed';
-    if (!isReviewable) return false;
-    
+  const filteredTasks = tasks.filter((task) => {
+    const reviewable = ['submitted', 'on_review', 'needs_rework', 'completed'].includes(task.status);
+    if (!reviewable) return false;
+
     const statusMatch = statusFilter === 'all' || task.status === statusFilter;
-    const internMatch = internFilter === 'all' || 
-      (task.takenBy && task.takenBy === internFilter) ||
-      (task.submittedBy && task.submittedBy === internFilter) ||
-      (task.assignedInterns && task.assignedInterns.includes(internFilter));
+    const internMatch =
+      internFilter === 'all' ||
+      (task.assigneeId != null && String(task.assigneeId) === String(internFilter));
     return statusMatch && internMatch;
   });
 
-  const submittedTasks = filteredTasks.filter(task => task.status === 'submitted');
-  const completedTasks = filteredTasks.filter(task => task.status === 'completed');
+  const submittedTasks = filteredTasks.filter((task) =>
+    ['submitted', 'on_review'].includes(task.status)
+  );
+  const completedTasks = filteredTasks.filter((task) => task.status === 'completed');
 
   return (
     <Box>
@@ -182,7 +212,9 @@ const TaskReviewPanel = ({ onViewTask }) => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <MenuItem value="all">Все</MenuItem>
-              <MenuItem value="submitted">На ревью</MenuItem>
+              <MenuItem value="submitted">Сдано</MenuItem>
+              <MenuItem value="on_review">На проверке</MenuItem>
+              <MenuItem value="needs_rework">Доработка</MenuItem>
               <MenuItem value="completed">Завершено</MenuItem>
             </Select>
           </FormControl>
@@ -236,7 +268,8 @@ const TaskReviewPanel = ({ onViewTask }) => {
           <TableBody>
             {filteredTasks.map((task) => {
               const statusInfo = getStatusInfo(task.status);
-              const internName = getInternName(task.takenBy || task.submittedBy);
+              const internName =
+                task.assigneeName || getInternName(task.assigneeId);
               
               return (
                 <TableRow key={task.id} hover>
@@ -246,7 +279,8 @@ const TaskReviewPanel = ({ onViewTask }) => {
                         {task.title}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {task.description.substring(0, 50)}...
+                        {(task.description || '').slice(0, 50)}
+                        {(task.description || '').length > 50 ? '…' : ''}
                       </Typography>
                     </Box>
                   </TableCell>
@@ -317,7 +351,7 @@ const TaskReviewPanel = ({ onViewTask }) => {
                         </IconButton>
                       </Tooltip>
                       
-                      {task.status === 'submitted' && (
+                      {(task.status === 'submitted' || task.status === 'on_review') && (
                         <Tooltip title="Проверить">
                           <IconButton 
                             size="small" 
@@ -426,7 +460,7 @@ const TaskReviewPanel = ({ onViewTask }) => {
                       Принять
                     </Box>
                   </MenuItem>
-                  <MenuItem value="rejected">
+                  <MenuItem value="needs_rework">
                     <Box display="flex" alignItems="center" gap={1}>
                       <Cancel color="error" />
                       Требует доработки

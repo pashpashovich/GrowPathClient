@@ -42,7 +42,7 @@ import {
   reorderStagesAsync,
 } from '../../store/slices/roadmapSlice';
 
-const RoadmapView = ({ onEdit, canEdit = true }) => {
+const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
   const dispatch = useDispatch();
   const { stages, currentInternshipId, internships, isLoading, error } = useSelector((state) => state.roadmap);
 
@@ -144,7 +144,8 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
     if (selectedStage && window.confirm('Вы уверены, что хотите удалить этот этап?')) {
       await dispatch(deleteStageAsync({ 
         internshipId: currentInternshipId, 
-        stageId: selectedStage.id 
+        stageId: selectedStage.id,
+        useIpr,
       }));
     }
     handleMenuClose();
@@ -166,6 +167,7 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
         stageId: selectedStage.id,
         status: newStatus,
         comments: statusComments,
+        useIpr,
       }));
     }
     setStatusDialogOpen(false);
@@ -188,6 +190,7 @@ const RoadmapView = ({ onEdit, canEdit = true }) => {
       reorderStagesAsync({
         internshipId: currentInternshipId,
         stageIds: orderedStages.map((s) => s.id),
+        useIpr,
       })
     );
   };

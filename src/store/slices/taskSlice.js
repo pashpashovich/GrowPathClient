@@ -1,6 +1,17 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { taskAPI } from '../../services/api';
 
+function mergeTaskPatch(state, patch) {
+  if (!patch?.id) return;
+  const index = state.tasks.findIndex((t) => t.id === patch.id);
+  if (index !== -1) {
+    state.tasks[index] = { ...state.tasks[index], ...patch };
+  }
+  if (state.currentTask && state.currentTask.id === patch.id) {
+    state.currentTask = { ...state.currentTask, ...patch };
+  }
+}
+
 // Async Thunks
 export const fetchTasksAsync = createAsyncThunk(
   'task/fetchTasks',
@@ -110,6 +121,56 @@ export const addCommentAsync = createAsyncThunk(
   }
 );
 
+export const fetchMyTasksAsync = createAsyncThunk(
+  'task/fetchMyTasks',
+  async (params, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.getMyTasks(params);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке моих задач');
+    }
+  }
+);
+
+export const patchTaskStatusAsync = createAsyncThunk(
+  'task/patchTaskStatus',
+  async ({ id, body }, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.patchTaskStatus(id, body);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Переход статуса недоступен для этой задачи'
+      );
+    }
+  }
+);
+
+export const reorderTasksAsync = createAsyncThunk(
+  'task/reorderTasks',
+  async ({ items, status }, { rejectWithValue }) => {
+    try {
+      await taskAPI.reorderTasks(items, status);
+      return { items, status };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Не удалось сохранить порядок');
+    }
+  }
+);
+
+export const completeTaskAsync = createAsyncThunk(
+  'task/completeTask',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await taskAPI.completeTask(id);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при завершении задачи');
+    }
+  }
+);
+
 const initialState = {
   tasks: [],
   currentTask: null,
@@ -165,6 +226,7 @@ const taskSlice = createSlice({
         status: '',
         assignee: '',
         priority: '',
+        internshipId: '',
       };
     },
     setPagination: (state, action) => {
@@ -346,13 +408,7 @@ const taskSlice = createSlice({
       })
       .addCase(takeTaskAsync.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.tasks.findIndex(task => task.id === action.payload.id);
-        if (index !== -1) {
-          state.tasks[index] = action.payload;
-        }
-        if (state.currentTask && state.currentTask.id === action.payload.id) {
-          state.currentTask = action.payload;
-        }
+        mergeTaskPatch(state, action.payload);
       })
       .addCase(takeTaskAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -365,13 +421,7 @@ const taskSlice = createSlice({
       })
       .addCase(submitTaskAsync.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.tasks.findIndex(task => task.id === action.payload.id);
-        if (index !== -1) {
-          state.tasks[index] = action.payload;
-        }
-        if (state.currentTask && state.currentTask.id === action.payload.id) {
-          state.currentTask = action.payload;
-        }
+        mergeTaskPatch(state, action.payload);
       })
       .addCase(submitTaskAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -384,13 +434,7 @@ const taskSlice = createSlice({
       })
       .addCase(reviewTaskAsync.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.tasks.findIndex(task => task.id === action.payload.id);
-        if (index !== -1) {
-          state.tasks[index] = action.payload;
-        }
-        if (state.currentTask && state.currentTask.id === action.payload.id) {
-          state.currentTask = action.payload;
-        }
+        mergeTaskPatch(state, action.payload);
       })
       .addCase(reviewTaskAsync.rejected, (state, action) => {
         state.isLoading = false;
@@ -415,6 +459,58 @@ const taskSlice = createSlice({
         }
       })
       .addCase(addCommentAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchMyTasksAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchMyTasksAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.tasks = action.payload.data || action.payload;
+        if (action.payload.pagination) {
+          state.pagination = action.payload.pagination;
+        }
+      })
+      .addCase(fetchMyTasksAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(patchTaskStatusAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(patchTaskStatusAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        mergeTaskPatch(state, action.payload);
+      })
+      .addCase(patchTaskStatusAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(reorderTasksAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(reorderTasksAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { items } = action.payload;
+        items.forEach(({ id, sortOrder }) => mergeTaskPatch(state, { id, sortOrder }));
+      })
+      .addCase(reorderTasksAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(completeTaskAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(completeTaskAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        mergeTaskPatch(state, action.payload);
+      })
+      .addCase(completeTaskAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

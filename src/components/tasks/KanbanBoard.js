@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -10,22 +10,15 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Tooltip,
   Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   Paper,
-  Popover,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
 } from '@mui/material';
 import {
   MoreVert,
@@ -35,11 +28,15 @@ import {
   Person,
   Schedule,
   Flag,
-  Add,
   DragIndicator,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { setCurrentTask, updateTask, setFilters } from '../../store/slices/taskSlice';
+import {
+  setCurrentTask,
+  setFilters,
+  fetchTasksAsync,
+  patchTaskStatusAsync,
+} from '../../store/slices/taskSlice';
 import TaskForm from './TaskForm';
 import TaskDetails from './TaskDetails';
 
@@ -63,10 +60,24 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const columns = [
     { id: 'pending', title: 'Доступно', color: '#9E9E9E' },
     { id: 'in_progress', title: 'В работе', color: '#2196F3' },
-    { id: 'submitted', title: 'На ревью', color: '#FF9800' },
+    { id: 'submitted', title: 'Сдано', color: '#FFB74D' },
+    { id: 'on_review', title: 'На проверке', color: '#FF9800' },
+    { id: 'needs_rework', title: 'Доработка', color: '#E57373' },
     { id: 'completed', title: 'Завершено', color: '#4CAF50' },
-    { id: 'rejected', title: 'Требует доработки', color: '#F44336' },
+    { id: 'rejected', title: 'Отклонено', color: '#B71C1C' },
   ];
+
+  const loadTasks = useCallback(() => {
+    const params = { page: 1, limit: 100 };
+    if (filters.internshipId) {
+      params.internshipId = String(filters.internshipId);
+    }
+    dispatch(fetchTasksAsync(params));
+  }, [dispatch, filters.internshipId]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -107,22 +118,14 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const handleMenuOpen = (event, task) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log('Opening menu for task:', task.title, 'anchorEl:', event.currentTarget);
-    console.log('Button position:', event.currentTarget.getBoundingClientRect());
-    console.log('Button in document:', document.contains(event.currentTarget));
-    
     buttonRef.current = event.currentTarget;
-    
     if (document.contains(event.currentTarget)) {
       setAnchorEl(event.currentTarget);
       setSelectedTask(task);
-    } else {
-      console.error('Button not in document!');
     }
   };
 
   const handleMenuClose = () => {
-    console.log('Closing menu, anchorEl was:', anchorEl);
     setAnchorEl(null);
     setSelectedTask(null);
   };
@@ -148,12 +151,19 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     setIsStatusDialogOpen(true);
   };
 
-  const handleStatusUpdate = () => {
-    if (newStatus && newStatus !== selectedTask.status) {
-      dispatch(updateTask({
-        ...selectedTask,
-        status: newStatus
-      }));
+  const handleStatusUpdate = async () => {
+    if (!selectedTask || !newStatus || newStatus === selectedTask.status) {
+      setIsStatusDialogOpen(false);
+      setNewStatus('');
+      return;
+    }
+    try {
+      await dispatch(
+        patchTaskStatusAsync({ id: selectedTask.id, body: { to: newStatus } })
+      ).unwrap();
+      loadTasks();
+    } catch (err) {
+      alert(typeof err === 'string' ? err : 'Переход недоступен. Проверьте статус и роль.');
     }
     setIsStatusDialogOpen(false);
     setNewStatus('');
@@ -167,11 +177,49 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   };
 
   const getTasksByStatus = (status) => {
-    return tasks.filter(task => {
+    const list = tasks.filter((task) => {
       const statusMatch = task.status === status;
-      const internshipMatch = !filters.internshipId || task.internshipId === filters.internshipId;
+      const internshipMatch =
+        !filters.internshipId ||
+        Number(task.internshipId) === Number(filters.internshipId);
       return statusMatch && internshipMatch;
     });
+    return [...list].sort((a, b) => {
+      const ao = a.sortOrder ?? 0;
+      const bo = b.sortOrder ?? 0;
+      if (ao !== bo) return ao - bo;
+      return Number(a.id) - Number(b.id);
+    });
+  };
+
+  const handleColumnDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleColumnDrop = (columnId) => async (e) => {
+    e.preventDefault();
+    const id = Number(e.dataTransfer.getData('application/x-task-id'), 10);
+    const fromStatus = e.dataTransfer.getData('application/x-from-status');
+    if (!id || !fromStatus) return;
+
+    if (fromStatus === columnId) {
+      return;
+    }
+
+    try {
+      await dispatch(patchTaskStatusAsync({ id, body: { to: columnId } })).unwrap();
+      loadTasks();
+    } catch (err) {
+      alert(typeof err === 'string' ? err : 'Перемещение в эту колонку сейчас недоступно');
+    }
+  };
+
+  const handleTaskDragStart = (task) => (e) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('application/x-task-id', String(task.id));
+    e.dataTransfer.setData('application/x-from-status', task.status);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const getTaskGoal = (task) => {
@@ -190,15 +238,18 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     const taskGoal = getTaskGoal(task);
     
     return (
-    <Card 
-      sx={{ 
-        mb: 2, 
-        cursor: 'pointer',
+    <Card
+      draggable
+      onDragStart={handleTaskDragStart(task)}
+      sx={{
+        mb: 2,
+        cursor: 'grab',
         '&:hover': {
           boxShadow: 3,
           transform: 'translateY(-2px)',
-          transition: 'all 0.2s ease-in-out'
-        }
+          transition: 'all 0.2s ease-in-out',
+        },
+        '&:active': { cursor: 'grabbing' },
       }}
       onClick={() => {
         dispatch(setCurrentTask(task));
@@ -217,7 +268,6 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Button clicked for task:', task.title, 'event:', e, 'currentTarget:', e.currentTarget);
               handleMenuOpen(e, task);
             }}
           >
@@ -227,7 +277,8 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
 
         {/* Описание */}
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: '0.7rem' }}>
-          {task.description.substring(0, 60)}...
+          {(task.description || '').slice(0, 60)}
+          {(task.description || '').length > 60 ? '…' : ''}
         </Typography>
 
         {/* Приоритет и стажировка */}
@@ -261,14 +312,22 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
           </Box>
         )}
 
-        {/* Назначенные стажеры */}
+        {task.assigneeName && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+            <Person fontSize="small" color="action" />
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+              {task.assigneeName}
+            </Typography>
+          </Box>
+        )}
+
         {task.assignedInterns && task.assignedInterns.length > 0 && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
             <Person fontSize="small" color="action" />
             <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 18, height: 18, fontSize: 9 } }}>
               {task.assignedInterns.slice(0, 3).map((internId) => (
                 <Avatar key={internId} alt={getInternName(internId)}>
-                  {getInternName(internId).split(' ').map(n => n[0]).join('')}
+                  {getInternName(internId).split(' ').map((n) => n[0]).join('')}
                 </Avatar>
               ))}
             </AvatarGroup>
@@ -277,16 +336,6 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
                 +{task.assignedInterns.length - 3}
               </Typography>
             )}
-          </Box>
-        )}
-
-        {/* Взято в работу */}
-        {task.takenBy && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-            <Schedule fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
-              {getInternName(task.takenBy)}
-            </Typography>
           </Box>
         )}
 
@@ -316,6 +365,10 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     <Box>
       <Typography variant="h4" gutterBottom>
         Доска задач
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Перетащите карточку в другую колонку, чтобы запросить смену статуса на сервере (доступные переходы
+        зависят от роли и текущего состояния задачи).
       </Typography>
 
       {/* Фильтр по стажировкам */}
@@ -377,6 +430,8 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
         {columns.map((column) => (
           <Box
             key={column.id}
+            onDragOver={handleColumnDragOver}
+            onDrop={handleColumnDrop(column.id)}
             sx={{
               minWidth: 250,
               width: 250,

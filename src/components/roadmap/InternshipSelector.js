@@ -9,14 +9,15 @@ import {
   Chip,
   Card,
   CardContent,
-  Button,
   IconButton,
   Tooltip,
   Alert,
+  Button,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   Edit,
-  Delete,
   School,
   Schedule,
   CheckCircle,
@@ -26,16 +27,24 @@ import {
 import { useSelector, useDispatch } from 'react-redux';
 import { setCurrentInternship } from '../../store/slices/roadmapSlice';
 
-const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
+const InternshipSelector = ({
+  onEditInternship,
+  onCreateIpr,
+  canEdit = true,
+  entityViewMode = 'templates',
+  onChangeEntityViewMode,
+}) => {
   const dispatch = useDispatch();
   const { internships, currentInternshipId } = useSelector((state) => state.roadmap);
   const currentUser = useSelector((state) => state.auth.user);
   
   const isIntern = currentUser?.role === 'intern';
-  const internInternship = isIntern 
-    ? internships.find(internship => 
-        internship.internIds?.includes(currentUser?.id)
-      )
+  const isMentor = currentUser?.role === 'mentor';
+  const internInternship = isIntern
+    ? internships.find((internship) => internship.internIds?.includes(String(currentUser?.id))) ||
+      internships.find((internship) => Number(internship.internId) === Number(currentUser?.id)) ||
+      internships[0] ||
+      null
     : null;
 
   const getStatusInfo = (status) => {
@@ -110,14 +119,30 @@ const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
         <Typography variant="h6" component="h2">
           {isIntern ? 'Моя стажировка' : 'Выбор стажировки'}
         </Typography>
+        {isMentor && (
+          <ToggleButtonGroup
+            value={entityViewMode}
+            exclusive
+            size="small"
+            onChange={(_, value) => value && onChangeEntityViewMode?.(value)}
+          >
+            <ToggleButton value="templates">Шаблоны</ToggleButton>
+            <ToggleButton value="iprs">ИПР</ToggleButton>
+          </ToggleButtonGroup>
+        )}
+        {!isIntern && canEdit && (
+          <Button variant="outlined" size="small" onClick={onCreateIpr}>
+            Создать ИПР
+          </Button>
+        )}
       </Box>
 
       {!isIntern && (
         <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel>Активная стажировка</InputLabel>
+          <InputLabel>{entityViewMode === 'iprs' ? 'Активный ИПР' : 'Активный шаблон'}</InputLabel>
           <Select
             value={currentInternshipId || ''}
-            label="Активная стажировка"
+            label={entityViewMode === 'iprs' ? 'Активный ИПР' : 'Активный шаблон'}
             onChange={handleInternshipChange}
           >
             {internships.map((internship) => {
@@ -194,7 +219,7 @@ const InternshipSelector = ({ onEditInternship, canEdit = true }) => {
       {!isIntern && internships.length > 1 && (
         <Box>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            Все стажировки:
+            {entityViewMode === 'iprs' ? 'Все ИПР:' : 'Все шаблоны:'}
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             {internships.map((internship) => {

@@ -14,12 +14,18 @@ const v1ResourcePath = (relativePath) => {
 };
 
 const internshipProgramsPath = v1ResourcePath('/internship-programs');
-const internshipsPath = v1ResourcePath('/internships');
+const iprsPath = v1ResourcePath('/iprs');
+const roadmapTemplatesPath = v1ResourcePath('/roadmap-templates');
+const internsPath = v1ResourcePath('/interns');
+const mentorsPath = v1ResourcePath('/mentors');
+const assessmentsPath = v1ResourcePath('/assessments');
 const competenciesPath = v1ResourcePath('/competencies');
 const itDirectionsPath = v1ResourcePath('/it-directions');
 const programRequirementDefinitionsPath = v1ResourcePath('/program-requirement-definitions');
 const programGoalDefinitionsPath = v1ResourcePath('/program-goal-definitions');
 const programSelectionStageDefinitionsPath = v1ResourcePath('/program-selection-stage-definitions');
+const tasksPath = v1ResourcePath('/tasks');
+const meTasksPath = v1ResourcePath('/me/tasks');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -192,23 +198,23 @@ export const userAPI = {
 };
 
 export const internAPI = {
-  getInterns: (params) => api.get('/interns', { params }),
-  getInternById: (id) => api.get(`/interns/${id}`),
-  createIntern: (data) => api.post('/interns', data),
-  updateIntern: (id, data) => api.put(`/interns/${id}`, data),
-  deleteIntern: (id) => api.delete(`/interns/${id}`),
-  getInternProgress: (id) => api.get(`/interns/${id}/progress`),
-  getInternTasks: (id) => api.get(`/interns/${id}/tasks`),
-  getInternAssessments: (id) => api.get(`/interns/${id}/assessments`),
+  getInterns: (params) => api.get(internsPath, { params }),
+  getInternById: (id) => api.get(`${internsPath}/${id}`),
+  createIntern: (data) => api.post(internsPath, data),
+  updateIntern: (id, data) => api.put(`${internsPath}/${id}`, data),
+  deleteIntern: (id) => api.delete(`${internsPath}/${id}`),
+  getInternProgress: (id) => api.get(`${internsPath}/${id}/progress`),
+  getInternTasks: (id) => api.get(`${internsPath}/${id}/tasks`),
+  getInternAssessments: (id) => api.get(`${internsPath}/${id}/assessments`),
 };
 
 export const mentorAPI = {
-  getMentors: (params) => api.get('/mentors', { params }),
-  getMentorById: (id) => api.get(`/mentors/${id}`),
-  getMentorInterns: (id) => api.get(`/mentors/${id}/interns`),
-  createAssessment: (data) => api.post('/assessments', data),
-  updateAssessment: (id, data) => api.put(`/assessments/${id}`, data),
-  getAssessments: (params) => api.get('/assessments', { params }),
+  getMentors: (params) => api.get(mentorsPath, { params }),
+  getMentorById: (id) => api.get(`${mentorsPath}/${id}`),
+  getMentorInterns: (id) => api.get(`${mentorsPath}/${id}/interns`),
+  createAssessment: (data) => api.post(assessmentsPath, data),
+  updateAssessment: (id, data) => api.put(`${assessmentsPath}/${id}`, data),
+  getAssessments: (params) => api.get(assessmentsPath, { params }),
 };
 
 export const hrAPI = {
@@ -247,43 +253,65 @@ export const hrAPI = {
 };
 
 export const roadmapAPI = {
+  // Roadmap templates (новая спецификация)
   getInternshipsByProgram: (programId) =>
-    api.get(`${internshipProgramsPath}/${programId}/internships`),
-  getInternships: (params) => api.get(internshipsPath, { params }),
-  getInternshipsProfile: () => api.get(`${internshipsPath}/profile`),
-  createInternship: (data) => api.post(internshipsPath, data),
-  getInternshipById: (internshipId) => api.get(`${internshipsPath}/${internshipId}`),
-  getInternshipRoadmap: (internshipId) =>
-    api.get(`${internshipsPath}/${internshipId}/roadmap`),
-  updateInternship: (internshipId, data) =>
-    api.put(`${internshipsPath}/${internshipId}`, data),
-  deleteInternship: (internshipId) => api.delete(`${internshipsPath}/${internshipId}`),
+    api.get(`${internshipProgramsPath}/${programId}/roadmap-templates`),
+  getInternships: (params) => api.get(roadmapTemplatesPath, { params }),
+  createInternship: (data) => api.post(roadmapTemplatesPath, data),
+  getInternshipById: (internshipId) => api.get(`${roadmapTemplatesPath}/${internshipId}`),
+  updateInternship: (internshipId, data) => api.put(`${roadmapTemplatesPath}/${internshipId}`, data),
+  deleteInternship: (internshipId) => api.delete(`${roadmapTemplatesPath}/${internshipId}`),
 
-  getStages: (internshipId) => api.get(`${internshipsPath}/${internshipId}/stages`),
-  createStage: (internshipId, data) =>
-    api.post(`${internshipsPath}/${internshipId}/stages`, data),
+  getStages: (internshipId) => api.get(`${roadmapTemplatesPath}/${internshipId}/stages`),
+  createStage: (internshipId, data) => api.post(`${roadmapTemplatesPath}/${internshipId}/stages`, data),
   updateStage: (internshipId, stageId, data) =>
-    api.put(`${internshipsPath}/${internshipId}/stages/${stageId}`, data),
+    api.put(`${roadmapTemplatesPath}/${internshipId}/stages/${stageId}`, data),
   deleteStage: (internshipId, stageId) =>
-    api.delete(`${internshipsPath}/${internshipId}/stages/${stageId}`),
+    api.delete(`${roadmapTemplatesPath}/${internshipId}/stages/${stageId}`),
   reorderStages: (internshipId, stageIds) =>
-    api.put(`${internshipsPath}/${internshipId}/stages/order`, { stageIds }),
+    api.put(`${roadmapTemplatesPath}/${internshipId}/stages/order`, { stageIds }),
   changeStageStatus: (internshipId, stageId, data) =>
-    api.patch(`${internshipsPath}/${internshipId}/stages/${stageId}/status`, data),
+    api.patch(`${roadmapTemplatesPath}/${internshipId}/stages/${stageId}/status`, data),
+
+  // Roadmap templates
+  getRoadmapTemplates: (params) => api.get(roadmapTemplatesPath, { params }),
+  getRoadmapTemplateById: (templateId) => api.get(`${roadmapTemplatesPath}/${templateId}`),
+  getRoadmapTemplatesByProgram: (programId) =>
+    api.get(`${internshipProgramsPath}/${programId}/roadmap-templates`),
+};
+
+export const iprAPI = {
+  getIprs: (params) => api.get(iprsPath, { params }),
+  getMyIprs: () => api.get(`${iprsPath}/profile`),
+  createIpr: (data) => api.post(iprsPath, data),
+  getIprById: (iprId) => api.get(`${iprsPath}/${iprId}`),
+  updateIpr: (iprId, data) => api.put(`${iprsPath}/${iprId}`, data),
+  deleteIpr: (iprId) => api.delete(`${iprsPath}/${iprId}`),
+  getIprStages: (iprId) => api.get(`${iprsPath}/${iprId}/stages`),
+  createIprStage: (iprId, data) => api.post(`${iprsPath}/${iprId}/stages`, data),
+  updateIprStage: (iprId, stageId, data) => api.put(`${iprsPath}/${iprId}/stages/${stageId}`, data),
+  deleteIprStage: (iprId, stageId) => api.delete(`${iprsPath}/${iprId}/stages/${stageId}`),
+  reorderIprStages: (iprId, stageIds) => api.put(`${iprsPath}/${iprId}/stages/order`, { stageIds }),
+  changeIprStageStatus: (iprId, stageId, data) =>
+    api.patch(`${iprsPath}/${iprId}/stages/${stageId}/status`, data),
 };
 
 export const taskAPI = {
-  getTasks: (params) => api.get('/tasks', { params }),
-  getTaskById: (id) => api.get(`/tasks/${id}`),
-  createTask: (data) => api.post('/tasks', data),
-  updateTask: (id, data) => api.put(`/tasks/${id}`, data),
-  deleteTask: (id) => api.delete(`/tasks/${id}`),
-  completeTask: (id) => api.patch(`/tasks/${id}/complete`),
-  takeTask: (id) => api.post(`/tasks/${id}/take`),
-  submitTask: (id, data) => api.post(`/tasks/${id}/submit`, data),
-  reviewTask: (id, data) => api.post(`/tasks/${id}/review`, data),
-  addComment: (id, data) => api.post(`/tasks/${id}/comments`, data),
-  getComments: (id) => api.get(`/tasks/${id}/comments`),
+  getTasks: (params) => api.get(tasksPath, { params }),
+  getMyTasks: (params) => api.get(meTasksPath, { params }),
+  getTaskById: (id) => api.get(`${tasksPath}/${id}`),
+  createTask: (data) => api.post(tasksPath, data),
+  updateTask: (id, data) => api.put(`${tasksPath}/${id}`, data),
+  deleteTask: (id) => api.delete(`${tasksPath}/${id}`),
+  patchTaskStatus: (id, body) => api.patch(`${tasksPath}/${id}/status`, body),
+  reorderTasks: (items, status) =>
+    api.patch(`${tasksPath}/reorder`, { items }, { params: status ? { status } : {} }),
+  completeTask: (id) => api.patch(`${tasksPath}/${id}/complete`),
+  takeTask: (id) => api.post(`${tasksPath}/${id}/take`),
+  submitTask: (id, data) => api.post(`${tasksPath}/${id}/submit`, data),
+  reviewTask: (id, data) => api.post(`${tasksPath}/${id}/review`, data),
+  addComment: (id, data) => api.post(`${tasksPath}/${id}/comments`, data),
+  getComments: (id) => api.get(`${tasksPath}/${id}/comments`),
 };
 
 export const assessmentAPI = {

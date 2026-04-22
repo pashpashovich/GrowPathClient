@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Container, Modal, AppBar, Toolbar, IconButton } from '@mui/material';
 import { Logout } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ import Sidebar from '../components/Sidebar';
 import { useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logoutAsync } from '../store/slices/authSlice';
-import { setCurrentTask } from '../store/slices/taskSlice';
+import { setCurrentTask, fetchMyTasksAsync } from '../store/slices/taskSlice';
 
 const InternDashboard = () => {
   const dispatch = useDispatch();
@@ -21,6 +21,10 @@ const InternDashboard = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [submissionTask, setSubmissionTask] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchMyTasksAsync({ page: 1, limit: 100 }));
+  }, [dispatch]);
 
   const handleViewTask = (task) => {
     dispatch(setCurrentTask(task));

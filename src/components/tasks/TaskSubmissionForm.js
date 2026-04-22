@@ -14,12 +14,11 @@ import {
   Divider,
 } from '@mui/material';
 import { Add, Delete, AttachFile, Link as LinkIcon, Send } from '@mui/icons-material';
-import { useDispatch, useSelector } from 'react-redux';
-import { submitTask } from '../../store/slices/taskSlice';
+import { useDispatch } from 'react-redux';
+import { submitTaskAsync } from '../../store/slices/taskSlice';
 
 const TaskSubmissionForm = ({ task, onClose }) => {
   const dispatch = useDispatch();
-  const currentUser = useSelector((state) => state.auth.user); 
 
   const [submissionFiles, setSubmissionFiles] = useState([]);
   const [submissionLinks, setSubmissionLinks] = useState(['']);
@@ -110,18 +109,21 @@ const TaskSubmissionForm = ({ task, onClose }) => {
 
       const processedLinks = submissionLinks.filter(link => link.trim());
 
-      dispatch(submitTask({
-        taskId: task.id,
-        internId: currentUser?.id || 'intern-1',
-        files: processedFiles,
-        links: processedLinks,
-        comment: submissionComment
-      }));
+      await dispatch(
+        submitTaskAsync({
+          id: task.id,
+          data: {
+            files: processedFiles,
+            links: processedLinks,
+            comment: submissionComment || undefined,
+          },
+        })
+      ).unwrap();
 
       onClose();
     } catch (error) {
       console.error('Ошибка при отправке задачи:', error);
-      alert('Произошла ошибка при отправке задачи');
+      alert(typeof error === 'string' ? error : 'Произошла ошибка при отправке задачи');
     } finally {
       setIsSubmitting(false);
     }

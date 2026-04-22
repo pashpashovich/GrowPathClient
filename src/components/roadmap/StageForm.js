@@ -20,7 +20,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { createStageAsync, updateStageAsync } from '../../store/slices/roadmapSlice';
 
-const StageForm = ({ open, onClose, stageToEdit }) => {
+const StageForm = ({ open, onClose, stageToEdit, useIpr = false }) => {
   const dispatch = useDispatch();
   const { currentInternshipId } = useSelector((state) => state.roadmap);
 
@@ -119,6 +119,7 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
             internshipId: currentInternshipId,
             stageId: stageToEdit.id,
             data: payload,
+            useIpr,
           })
         );
         if (!updateStageAsync.fulfilled.match(result)) return;
@@ -127,6 +128,7 @@ const StageForm = ({ open, onClose, stageToEdit }) => {
           createStageAsync({
             internshipId: currentInternshipId,
             data: payload,
+            useIpr,
           })
         );
         if (!createStageAsync.fulfilled.match(result)) return;

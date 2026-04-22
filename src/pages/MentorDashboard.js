@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Container, Modal, AppBar, Toolbar, IconButton } from '@mui/material';
+import { Box, Typography, Button, Modal, AppBar, Toolbar, IconButton } from '@mui/material';
 import { Logout } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
@@ -10,8 +10,8 @@ import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
 import RoadmapPage from './RoadmapPage';
 import Sidebar from '../components/Sidebar';
-import { useDispatch, useSelector } from 'react-redux';
-import { removeTask } from '../store/slices/taskSlice';
+import { useDispatch } from 'react-redux';
+import { deleteTaskAsync } from '../store/slices/taskSlice';
 import { logoutAsync } from '../store/slices/authSlice';
 import { useLocation } from 'react-router-dom';
 
@@ -19,7 +19,6 @@ const MentorDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const tasks = useSelector((state) => state.task.tasks);
   const [openForm, setOpenForm] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -45,7 +44,7 @@ const MentorDashboard = () => {
 
   const handleDeleteTask = (taskId) => {
     if (window.confirm('Вы уверены, что хотите удалить это задание?')) {
-      dispatch(removeTask(taskId));
+      dispatch(deleteTaskAsync(taskId));
     }
   };
 
