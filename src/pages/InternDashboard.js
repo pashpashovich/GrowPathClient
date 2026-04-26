@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Container, Modal, AppBar, Toolbar, IconButton } from '@mui/material';
-import { Logout } from '@mui/icons-material';
+import { Box, Typography, Modal } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import Logo from '../components/Logo';
+import DashboardAppBar, { DASHBOARD_APP_BAR_HEIGHT } from '../components/DashboardAppBar';
 import InternTaskList from '../components/tasks/InternTaskList';
 import TaskSubmissionForm from '../components/tasks/TaskSubmissionForm';
 import TaskDetails from '../components/tasks/TaskDetails';
@@ -77,24 +76,9 @@ const InternDashboard = () => {
 
   return (
     <Box>
-      {/* Глобальный хедер */}
-      <AppBar position="fixed" sx={{ zIndex: 1300 }}>
-        <Toolbar>
-          <Logo size="medium" />
-          
-          <Box sx={{ flexGrow: 1 }} />
-          
-              <IconButton
-                color="inherit"
-                onClick={handleLogout}
-                title="Выйти"
-              >
-                <Logout />
-              </IconButton>
-        </Toolbar>
-      </AppBar>
+      <DashboardAppBar onLogout={handleLogout} />
 
-      <Box sx={{ display: 'flex', mt: 8 }}>
+      <Box sx={{ display: 'flex', mt: `${DASHBOARD_APP_BAR_HEIGHT}px` }}>
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
         <Box
@@ -103,7 +87,7 @@ const InternDashboard = () => {
             flexGrow: 1,
             ml: sidebarOpen ? '280px' : '80px',
             transition: 'margin-left 0.3s ease',
-            minHeight: 'calc(100vh - 64px)',
+            minHeight: `calc(100vh - ${DASHBOARD_APP_BAR_HEIGHT}px)`,
             backgroundColor: 'background.default',
           }}
         >

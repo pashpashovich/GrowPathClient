@@ -18,7 +18,7 @@ import {
   Mail,
   TrendingUp,
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginAsync } from '../store/slices/authSlice';
 import { getNormalizedRole } from '../utils/resolveAppRole';
@@ -118,7 +118,7 @@ const AuthForm = () => {
     },
     '& .MuiInputBase-input': {
       typography: 'body2',
-      py: 2,
+      py: 2.25,
       '&::placeholder': {
         color: 'grey.600',
         opacity: 1,
@@ -184,14 +184,14 @@ const AuthForm = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            mb: 4,
+            mb: 5,
           }}
         >
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
+              gap: 1.5,
               mb: 1,
             }}
           >
@@ -227,7 +227,7 @@ const AuthForm = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 4,
+            p: { xs: 4, sm: 5 },
             borderRadius: 3,
             bgcolor: 'background.paper',
             border: 1,
@@ -235,16 +235,16 @@ const AuthForm = () => {
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.05)',
           }}
         >
-          <Box sx={{ mb: 3, textAlign: 'center' }}>
-            <Typography variant="h2" component="h1" sx={{ mb: 0.5 }}>
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="h2" component="h1" sx={{ mb: 1.25 }}>
               Войти в аккаунт
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Добро пожаловать в HR портал управления стажировками
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+              Добро пожаловать в портал управления стажировками
             </Typography>
           </Box>
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {registrationSuccess && (
               <Alert severity="success" onClose={() => setRegistrationSuccess(false)}>
                 Регистрация завершена. Войдите с указанным в письме email и новым паролем.
@@ -260,7 +260,7 @@ const AuthForm = () => {
                 sx={{
                   display: 'block',
                   color: 'grey.600',
-                  mb: 0.5,
+                  mb: 1,
                 }}
               >
                 Электронная почта или логин
@@ -292,7 +292,8 @@ const AuthForm = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  mb: 0.5,
+                  mb: 1,
+                  gap: 1,
                 }}
               >
                 <Typography
@@ -362,7 +363,8 @@ const AuthForm = () => {
               color="primary"
               disabled={loading || !formData.email || !formData.password}
               sx={{
-                py: 2,
+                mt: 0.5,
+                py: 2.25,
                 typography: 'h3',
                 borderRadius: 2,
                 boxShadow: 1,
@@ -380,12 +382,12 @@ const AuthForm = () => {
           </Box>
         </Paper>
 
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary" component="p">
+        <Box sx={{ mt: 5, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary" component="p" sx={{ lineHeight: 1.7 }}>
             Нет учетной записи?{' '}
             <Link
-              href="#"
-              onClick={(e) => e.preventDefault()}
+              component={RouterLink}
+              to="/contact-hr"
               sx={{
                 fontWeight: 600,
                 color: 'primary.main',

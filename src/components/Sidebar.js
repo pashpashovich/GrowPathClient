@@ -22,11 +22,11 @@ import {
   Person,
   School,
   Settings,
-  Logout,
   ChevronLeft,
   ChevronRight,
   Timeline,
   EmojiEvents,
+  Groups,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -65,26 +65,34 @@ const Sidebar = ({ open, onClose }) => {
         },
       ];
 
-      const hrMenuItems = [
-        {
-          text: 'Программы стажировок',
-          icon: <School />,
-          path: '/hr',
-          active: location.pathname === '/hr',
-        },
-        {
-          text: 'Аналитика и отчеты',
-          icon: <BarChart />,
-          path: '/hr/analytics',
-          active: location.pathname === '/hr/analytics',
-        },
-        {
-          text: 'Рейтинг стажеров',
-          icon: <EmojiEvents />,
-          path: '/hr/rating',
-          active: location.pathname === '/hr/rating',
-        },
-      ];
+  const hrBase = location.pathname.replace(/\/$/, '') || '/';
+
+  const hrMenuItems = [
+    {
+      text: 'Программы стажировок',
+      icon: <School />,
+      path: '/hr',
+      active: hrBase === '/hr',
+    },
+    {
+      text: 'Аналитика и отчеты',
+      icon: <BarChart />,
+      path: '/hr/analytics',
+      active: location.pathname.startsWith('/hr/analytics'),
+    },
+    {
+      text: 'Рейтинг стажеров',
+      icon: <EmojiEvents />,
+      path: '/hr/rating',
+      active: location.pathname.startsWith('/hr/rating'),
+    },
+    {
+      text: 'Менторы',
+      icon: <Groups />,
+      path: '/hr/mentors',
+      active: location.pathname.startsWith('/hr/mentors'),
+    },
+  ];
 
       const adminMenuItems = [
         {
@@ -177,7 +185,13 @@ const Sidebar = ({ open, onClose }) => {
               GrowPath
             </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {isHR ? 'Панель HR' : (isMentor ? 'Панель ментора' : 'Панель стажера')}
+                  {isAdmin
+                    ? 'Панель администратора'
+                    : isHR
+                      ? 'Панель HR'
+                      : isMentor
+                        ? 'Панель ментора'
+                        : 'Панель стажера'}
                 </Typography>
           </Box>
         )}
@@ -219,7 +233,9 @@ const Sidebar = ({ open, onClose }) => {
                 {currentUser?.email || 'user@example.com'}
               </Typography>
                   <Chip
-                    label={isHR ? 'HR' : (isMentor ? 'Ментор' : 'Стажер')}
+                    label={
+                      isAdmin ? 'Админ' : isHR ? 'HR' : isMentor ? 'Ментор' : 'Стажер'
+                    }
                     size="small"
                     color="primary"
                     sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }}
@@ -247,7 +263,7 @@ const Sidebar = ({ open, onClose }) => {
       <Divider />
 
       {/* Меню навигации */}
-      <List sx={{ flexGrow: 1, pt: 1 }}>
+      <List sx={{ flexGrow: 1, pt: 1, pb: 2 }}>
         {items.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ px: 1, mb: 0.5 }}>
             {isCollapsed && !isExpanded ? (
@@ -309,95 +325,6 @@ const Sidebar = ({ open, onClose }) => {
             )}
           </ListItem>
         ))}
-      </List>
-
-      <Divider />
-
-      {/* Нижнее меню */}
-      <List sx={{ pb: 1 }}>
-        <ListItem disablePadding sx={{ px: 1, mb: 0.5 }}>
-          {isCollapsed && !isExpanded ? (
-            <Tooltip title="Настройки" placement="right">
-              <ListItemButton
-                sx={{
-                  borderRadius: 2,
-                  '&:hover': {
-                    backgroundColor: 'action.hover',
-                  },
-                  justifyContent: 'center',
-                  minHeight: 48,
-                }}
-              >
-                <ListItemIcon sx={{ color: 'text.secondary', minWidth: 'auto', justifyContent: 'center' }}>
-                  <Settings />
-                </ListItemIcon>
-              </ListItemButton>
-            </Tooltip>
-          ) : (
-            <ListItemButton
-              sx={{
-                borderRadius: 2,
-                '&:hover': {
-                  backgroundColor: 'action.hover',
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'text.secondary', minWidth: 40 }}>
-                <Settings />
-              </ListItemIcon>
-              <ListItemText
-                primary="Настройки"
-                sx={{
-                  '& .MuiListItemText-primary': {
-                    color: 'text.primary',
-                  },
-                }}
-              />
-            </ListItemButton>
-          )}
-        </ListItem>
-        
-        <ListItem disablePadding sx={{ px: 1 }}>
-          {isCollapsed && !isExpanded ? (
-            <Tooltip title="Выйти" placement="right">
-              <ListItemButton
-                sx={{
-                  borderRadius: 2,
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                  },
-                  justifyContent: 'center',
-                  minHeight: 48,
-                }}
-              >
-                <ListItemIcon sx={{ color: 'text.secondary', minWidth: 'auto', justifyContent: 'center' }}>
-                  <Logout />
-                </ListItemIcon>
-              </ListItemButton>
-            </Tooltip>
-          ) : (
-            <ListItemButton
-              sx={{
-                borderRadius: 2,
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'text.secondary', minWidth: 40 }}>
-                <Logout />
-              </ListItemIcon>
-              <ListItemText
-                primary="Выйти"
-                sx={{
-                  '& .MuiListItemText-primary': {
-                    color: 'text.primary',
-                  },
-                }}
-              />
-            </ListItemButton>
-          )}
-        </ListItem>
       </List>
     </Drawer>
   );

@@ -37,6 +37,8 @@ import {
   Edit,
   Delete,
   Search,
+  PersonAdd,
+  ShowChart,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -52,7 +54,7 @@ import {
 
 const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
 
-const UserManagementTable = () => {
+const UserManagementTable = ({ onAddUser }) => {
   const dispatch = useDispatch();
   const { users, isLoading, error, filters, pagination } = useSelector((state) => state.userManagement || {});
   const usersList = users || [];
@@ -65,7 +67,6 @@ const UserManagementTable = () => {
   const page = filters?.page ?? 1;
   const limit = filters?.limit ?? 10;
   const total = pagination?.total ?? 0;
-  const totalPages = pagination?.totalPages ?? 0;
 
   const loadUsers = useCallback(() => {
     dispatch(fetchUsersAsync({
@@ -120,15 +121,6 @@ const UserManagementTable = () => {
   const [inviteError, setInviteError] = useState('');
   const [newRole, setNewRole] = useState('');
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'blocked': return 'error';
-      case 'pending': return 'warning';
-      default: return 'default';
-    }
-  };
-
   const getStatusLabel = (status) => {
     switch (status) {
       case 'active': return 'Активен';
@@ -164,6 +156,28 @@ const UserManagementTable = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const formatDateShort = (dateString) => {
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const statusChipSx = (status) => {
+    switch (status) {
+      case 'active':
+        return { bgcolor: '#82f9be', color: '#005235', fontWeight: 700 };
+      case 'blocked':
+        return { bgcolor: '#ffdad6', color: '#93000a', fontWeight: 700 };
+      case 'pending':
+        return { bgcolor: '#ffddb3', color: '#624000', fontWeight: 700 };
+      default:
+        return { fontWeight: 700 };
+    }
   };
 
   const handleMenuOpen = (event, user) => {
@@ -250,142 +264,228 @@ const UserManagementTable = () => {
         </Alert>
       )}
 
-      {/* Панель фильтров */}
-      <Paper
-        variant="outlined"
+      <Box
         sx={{
-          p: 2,
-          mb: 2,
-          backgroundColor: '#f5f5f5',
-          borderRadius: 2,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { md: 'flex-end' },
+          justifyContent: 'space-between',
+          gap: 2,
+          mb: 4,
         }}
       >
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Введите ФИО"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="small" sx={{ color: 'text.secondary' }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ backgroundColor: 'white', borderRadius: 1 }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth size="small" sx={{ backgroundColor: 'white', borderRadius: 1 }}>
-              <InputLabel>Роль</InputLabel>
+        <Box>
+          <Typography variant="h1" component="h1" sx={{ fontSize: { xs: '1.5rem', md: '1.875rem' }, mb: 0.5 }}>
+            Управление пользователями
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 560 }}>
+            Отслеживайте, фильтруйте и управляйте участниками организации из одного окна.
+          </Typography>
+        </Box>
+        {typeof onAddUser === 'function' && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<PersonAdd />}
+            onClick={onAddUser}
+            sx={{ fontWeight: 700, py: 1.25, px: 3, borderRadius: 2, flexShrink: 0 }}
+          >
+            Добавить пользователя
+          </Button>
+        )}
+      </Box>
+
+      <TextField
+        fullWidth
+        size="small"
+        placeholder="Поиск по имени или email..."
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search fontSize="small" sx={{ color: 'text.secondary' }} />
+            </InputAdornment>
+          ),
+        }}
+        sx={{ mb: 2, maxWidth: { md: 420 } }}
+      />
+
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} md={4}>
+          <Paper
+            elevation={0}
+            sx={{ p: 2, borderRadius: 3, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+          >
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.06em', display: 'block', mb: 1.5 }}>
+              РОЛЬ
+            </Typography>
+            <FormControl fullWidth size="small">
               <Select
                 value={roleInput}
-                label="Роль"
+                displayEmpty
                 onChange={(e) => setRoleInput(e.target.value)}
+                sx={{ borderRadius: 2 }}
               >
-                <MenuItem value="">Все</MenuItem>
+                <MenuItem value="">Все роли</MenuItem>
                 <MenuItem value="admin">Администратор</MenuItem>
                 <MenuItem value="hr">HR</MenuItem>
                 <MenuItem value="mentor">Ментор</MenuItem>
                 <MenuItem value="intern">Стажер</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <FormControl fullWidth size="small" sx={{ backgroundColor: 'white', borderRadius: 1 }}>
-              <InputLabel>Статус</InputLabel>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper
+            elevation={0}
+            sx={{ p: 2, borderRadius: 3, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+          >
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.06em', display: 'block', mb: 1.5 }}>
+              СТАТУС АККАУНТА
+            </Typography>
+            <FormControl fullWidth size="small">
               <Select
                 value={statusInput}
-                label="Статус"
+                displayEmpty
                 onChange={(e) => setStatusInput(e.target.value)}
+                sx={{ borderRadius: 2 }}
               >
-                <MenuItem value="">Все</MenuItem>
+                <MenuItem value="">Все статусы</MenuItem>
                 <MenuItem value="active">Активен</MenuItem>
                 <MenuItem value="pending">Ожидает активации</MenuItem>
                 <MenuItem value="blocked">Заблокирован</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6} md={2}>
-            <Button
-              variant="contained"
-              size="medium"
-              onClick={handleApplyFilters}
-              sx={{ borderRadius: 1 }}
-            >
-              Применить
-            </Button>
-          </Grid>
-          <Grid item xs={12} sm={6} md={2} sx={{ display: 'flex', justifyContent: { md: 'flex-end' } }}>
-            <Button
-              variant="outlined"
-              size="medium"
-              onClick={handleResetFilters}
-              sx={{ borderRadius: 1, borderColor: 'primary.main', color: 'primary.main' }}
-            >
-              Сбросить
-            </Button>
-          </Grid>
+          </Paper>
         </Grid>
-      </Paper>
+        <Grid item xs={12} md={4}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: 3,
+              border: 1,
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.06em', display: 'block', mb: 0.5 }}>
+                ВСЕГО ПОЛЬЗОВАТЕЛЕЙ
+              </Typography>
+              <Typography variant="h2" sx={{ fontSize: '1.5rem', color: 'primary.main' }}>
+                {total.toLocaleString('ru-RU')}
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                bgcolor: 'rgba(178, 197, 255, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'primary.main',
+              }}
+            >
+              <ShowChart />
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 2 }}>
+        <Button variant="outlined" onClick={handleResetFilters} sx={{ fontWeight: 600, borderRadius: 2 }}>
+          Сбросить
+        </Button>
+        <Button variant="contained" color="primary" onClick={handleApplyFilters} sx={{ fontWeight: 700, borderRadius: 2 }}>
+          Применить
+        </Button>
+      </Box>
 
       {isLoading && !usersList.length ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress />
         </Box>
       ) : (
-      <TableContainer component={Paper}>
+      <TableContainer
+        component={Paper}
+        elevation={0}
+        sx={{ borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}
+      >
         <Table>
           <TableHead>
-            <TableRow>
-              <TableCell>Пользователь</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Роль</TableCell>
-              <TableCell>Статус</TableCell>
-              <TableCell>Дата создания</TableCell>
-              <TableCell>Последний вход</TableCell>
-              <TableCell>Действия</TableCell>
+            <TableRow sx={{ bgcolor: 'grey.100', '& th': { typography: 'caption', fontWeight: 700, color: 'text.secondary', letterSpacing: '0.06em' } }}>
+              <TableCell sx={{ py: 2, px: 3 }}>Пользователь</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Email</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Роль</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Статус</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Дата создания</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Последний вход</TableCell>
+              <TableCell align="right" sx={{ py: 2, px: 3 }}>Действия</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Avatar sx={{ width: 32, height: 32 }}>
+              <TableRow key={user.id} hover sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                <TableCell sx={{ py: 2, px: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar sx={{ width: 40, height: 40 }} src={user.avatarUrl}>
                       {(getDisplayName(user) || user.email || '?').toString().split(/\s+/).map((n) => n[0]).join('').slice(0, 2)}
                     </Avatar>
-                    <Typography variant="body2">
-                      {getDisplayName(user) || user.email || '—'}
-                    </Typography>
+                    <Box>
+                      <Typography variant="body2" fontWeight={700}>
+                        {getDisplayName(user) || user.email || '—'}
+                      </Typography>
+                      {(user.position || user.jobTitle) && (
+                        <Typography variant="caption" color="text.secondary">
+                          {user.position || user.jobTitle}
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
                 </TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
+                <TableCell sx={{ py: 2, px: 3 }}>
+                  <Typography variant="body2" color="text.secondary">{user.email}</Typography>
+                </TableCell>
+                <TableCell sx={{ py: 2, px: 3 }}>
                   <Chip
                     label={getRoleLabel(user.role)}
-                    color="primary"
-                    variant="outlined"
                     size="small"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: '0.7rem',
+                      bgcolor: 'primary.light',
+                      color: 'primary.dark',
+                      borderRadius: 999,
+                    }}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell sx={{ py: 2, px: 3 }}>
                   <Chip
                     label={getStatusLabel(user.status)}
-                    color={getStatusColor(user.status)}
                     size="small"
+                    sx={{ borderRadius: 999, fontSize: '0.7rem', ...statusChipSx(user.status) }}
                   />
                 </TableCell>
-                <TableCell>{formatDate(user.createdAt)}</TableCell>
-                <TableCell>{formatDate(user.lastLogin)}</TableCell>
-                <TableCell>
+                <TableCell sx={{ py: 2, px: 3 }}>
+                  <Typography variant="body2" color="text.secondary">{formatDateShort(user.createdAt)}</Typography>
+                </TableCell>
+                <TableCell sx={{ py: 2, px: 3 }}>
+                  <Typography variant="body2" color="text.secondary">{formatDate(user.lastLogin)}</Typography>
+                </TableCell>
+                <TableCell align="right" sx={{ py: 2, px: 3 }}>
                   <IconButton
                     size="small"
                     onClick={(e) => handleMenuOpen(e, user)}
+                    sx={{ color: 'text.secondary' }}
                   >
                     <MoreVert />
                   </IconButton>
@@ -404,7 +504,7 @@ const UserManagementTable = () => {
           rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
           labelRowsPerPage="Строк на странице:"
           labelDisplayedRows={({ from, to, count }) => `${from}–${to} из ${count !== -1 ? count : `более ${to}`}`}
-          sx={{ borderTop: 1, borderColor: 'divider' }}
+          sx={{ borderTop: 1, borderColor: 'divider', bgcolor: 'grey.50' }}
         />
       </TableContainer>
       )}

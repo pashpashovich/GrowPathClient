@@ -12,9 +12,8 @@ import MentorDashboard from './pages/MentorDashboard';
 import InternDashboard from './pages/InternDashboard';
 import HRDashboard from './pages/HRDashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import HRRatingPage from './pages/HRRatingPage';
-import InternRatingPage from './pages/InternRatingPage';
 import TestPage from './pages/TestPage';
+import HRContactPage from './pages/HRContactPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthInitializer from './components/AuthInitializer';
 import './App.css';
@@ -33,6 +32,7 @@ function App() {
                   <Route path="/" element={<LoginPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterConfirmPage />} />
+                  <Route path="/contact-hr" element={<HRContactPage />} />
                   
                   
                   <Route path="/mentor" element={
@@ -96,6 +96,12 @@ function App() {
                   } />
                   
                   <Route path="/hr/analytics" element={
+                    <ProtectedRoute requiredRole="hr">
+                      <HRDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/hr/mentors" element={
                     <ProtectedRoute requiredRole="hr">
                       <HRDashboard />
                     </ProtectedRoute>

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, AppBar, Toolbar, IconButton, Button, Paper } from '@mui/material';
-import { Logout, Add } from '@mui/icons-material';
+import { Box, Typography, Button } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { logoutAsync } from '../store/slices/authSlice';
 import {
   fetchInternshipProgramsAsync,
   fetchInternshipProgramByIdAsync,
 } from '../store/slices/internshipProgramSlice';
-import Logo from '../components/Logo';
+import DashboardAppBar, { DASHBOARD_APP_BAR_HEIGHT } from '../components/DashboardAppBar';
 import Sidebar from '../components/Sidebar';
 import HRRatingPage from './HRRatingPage';
 import InternshipProgramsList from '../components/internshipPrograms/InternshipProgramsList';
@@ -26,11 +25,15 @@ const HRDashboard = () => {
   const [editingProgram, setEditingProgram] = useState(null);
   const [viewingProgram, setViewingProgram] = useState(null);
 
-  const isProgramsTab =
-    !location.pathname.includes('/hr/rating') && !location.pathname.includes('/hr/analytics');
+  const normalizedPath = location.pathname.replace(/\/$/, '') || '/';
+  const isProgramsTab = normalizedPath === '/hr';
+  const shouldLoadProgramList =
+    isProgramsTab ||
+    location.pathname.startsWith('/hr/rating') ||
+    location.pathname.startsWith('/hr/analytics');
 
   useEffect(() => {
-    if (isProgramsTab) {
+    if (shouldLoadProgramList) {
       dispatch(
         fetchInternshipProgramsAsync({
           page: 1,
@@ -39,7 +42,7 @@ const HRDashboard = () => {
         })
       );
     }
-  }, [dispatch, isProgramsTab]);
+  }, [dispatch, shouldLoadProgramList]);
 
   const handleLogout = async () => {
     await dispatch(logoutAsync());
@@ -72,58 +75,47 @@ const HRDashboard = () => {
   };
 
   const getCurrentPage = () => {
-    if (location.pathname === '/hr/rating') {
+    if (location.pathname.startsWith('/hr/rating')) {
       return <HRRatingPage />;
     }
-    
-    if (location.pathname === '/hr/analytics') {
+
+    if (location.pathname.startsWith('/hr/analytics')) {
       return <AnalyticsPage />;
     }
-    
+
+    if (location.pathname.startsWith('/hr/mentors')) {
+      return (
+        <Box sx={{ maxWidth: 720, mx: 'auto', py: 2 }}>
+          <Typography variant="h2" component="h1" gutterBottom>
+            Менторы
+          </Typography>
+          <Typography color="text.secondary" variant="body1">
+            Раздел в разработке. Здесь появится работа с менторами и назначениями.
+          </Typography>
+        </Box>
+      );
+    }
+
     return (
       <Box>
-        <Paper sx={{ p: 2, mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h5" component="h1">
-              Программы стажировок
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleCreateProgram}
-            >
-              Создать программу
-            </Button>
-          </Box>
-        </Paper>
-
-        <InternshipProgramsList
-          onEdit={handleEditProgram}
-          onView={handleViewProgram}
-        />
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h2" component="h1">
+            Программы стажировок
+          </Typography>
+          <Button variant="contained" color="primary" onClick={handleCreateProgram} sx={{ fontWeight: 700 }}>
+            Создать программу
+          </Button>
+        </Box>
+        <InternshipProgramsList onEdit={handleEditProgram} onView={handleViewProgram} />
       </Box>
     );
   };
 
   return (
-    <Box>
-      <AppBar position="fixed" sx={{ zIndex: 1300 }}>
-        <Toolbar>
-          <Logo size="medium" />
-          
-          <Box sx={{ flexGrow: 1 }} />
-          
-          <IconButton
-            color="inherit"
-            onClick={handleLogout}
-            title="Выйти"
-          >
-            <Logout />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <DashboardAppBar onLogout={handleLogout} />
 
-      <Box sx={{ display: 'flex', mt: 8 }}>
+      <Box sx={{ display: 'flex', mt: `${DASHBOARD_APP_BAR_HEIGHT}px` }}>
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <Box
@@ -132,13 +124,14 @@ const HRDashboard = () => {
             flexGrow: 1,
             ml: sidebarOpen ? '280px' : '80px',
             transition: 'margin-left 0.3s ease',
-            minHeight: 'calc(100vh - 64px)',
+            minHeight: `calc(100vh - ${DASHBOARD_APP_BAR_HEIGHT}px)`,
             backgroundColor: 'background.default',
+            py: 3,
+            px: 3,
+            overflowX: 'auto',
           }}
         >
-          <Box sx={{ py: 3, px: 3, overflowX: 'auto' }}>
-            {getCurrentPage()}
-          </Box>
+          <Box sx={{ maxWidth: 1280, mx: 'auto' }}>{getCurrentPage()}</Box>
         </Box>
       </Box>
 
@@ -158,6 +151,3 @@ const HRDashboard = () => {
 };
 
 export default HRDashboard;
-
-
-

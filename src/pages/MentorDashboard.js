@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Modal, AppBar, Toolbar, IconButton } from '@mui/material';
-import { Logout } from '@mui/icons-material';
+import { Box, Typography, Button, Modal } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
-import Logo from '../components/Logo';
+import DashboardAppBar, { DASHBOARD_APP_BAR_HEIGHT } from '../components/DashboardAppBar';
 import TaskForm from '../components/tasks/TaskForm';
 import TaskDetails from '../components/tasks/TaskDetails';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
@@ -83,24 +82,9 @@ const MentorDashboard = () => {
 
   return (
     <Box>
-      {/* Глобальный хедер */}
-      <AppBar position="fixed" sx={{ zIndex: 1300 }}>
-        <Toolbar>
-          <Logo size="medium" />
-          
-          <Box sx={{ flexGrow: 1 }} />
-          
-              <IconButton
-                color="inherit"
-                onClick={handleLogout}
-                title="Выйти"
-              >
-                <Logout />
-              </IconButton>
-        </Toolbar>
-      </AppBar>
+      <DashboardAppBar onLogout={handleLogout} />
 
-      <Box sx={{ display: 'flex', mt: 8 }}>
+      <Box sx={{ display: 'flex', mt: `${DASHBOARD_APP_BAR_HEIGHT}px` }}>
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
         <Box
@@ -109,8 +93,8 @@ const MentorDashboard = () => {
             flexGrow: 1,
             ml: sidebarOpen ? '280px' : '80px',
             transition: 'margin-left 0.3s ease',
-            minHeight: 'calc(100vh - 64px)',
-            maxHeight: 'calc(100vh - 64px)',
+            minHeight: `calc(100vh - ${DASHBOARD_APP_BAR_HEIGHT}px)`,
+            maxHeight: `calc(100vh - ${DASHBOARD_APP_BAR_HEIGHT}px)`,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
