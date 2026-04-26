@@ -13,8 +13,8 @@ import {
 import { ArrowBack, Email, Phone, Business } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 
-const PLACEHOLDER_EMAIL = 'hr@growpath.local';
-const PLACEHOLDER_PHONE = '+7 (000) 000-00-00';
+const PLACEHOLDER_EMAIL = 'hr@growpath.com';
+const PLACEHOLDER_PHONE = '+375 (29) 358-62-69';
 
 const HRContactPage = () => {
   useEffect(() => {
