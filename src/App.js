@@ -14,6 +14,8 @@ import HRDashboard from './pages/HRDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import TestPage from './pages/TestPage';
 import HRContactPage from './pages/HRContactPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthInitializer from './components/AuthInitializer';
 import './App.css';
@@ -33,6 +35,8 @@ function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterConfirmPage />} />
                   <Route path="/contact-hr" element={<HRContactPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
                   
                   
                   <Route path="/mentor" element={

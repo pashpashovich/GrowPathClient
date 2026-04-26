@@ -98,7 +98,9 @@ api.interceptors.response.use(
       if (
         reqUrl.includes('/auth/login') ||
         reqUrl.includes('/auth/refresh') ||
-        reqUrl.includes('complete-registration')
+        reqUrl.includes('complete-registration') ||
+        reqUrl.includes('/auth/forgot-password') ||
+        reqUrl.includes('/auth/reset-password')
       ) {
         return Promise.reject(error);
       }
@@ -185,6 +187,10 @@ export const authAPI = {
   /** Публичный вызов: токен из письма в теле запроса. */
   completeRegistration: (payload) =>
     api.post(authV1Suffix('/auth/complete-registration'), payload),
+  forgotPassword: (email) =>
+    api.post(authV1Suffix('/auth/forgot-password'), { email }),
+  resetPassword: (payload) =>
+    api.post(authV1Suffix('/auth/reset-password'), payload),
 };
 
 const usersBase = '/users';

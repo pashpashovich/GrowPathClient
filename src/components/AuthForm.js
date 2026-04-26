@@ -30,12 +30,14 @@ const AuthForm = () => {
   const { isLoading, error: authError } = useSelector((state) => state.auth);
 
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [passwordResetSuccess, setPasswordResetSuccess] = useState(false);
 
   useEffect(() => {
-    if (location.state?.registrationComplete) {
-      setRegistrationSuccess(true);
-      navigate(location.pathname, { replace: true, state: {} });
-    }
+    const s = location.state;
+    if (!s?.registrationComplete && !s?.passwordReset) return;
+    if (s.registrationComplete) setRegistrationSuccess(true);
+    if (s.passwordReset) setPasswordResetSuccess(true);
+    navigate(location.pathname, { replace: true, state: {} });
   }, [location.state, location.pathname, navigate]);
 
   const [formData, setFormData] = useState({
@@ -250,6 +252,11 @@ const AuthForm = () => {
                 Регистрация завершена. Войдите с указанным в письме email и новым паролем.
               </Alert>
             )}
+            {passwordResetSuccess && (
+              <Alert severity="success" onClose={() => setPasswordResetSuccess(false)}>
+                Пароль успешно изменён. Войдите, используя новый пароль.
+              </Alert>
+            )}
             {error && <Alert severity="error">{error}</Alert>}
 
             <Box>
@@ -305,8 +312,8 @@ const AuthForm = () => {
                   Пароль
                 </Typography>
                 <Link
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
+                  component={RouterLink}
+                  to="/forgot-password"
                   variant="body2"
                   sx={{
                     fontWeight: 600,
