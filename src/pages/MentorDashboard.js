@@ -114,14 +114,14 @@ const MentorDashboard = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            backgroundColor: '#f5f5f5',
+            backgroundColor: 'background.default',
           }}
         >
         {/* Верхняя панель */}
         <Box sx={{ 
-          backgroundColor: 'white',
+          backgroundColor: 'background.paper',
           color: 'text.primary',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          boxShadow: 1,
           p: 2,
           display: 'flex',
           justifyContent: 'space-between',

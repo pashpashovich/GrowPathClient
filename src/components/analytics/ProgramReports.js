@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Card,
@@ -26,14 +26,16 @@ import {
   TrendingUp,
   TrendingDown,
   CheckCircle,
-  Schedule,
   Warning,
   Download,
   Visibility,
 } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProgramReportsAsync } from '../../store/slices/analyticsSlice';
+import { analyticsAPI } from '../../services/api';
 
 const ProgramReports = () => {
+  const dispatch = useDispatch();
   const programReports = useSelector((state) => state.analytics?.programReports || []);
   const [selectedProgram, setSelectedProgram] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
@@ -62,12 +64,36 @@ const ProgramReports = () => {
     }
   };
 
-  const filteredReports = selectedProgram 
-    ? programReports.filter(report => report.programId === selectedProgram)
-    : programReports;
+  useEffect(() => {
+    dispatch(fetchProgramReportsAsync({ period: selectedPeriod }));
+  }, [dispatch, selectedPeriod]);
 
-  const handleExport = (report) => {
-    console.log('Exporting report for program:', report.programTitle);
+  const filteredReports = useMemo(
+    () =>
+      selectedProgram
+        ? programReports.filter((report) => String(report.programId) === String(selectedProgram))
+        : programReports,
+    [programReports, selectedProgram]
+  );
+
+  const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async (report) => {
+    try {
+      const response = await analyticsAPI.getReportsExport({ programId: report.programId, period: selectedPeriod });
+      downloadBlob(response.data, `program-report-${report.programId}.csv`);
+    } catch (error) {
+      console.error('Export report error', error);
+    }
   };
 
   return (
@@ -110,7 +136,14 @@ const ProgramReports = () => {
               <Button
                 variant="contained"
                 startIcon={<Download />}
-                onClick={() => console.log('Export all reports')}
+                onClick={async () => {
+                  try {
+                    const response = await analyticsAPI.getReportsExport({ period: selectedPeriod });
+                    downloadBlob(response.data, `program-reports-${selectedPeriod}.csv`);
+                  } catch (error) {
+                    console.error('Export all reports error', error);
+                  }
+                }}
                 fullWidth
               >
                 Экспорт отчетов
@@ -212,7 +245,15 @@ const ProgramReports = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {report.internStats.map((intern) => (
+                  {(report.internStats || []).map((intern) => {
+                    const competencies = intern.competencies || {};
+                    const achievedCount = Array.isArray(competencies.achieved)
+                      ? competencies.achieved.length
+                      : 0;
+                    const currentCount = Array.isArray(competencies.current)
+                      ? competencies.current.length
+                      : 0;
+                    return (
                     <TableRow key={intern.internId}>
                       <TableCell>{intern.internName}</TableCell>
                       <TableCell align="center">
@@ -234,13 +275,13 @@ const ProgramReports = () => {
                       <TableCell align="center">
                         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                           <Chip
-                            label={`${intern.competencies.achieved.length} освоено`}
+                            label={`${achievedCount} освоено`}
                             color="success"
                             size="small"
                             variant="outlined"
                           />
                           <Chip
-                            label={`${intern.competencies.current.length} текущих`}
+                            label={`${currentCount} текущих`}
                             color="primary"
                             size="small"
                             variant="outlined"
@@ -248,7 +289,8 @@ const ProgramReports = () => {
                         </Box>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -257,7 +299,7 @@ const ProgramReports = () => {
               Статистика по менторам
             </Typography>
             <Grid container spacing={2}>
-              {report.mentorStats.map((mentor) => (
+              {(report.mentorStats || []).map((mentor) => (
                 <Grid item xs={12} sm={6} md={4} key={mentor.mentorId}>
                   <Card variant="outlined">
                     <CardContent>
@@ -301,7 +343,7 @@ const ProgramReports = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {report.periodStats[selectedPeriod]?.map((period, index) => (
+                  {(report.periodStats?.[selectedPeriod] || []).map((period, index) => (
                     <TableRow key={index}>
                       <TableCell>{period.week || period.month}</TableCell>
                       <TableCell align="center">
@@ -333,9 +375,21 @@ const ProgramReports = () => {
                       <TableCell align="center">
                         {index > 0 && (
                           <Chip
-                            icon={period.completed > report.periodStats[selectedPeriod][index - 1].completed ? <TrendingUp /> : <TrendingDown />}
-                            label={period.completed > report.periodStats[selectedPeriod][index - 1].completed ? '↗' : '↘'}
-                            color={period.completed > report.periodStats[selectedPeriod][index - 1].completed ? 'success' : 'error'}
+                            icon={
+                              period.completed > (report.periodStats?.[selectedPeriod]?.[index - 1]?.completed ?? 0)
+                                ? <TrendingUp />
+                                : <TrendingDown />
+                            }
+                            label={
+                              period.completed > (report.periodStats?.[selectedPeriod]?.[index - 1]?.completed ?? 0)
+                                ? '↗'
+                                : '↘'
+                            }
+                            color={
+                              period.completed > (report.periodStats?.[selectedPeriod]?.[index - 1]?.completed ?? 0)
+                                ? 'success'
+                                : 'error'
+                            }
                             size="small"
                           />
                         )}

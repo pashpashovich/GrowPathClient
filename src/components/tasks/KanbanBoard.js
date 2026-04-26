@@ -37,11 +37,13 @@ import {
   fetchTasksAsync,
   patchTaskStatusAsync,
 } from '../../store/slices/taskSlice';
+import { useTheme } from '@mui/material/styles';
 import TaskForm from './TaskForm';
 import TaskDetails from './TaskDetails';
 
 const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const dispatch = useDispatch();
+  const theme = useTheme();
   const tasks = useSelector((state) => state.task?.tasks || []);
   const interns = useSelector((state) => state.intern?.interns || []);
   const internships = useSelector((state) => state.roadmap?.internships || []);
@@ -58,13 +60,13 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const buttonRef = useRef(null);
 
   const columns = [
-    { id: 'pending', title: 'Доступно', color: '#9E9E9E' },
-    { id: 'in_progress', title: 'В работе', color: '#2196F3' },
-    { id: 'submitted', title: 'Сдано', color: '#FFB74D' },
-    { id: 'on_review', title: 'На проверке', color: '#FF9800' },
-    { id: 'needs_rework', title: 'Доработка', color: '#E57373' },
-    { id: 'completed', title: 'Завершено', color: '#4CAF50' },
-    { id: 'rejected', title: 'Отклонено', color: '#B71C1C' },
+    { id: 'pending', title: 'Доступно', color: theme.palette.grey[500] },
+    { id: 'in_progress', title: 'В работе', color: theme.palette.info.main },
+    { id: 'submitted', title: 'Сдано', color: theme.palette.warning.light },
+    { id: 'on_review', title: 'На проверке', color: theme.palette.warning.main },
+    { id: 'needs_rework', title: 'Доработка', color: theme.palette.error.light },
+    { id: 'completed', title: 'Завершено', color: theme.palette.success.main },
+    { id: 'rejected', title: 'Отклонено', color: theme.palette.error.dark },
   ];
 
   const loadTasks = useCallback(() => {
@@ -462,7 +464,7 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
               minWidth: 250,
               width: 250,
               maxHeight: '100%',
-              backgroundColor: '#f5f5f5',
+              backgroundColor: 'background.paper',
               borderRadius: 2,
               p: 1.5,
               border: `2px solid ${column.color}20`,

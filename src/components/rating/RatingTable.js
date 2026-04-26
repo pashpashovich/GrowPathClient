@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -26,11 +26,14 @@ import {
   TrendingDown,
   TrendingFlat,
   Download,
-  FilterList,
   Refresh,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { setSelectedInternship, recalculateRanks } from '../../store/slices/ratingSlice';
+import {
+  fetchRatingsAsync,
+  recalculateRanks,
+  setSelectedInternship,
+} from '../../store/slices/ratingSlice';
 
 const RatingTable = () => {
   const dispatch = useDispatch();
@@ -39,6 +42,10 @@ const RatingTable = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState('rank');
+
+  useEffect(() => {
+    dispatch(fetchRatingsAsync(selectedInternshipId ? { internshipId: selectedInternshipId } : undefined));
+  }, [dispatch, selectedInternshipId]);
 
   const filteredRatings = useMemo(() => {
     if (!selectedInternshipId) return ratings;
@@ -120,6 +127,7 @@ const RatingTable = () => {
   };
 
   const handleRefresh = () => {
+    dispatch(fetchRatingsAsync(selectedInternshipId ? { internshipId: selectedInternshipId } : undefined));
     dispatch(recalculateRanks());
   };
 

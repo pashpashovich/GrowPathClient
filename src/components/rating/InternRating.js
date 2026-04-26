@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -25,12 +25,20 @@ import {
   CheckCircle,
   EmojiEvents,
 } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchInternRatingAsync, fetchRatingsAsync } from '../../store/slices/ratingSlice';
 
 const InternRating = () => {
+  const dispatch = useDispatch();
   const { ratings = [] } = useSelector((state) => state.rating || {});
   const currentUser = useSelector((state) => state.auth?.user);
   const { internships = [] } = useSelector((state) => state.roadmap || {});
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    dispatch(fetchRatingsAsync());
+    dispatch(fetchInternRatingAsync(currentUser.id));
+  }, [dispatch, currentUser?.id]);
 
   const internRating = useMemo(() => {
     return ratings.find(rating => rating.internId === currentUser?.id);

@@ -1,259 +1,289 @@
 import { createTheme } from '@mui/material/styles';
 
+const tokens = {
+  colors: {
+    surface: '#f8f9fb',
+    surfaceDim: '#d9dadc',
+    surfaceBright: '#f8f9fb',
+    surfaceContainerLowest: '#ffffff',
+    surfaceContainerLow: '#f3f4f6',
+    surfaceContainer: '#edeef0',
+    surfaceContainerHigh: '#e7e8ea',
+    surfaceContainerHighest: '#e1e2e4',
+    onSurface: '#191c1e',
+    onSurfaceVariant: '#434654',
+    inverseSurface: '#2e3132',
+    inverseOnSurface: '#f0f1f3',
+    outline: '#737685',
+    outlineVariant: '#c3c6d6',
+    surfaceTint: '#0c56d0',
+    primary: '#003d9b',
+    onPrimary: '#ffffff',
+    primaryContainer: '#0052cc',
+    onPrimaryContainer: '#c4d2ff',
+    inversePrimary: '#b2c5ff',
+    secondary: '#006c47',
+    onSecondary: '#ffffff',
+    secondaryContainer: '#82f9be',
+    onSecondaryContainer: '#00734c',
+    tertiary: '#5e3c00',
+    onTertiary: '#ffffff',
+    tertiaryContainer: '#7d5200',
+    onTertiaryContainer: '#ffca81',
+    error: '#ba1a1a',
+    onError: '#ffffff',
+    errorContainer: '#ffdad6',
+    onErrorContainer: '#93000a',
+    background: '#f8f9fb',
+    onBackground: '#191c1e',
+    surfaceVariant: '#e1e2e4',
+    success: '#36B37E',
+    warning: '#FFAB00',
+  },
+  rounded: {
+    sm: 4,
+    default: 8,
+    md: 12,
+    lg: 16,
+    xl: 24,
+    full: 9999,
+  },
+};
+
+const interStack = ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Arial', 'sans-serif'].join(',');
+const monoStack = ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', '"Courier New"', 'monospace'].join(',');
+
 export const growPathTheme = createTheme({
+  spacing: 4,
   palette: {
+    mode: 'light',
     primary: {
-      main: '#1A7AE0',
-      light: '#92C0FA',
-      dark: '#1565C0',
-      contrastText: '#FFFFFF',
+      main: tokens.colors.primaryContainer,
+      light: tokens.colors.surfaceTint,
+      dark: tokens.colors.primary,
+      contrastText: tokens.colors.onPrimary,
     },
     secondary: {
-      main: '#31F0A4',
-      light: '#99E6D8',
-      dark: '#2DD4A0',
-      contrastText: '#212121',
+      main: tokens.colors.secondary,
+      light: tokens.colors.secondaryContainer,
+      dark: tokens.colors.onSecondaryContainer,
+      contrastText: tokens.colors.onSecondary,
     },
     success: {
-      main: '#31F0A4',
-      light: '#99E6D8',
-      dark: '#2DD4A0',
-    },
-    error: {
-      main: '#FF5252',
-      light: '#FFCDD2',
-      dark: '#E53935',
+      main: tokens.colors.success,
+      light: '#7FD8AE',
+      dark: '#1A8B5D',
+      contrastText: '#ffffff',
     },
     warning: {
-      main: '#FFC107',
-      light: '#FFF176',
-      dark: '#FF8F00',
+      main: tokens.colors.warning,
+      light: '#FFCF66',
+      dark: '#CC8800',
+      contrastText: '#191c1e',
+    },
+    error: {
+      main: tokens.colors.error,
+      light: tokens.colors.errorContainer,
+      dark: tokens.colors.onErrorContainer,
+      contrastText: tokens.colors.onError,
     },
     info: {
-      main: '#2196F3',
-      light: '#64B5F6',
-      dark: '#1976D2',
+      main: tokens.colors.surfaceTint,
+      light: '#4C82DF',
+      dark: tokens.colors.primary,
+      contrastText: '#ffffff',
     },
     background: {
-      default: '#F6F7F9',
-      paper: '#FFFFFF',
+      default: tokens.colors.background,
+      paper: tokens.colors.surfaceContainerLowest,
     },
     text: {
-      primary: '#212121',
-      secondary: '#757575',
-      disabled: '#9E9E9E',
+      primary: tokens.colors.onSurface,
+      secondary: tokens.colors.onSurfaceVariant,
+      disabled: tokens.colors.outline,
     },
+    divider: tokens.colors.outlineVariant,
     grey: {
-      50: '#FAFAFA',
-      100: '#F5F5F5',
-      200: '#EEEEEE',
-      300: '#E0E0E0',
-      400: '#BDBDBD',
-      500: '#9E9E9E',
-      600: '#757575',
-      700: '#616161',
-      800: '#424242',
-      900: '#212121',
-    },
-    rating: {
-      high: '#31F0A4',
-      medium: '#FFC107',
-      low: '#FF5252',
-    },
-    experience: {
-      beginner: '#92C0FA',
-      intermediate: '#FF9800',
-      advanced: '#31F0A4',
+      50: tokens.colors.surfaceContainerLowest,
+      100: tokens.colors.surfaceContainerLow,
+      200: tokens.colors.surfaceContainer,
+      300: tokens.colors.surfaceContainerHigh,
+      400: tokens.colors.surfaceContainerHighest,
+      500: tokens.colors.outlineVariant,
+      600: tokens.colors.outline,
+      700: tokens.colors.onSurfaceVariant,
+      800: tokens.colors.inverseSurface,
+      900: tokens.colors.onSurface,
     },
   },
   typography: {
-    fontFamily: [
-      'Source Sans Pro',
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-    ].join(','),
+    fontFamily: interStack,
     h1: {
-      fontFamily: [
-        'Montserrat',
-        '-apple-system',
-        'BlinkMacSystemFont',
-        '"Segoe UI"',
-        'Roboto',
-        '"Helvetica Neue"',
-        'Arial',
-        'sans-serif',
-      ].join(','),
+      fontFamily: interStack,
       fontSize: '30px',
       fontWeight: 700,
-      lineHeight: 1.2,
+      lineHeight: '38px',
+      letterSpacing: '-0.02em',
     },
     h2: {
-      fontFamily: [
-        'Montserrat',
-        '-apple-system',
-        'BlinkMacSystemFont',
-        '"Segoe UI"',
-        'Roboto',
-        '"Helvetica Neue"',
-        'Arial',
-        'sans-serif',
-      ].join(','),
+      fontFamily: interStack,
       fontSize: '24px',
-      fontWeight: 700,
-      lineHeight: 1.2,
+      fontWeight: 600,
+      lineHeight: '32px',
+      letterSpacing: '-0.01em',
     },
     h3: {
-      fontFamily: [
-        'Montserrat',
-        '-apple-system',
-        'BlinkMacSystemFont',
-        '"Segoe UI"',
-        'Roboto',
-        '"Helvetica Neue"',
-        'Arial',
-        'sans-serif',
-      ].join(','),
+      fontFamily: interStack,
       fontSize: '20px',
       fontWeight: 600,
-      lineHeight: 1.2,
+      lineHeight: '28px',
     },
     h4: {
-      fontFamily: [
-        'Montserrat',
-        '-apple-system',
-        'BlinkMacSystemFont',
-        '"Segoe UI"',
-        'Roboto',
-        '"Helvetica Neue"',
-        'Arial',
-        'sans-serif',
-      ].join(','),
+      fontFamily: interStack,
       fontSize: '18px',
       fontWeight: 600,
-      lineHeight: 1.2,
+      lineHeight: '26px',
     },
     h5: {
-      fontFamily: [
-        'Montserrat',
-        '-apple-system',
-        'BlinkMacSystemFont',
-        '"Segoe UI"',
-        'Roboto',
-        '"Helvetica Neue"',
-        'Arial',
-        'sans-serif',
-      ].join(','),
+      fontFamily: interStack,
       fontSize: '16px',
       fontWeight: 600,
-      lineHeight: 1.2,
+      lineHeight: '24px',
     },
     h6: {
-      fontFamily: [
-        'Montserrat',
-        '-apple-system',
-        'BlinkMacSystemFont',
-        '"Segoe UI"',
-        'Roboto',
-        '"Helvetica Neue"',
-        'Arial',
-        'sans-serif',
-      ].join(','),
+      fontFamily: interStack,
       fontSize: '14px',
       fontWeight: 600,
-      lineHeight: 1.2,
+      lineHeight: '20px',
     },
     body1: {
+      fontFamily: interStack,
       fontSize: '16px',
-      lineHeight: 1.5,
+      fontWeight: 400,
+      lineHeight: '24px',
     },
     body2: {
+      fontFamily: interStack,
       fontSize: '14px',
-      lineHeight: 1.5,
+      fontWeight: 400,
+      lineHeight: '20px',
     },
     button: {
-      fontSize: '16px',
+      fontFamily: interStack,
+      fontSize: '14px',
       fontWeight: 600,
+      lineHeight: '20px',
+      textTransform: 'none',
+    },
+    caption: {
+      fontFamily: interStack,
+      fontSize: '12px',
+      fontWeight: 700,
+      lineHeight: '16px',
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase',
+    },
+    overline: {
+      fontFamily: monoStack,
+      fontSize: '13px',
+      fontWeight: 400,
+      lineHeight: '18px',
+      letterSpacing: 0,
       textTransform: 'none',
     },
   },
   shape: {
-    borderRadius: 8,
+    borderRadius: tokens.rounded.default,
   },
   components: {
-    MuiButton: {
+    MuiCssBaseline: {
       styleOverrides: {
-        root: {
-          borderRadius: 8,
-          textTransform: 'none',
-          fontWeight: 600,
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 4px 12px rgba(26, 122, 224, 0.3)',
-            transform: 'translateY(-1px)',
-          },
-          '&:active': {
-            transform: 'translateY(0)',
-            boxShadow: '0 2px 6px rgba(26, 122, 224, 0.3)',
-          },
-        },
-        contained: {
-          '&:hover': {
-            boxShadow: '0 4px 12px rgba(26, 122, 224, 0.3)',
-          },
-        },
-        outlined: {
-          borderWidth: 2,
-          '&:hover': {
-            borderWidth: 2,
-          },
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 8,
-            backgroundColor: '#F6F7F9',
-            '&:hover': {
-              backgroundColor: '#FFFFFF',
-            },
-            '&.Mui-focused': {
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 0 0 3px rgba(26, 122, 224, 0.1)',
-            },
-          },
+        body: {
+          backgroundColor: tokens.colors.background,
+          color: tokens.colors.onBackground,
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.1)',
-          '&:hover': {
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.1)',
-          },
+          borderRadius: tokens.rounded.default,
+          backgroundColor: tokens.colors.surfaceContainerLowest,
+          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.05)',
+          border: `1px solid ${tokens.colors.outlineVariant}`,
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: tokens.rounded.default,
+          backgroundColor: tokens.colors.surfaceContainerLowest,
+        },
+      },
+    },
+    MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: tokens.rounded.default,
+          paddingInline: '16px',
+          minHeight: 40,
+          fontWeight: 600,
+        },
+        containedPrimary: {
+          backgroundColor: tokens.colors.primaryContainer,
+          color: tokens.colors.onPrimary,
+          '&:hover': {
+            backgroundColor: tokens.colors.primary,
+          },
+        },
+        outlinedPrimary: {
+          borderColor: tokens.colors.primaryContainer,
+          color: tokens.colors.primaryContainer,
         },
       },
     },
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
+          borderRadius: tokens.rounded.full,
+          fontWeight: 700,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: tokens.rounded.default,
+          backgroundColor: tokens.colors.surfaceContainerLowest,
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: tokens.colors.outlineVariant,
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: tokens.colors.outline,
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderWidth: 2,
+            borderColor: tokens.colors.primaryContainer,
+          },
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
           fontWeight: 600,
+        },
+      },
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          borderRadius: tokens.rounded.full,
+          height: 6,
         },
       },
     },
@@ -262,15 +292,17 @@ export const growPathTheme = createTheme({
 
 export const customColors = {
   rating: {
-    high: '#31F0A4',
-    medium: '#FFC107',
-    low: '#FF5252',
+    high: '#36B37E',
+    medium: '#FFAB00',
+    low: '#BA1A1A',
   },
   experience: {
-    beginner: '#92C0FA',
-    intermediate: '#FF9800',
-    advanced: '#31F0A4',
+    beginner: '#4C82DF',
+    intermediate: '#FFAB00',
+    advanced: '#36B37E',
   },
 };
+
+export const designTokens = tokens;
 
 

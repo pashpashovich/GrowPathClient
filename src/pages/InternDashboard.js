@@ -104,14 +104,14 @@ const InternDashboard = () => {
             ml: sidebarOpen ? '280px' : '80px',
             transition: 'margin-left 0.3s ease',
             minHeight: 'calc(100vh - 64px)',
-            backgroundColor: '#f5f5f5',
+            backgroundColor: 'background.default',
           }}
         >
         {/* Верхняя панель */}
         <Box sx={{ 
-          backgroundColor: 'white',
+          backgroundColor: 'background.paper',
           color: 'text.primary',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          boxShadow: 1,
           p: 2,
           display: 'flex',
           justifyContent: 'space-between',

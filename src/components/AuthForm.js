@@ -8,11 +8,15 @@ import {
   IconButton,
   Alert,
   CircularProgress,
+  Link,
+  Paper,
 } from '@mui/material';
 import {
   Lock,
   Visibility,
   VisibilityOff,
+  Mail,
+  TrendingUp,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -33,19 +37,19 @@ const AuthForm = () => {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigate]);
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
     setLocalError('');
   };
@@ -64,10 +68,12 @@ const AuthForm = () => {
     }
 
     try {
-      const result = await dispatch(loginAsync({
-        username: formData.email,
-        password: formData.password,
-      }));
+      const result = await dispatch(
+        loginAsync({
+          username: formData.email,
+          password: formData.password,
+        })
+      );
 
       if (loginAsync.fulfilled.match(result)) {
         const user = result.payload.user;
@@ -94,187 +100,303 @@ const AuthForm = () => {
   const error = localError || authError;
   const loading = isLoading;
 
+  const getFieldSx = (extra = {}) => ({
+    ...extra,
+    '& .MuiOutlinedInput-root': {
+      bgcolor: 'grey.100',
+      pl: 0.5,
+      '& fieldset': {
+        borderWidth: 2,
+        borderColor: 'transparent',
+      },
+      '&:hover fieldset': {
+        borderColor: 'transparent',
+      },
+      '&.Mui-focused fieldset': {
+        borderWidth: 2,
+      },
+    },
+    '& .MuiInputBase-input': {
+      typography: 'body2',
+      py: 2,
+      '&::placeholder': {
+        color: 'grey.600',
+        opacity: 1,
+      },
+    },
+  });
+
   return (
     <Box
       sx={{
+        position: 'relative',
         minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'white',
         px: 2,
+        py: 2,
+        bgcolor: 'background.default',
+        color: 'text.primary',
       }}
     >
-        <Box sx={{ mb: 6, textAlign: 'center', width: '100%', maxWidth: 400 }}>
-        <Typography
-          variant="h3"
-          component="h1"
-          sx={{
-            fontWeight: 'bold',
-            color: '#000',
-            mb: 1,
-            fontSize: '2.5rem',
-          }}
-        >
-          Войдите
-        </Typography>
-        
-        <Typography
-          variant="h6"
-          sx={{
-            color: '#000',
-            fontWeight: 400,
-            fontSize: '1.1rem',
-          }}
-        >
-          В свой аккаунт
-        </Typography>
-      </Box>
-
       <Box
-        component="form"
-        onSubmit={handleSubmit}
+        aria-hidden
         sx={{
-          width: '100%',
-          maxWidth: 400,
+          position: 'fixed',
+          inset: 0,
+          zIndex: 0,
+          overflow: 'hidden',
+          pointerEvents: 'none',
         }}
       >
-        {registrationSuccess && (
-          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setRegistrationSuccess(false)}>
-            Регистрация завершена. Войдите с указанным в письме email и новым паролем.
-          </Alert>
-        )}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        <TextField
-          fullWidth
-          type="email"
-          placeholder="@ E-mail"
-          value={formData.email}
-          onChange={(e) => handleInputChange('email', e.target.value)}
-          disabled={loading}
+        <Box
           sx={{
-            mb: 3,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 3,
-              backgroundColor: '#f5f5f5',
-              height: '56px',
-              '& fieldset': {
-                border: 'none',
-              },
-              '&:hover fieldset': {
-                border: 'none',
-              },
-              '&.Mui-focused fieldset': {
-                border: 'none',
-              },
-            },
-            '& .MuiInputBase-input': {
-              padding: '16px 14px',
-              fontSize: '16px',
-              '&::placeholder': {
-                color: '#999',
-                opacity: 1,
-              },
-            },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start" sx={{ ml: 1 }}>
-                <Typography sx={{ color: '#000', fontSize: '18px', fontWeight: 'bold' }}>
-                  @
-                </Typography>
-              </InputAdornment>
-            ),
+            position: 'absolute',
+            top: '-10%',
+            left: '-5%',
+            width: '40%',
+            height: '40%',
+            borderRadius: '50%',
+            bgcolor: 'primary.main',
+            opacity: 0.03,
+            filter: 'blur(120px)',
           }}
         />
-
-        <TextField
-          fullWidth
-          type={showPassword ? 'text' : 'password'}
-          placeholder="Password"
-          value={formData.password}
-          onChange={(e) => handleInputChange('password', e.target.value)}
-          disabled={loading}
+        <Box
           sx={{
+            position: 'absolute',
+            bottom: '5%',
+            right: '5%',
+            width: '30%',
+            height: '30%',
+            borderRadius: '50%',
+            bgcolor: 'secondary.main',
+            opacity: 0.03,
+            filter: 'blur(100px)',
+          }}
+        />
+      </Box>
+
+      <Box sx={{ width: '100%', maxWidth: 448, position: 'relative', zIndex: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
             mb: 4,
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 3,
-              backgroundColor: '#f5f5f5',
-              height: '56px',
-              '& fieldset': {
-                border: 'none',
-              },
-              '&:hover fieldset': {
-                border: 'none',
-              },
-              '&.Mui-focused fieldset': {
-                border: 'none',
-              },
-            },
-            '& .MuiInputBase-input': {
-              padding: '16px 14px',
-              fontSize: '16px',
-              '&::placeholder': {
-                color: '#999',
-                opacity: 1,
-              },
-            },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start" sx={{ ml: 1 }}>
-                <Lock sx={{ color: '#000', fontSize: '20px' }} />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end" sx={{ mr: 1 }}>
-                <IconButton
-                  onClick={handleTogglePasswordVisibility}
-                  edge="end"
-                  disabled={loading}
-                  sx={{ color: '#000' }}
-                >
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          disabled={loading || !formData.email || !formData.password}
-          sx={{
-            py: 2,
-            borderRadius: 3,
-            backgroundColor: '#1976d2',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            textTransform: 'none',
-            height: '56px',
-            '&:hover': {
-              backgroundColor: '#1565c0',
-            },
-            '&:disabled': {
-              backgroundColor: '#ccc',
-              color: '#666',
-            },
           }}
         >
-          {loading ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            'Войти'
-          )}
-        </Button>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              mb: 1,
+            }}
+          >
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 2,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 2,
+              }}
+            >
+              <TrendingUp sx={{ fontSize: 22 }} />
+            </Box>
+            <Typography
+              variant="h1"
+              component="span"
+              sx={{
+                color: 'primary.main',
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              GrowPath
+            </Typography>
+          </Box>
+        </Box>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            bgcolor: 'background.paper',
+            border: 1,
+            borderColor: 'divider',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <Box sx={{ mb: 3, textAlign: 'center' }}>
+            <Typography variant="h2" component="h1" sx={{ mb: 0.5 }}>
+              Войти в аккаунт
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Добро пожаловать в HR портал управления стажировками
+            </Typography>
+          </Box>
+
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {registrationSuccess && (
+              <Alert severity="success" onClose={() => setRegistrationSuccess(false)}>
+                Регистрация завершена. Войдите с указанным в письме email и новым паролем.
+              </Alert>
+            )}
+            {error && <Alert severity="error">{error}</Alert>}
+
+            <Box>
+              <Typography
+                component="label"
+                htmlFor="login-email"
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  color: 'grey.600',
+                  mb: 0.5,
+                }}
+              >
+                Электронная почта или логин
+              </Typography>
+              <TextField
+                id="login-email"
+                name="email"
+                fullWidth
+                type="text"
+                autoComplete="username"
+                placeholder="ivanov@company.ru"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                disabled={loading}
+                sx={getFieldSx()}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ ml: 0.5, mr: 0 }}>
+                      <Mail sx={{ color: 'grey.600', fontSize: 22 }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 0.5,
+                }}
+              >
+                <Typography
+                  component="label"
+                  htmlFor="login-password"
+                  variant="caption"
+                  sx={{ color: 'grey.600' }}
+                >
+                  Пароль
+                </Typography>
+                <Link
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  Забыли пароль?
+                </Link>
+              </Box>
+              <TextField
+                id="login-password"
+                name="password"
+                fullWidth
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                disabled={loading}
+                sx={getFieldSx()}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ ml: 0.5, mr: 0 }}>
+                      <Lock sx={{ color: 'grey.600', fontSize: 22 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end" sx={{ mr: 0.5 }}>
+                      <IconButton
+                        aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                        onClick={handleTogglePasswordVisibility}
+                        edge="end"
+                        disabled={loading}
+                        size="small"
+                        sx={{
+                          color: 'grey.600',
+                          '&:hover': { color: 'text.primary' },
+                        }}
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              disabled={loading || !formData.email || !formData.password}
+              sx={{
+                py: 2,
+                typography: 'h3',
+                borderRadius: 2,
+                boxShadow: 1,
+                transition: 'transform 0.15s ease, filter 0.15s ease',
+                '&:hover:not(:disabled)': {
+                  filter: 'brightness(1.1)',
+                },
+                '&:active:not(:disabled)': {
+                  transform: 'scale(0.98)',
+                },
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Войти'}
+            </Button>
+          </Box>
+        </Paper>
+
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary" component="p">
+            Нет учетной записи?{' '}
+            <Link
+              href="#"
+              onClick={(e) => e.preventDefault()}
+              sx={{
+                fontWeight: 600,
+                color: 'primary.main',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              Свяжитесь с HR отделом
+            </Link>
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );

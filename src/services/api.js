@@ -26,6 +26,9 @@ const programGoalDefinitionsPath = v1ResourcePath('/program-goal-definitions');
 const programSelectionStageDefinitionsPath = v1ResourcePath('/program-selection-stage-definitions');
 const tasksPath = v1ResourcePath('/tasks');
 const meTasksPath = v1ResourcePath('/me/tasks');
+const reportsPath = v1ResourcePath('/reports');
+const dashboardPath = v1ResourcePath('/dashboard');
+const ratingsPath = v1ResourcePath('/ratings');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -248,8 +251,8 @@ export const hrAPI = {
   createInternshipProgram: (data) => api.post(internshipProgramsPath, data),
   updateInternshipProgram: (id, data) => api.put(`${internshipProgramsPath}/${id}`, data),
   deleteInternshipProgram: (id) => api.delete(`${internshipProgramsPath}/${id}`),
-  getReports: (params) => api.get('/reports', { params }),
-  getDashboardData: () => api.get('/dashboard'),
+  getReports: (params) => api.get(reportsPath, { params }),
+  getDashboardData: (params) => api.get(dashboardPath, { params }),
 };
 
 export const roadmapAPI = {
@@ -328,6 +331,21 @@ export const departmentAPI = {
   createDepartment: (data) => api.post('/departments', data),
   updateDepartment: (id, data) => api.put(`/departments/${id}`, data),
   deleteDepartment: (id) => api.delete(`/departments/${id}`),
+};
+
+export const analyticsAPI = {
+  getReports: (params) => api.get(reportsPath, { params }),
+  getReportsExport: (params) =>
+    api.get(`${reportsPath}/export`, { params, responseType: 'blob' }),
+  getMentorWorkload: (params) => api.get(`${reportsPath}/mentor-workload`, { params }),
+  getMentorWorkloadExport: (params) =>
+    api.get(`${reportsPath}/mentor-workload/export`, { params, responseType: 'blob' }),
+  getDashboard: (params) => api.get(dashboardPath, { params }),
+};
+
+export const ratingAPI = {
+  getRatings: (params) => api.get(ratingsPath, { params }),
+  getInternRating: (internId) => api.get(`${ratingsPath}/interns/${internId}`),
 };
 
 export default api;

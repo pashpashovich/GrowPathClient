@@ -1,4 +1,29 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { ratingAPI } from '../../services/api';
+
+export const fetchRatingsAsync = createAsyncThunk(
+  'rating/fetchRatings',
+  async (params, { rejectWithValue }) => {
+    try {
+      const response = await ratingAPI.getRatings(params);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке рейтингов');
+    }
+  }
+);
+
+export const fetchInternRatingAsync = createAsyncThunk(
+  'rating/fetchInternRating',
+  async (internId, { rejectWithValue }) => {
+    try {
+      const response = await ratingAPI.getInternRating(internId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке рейтинга стажера');
+    }
+  }
+);
 
 const initialState = {
   ratings: [],
@@ -56,6 +81,41 @@ const ratingSlice = createSlice({
       state.ratings = state.ratings.filter(rating => rating.internId !== action.payload);
       ratingSlice.caseReducers.recalculateRanks(state);
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchRatingsAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchRatingsAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.ratings = action.payload.data || [];
+        ratingSlice.caseReducers.recalculateRanks(state);
+      })
+      .addCase(fetchRatingsAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchInternRatingAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchInternRatingAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const payload = action.payload;
+        const existingIndex = state.ratings.findIndex((r) => r.internId === payload.internId);
+        if (existingIndex === -1) {
+          state.ratings.push(payload);
+        } else {
+          state.ratings[existingIndex] = payload;
+        }
+        ratingSlice.caseReducers.recalculateRanks(state);
+      })
+      .addCase(fetchInternRatingAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      });
   },
 });
 

@@ -133,7 +133,7 @@ const HRDashboard = () => {
             ml: sidebarOpen ? '280px' : '80px',
             transition: 'margin-left 0.3s ease',
             minHeight: 'calc(100vh - 64px)',
-            backgroundColor: '#f5f5f5',
+            backgroundColor: 'background.default',
           }}
         >
           <Box sx={{ py: 3, px: 3, overflowX: 'auto' }}>

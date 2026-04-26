@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -8,7 +8,6 @@ import {
   Grid,
   Card,
   CardContent,
-  Chip,
 } from '@mui/material';
 import {
   Assessment,
@@ -18,20 +17,38 @@ import {
 } from '@mui/icons-material';
 import ProgramReports from '../components/analytics/ProgramReports';
 import MentorWorkload from '../components/analytics/MentorWorkload';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  fetchDashboardAsync,
+  fetchMentorWorkloadAsync,
+  fetchProgramReportsAsync,
+} from '../store/slices/analyticsSlice';
 
 const AnalyticsPage = () => {
+  const dispatch = useDispatch();
   const [currentTab, setCurrentTab] = useState(0);
   const programReports = useSelector((state) => state.analytics?.programReports || []);
   const mentorWorkload = useSelector((state) => state.analytics?.mentorWorkload || []);
+  const dashboardStats = useSelector((state) => state.analytics?.dashboardStats);
+
+  useEffect(() => {
+    dispatch(fetchProgramReportsAsync({ period: 'monthly' }));
+    dispatch(fetchMentorWorkloadAsync());
+    dispatch(fetchDashboardAsync());
+  }, [dispatch]);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
   };
 
-  const totalTasks = programReports.reduce((sum, report) => sum + report.totalTasks, 0);
-  const completedTasks = programReports.reduce((sum, report) => sum + report.completedTasks, 0);
-  const overdueTasks = programReports.reduce((sum, report) => sum + report.overdueTasks, 0);
+  const totalTasks =
+    dashboardStats != null
+      ? (dashboardStats.pendingTasks ?? 0) + (dashboardStats.completedTasks ?? 0)
+      : programReports.reduce((sum, report) => sum + (report.totalTasks || 0), 0);
+  const completedTasks =
+    dashboardStats?.completedTasks ??
+    programReports.reduce((sum, report) => sum + (report.completedTasks || 0), 0);
+  const overdueTasks = programReports.reduce((sum, report) => sum + (report.overdueTasks || 0), 0);
   const overloadedMentors = mentorWorkload.filter(mentor => 
     mentor.workload === 'high' || mentor.workload === 'overload'
   ).length;

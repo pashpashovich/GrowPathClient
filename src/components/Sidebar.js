@@ -157,9 +157,10 @@ const Sidebar = ({ open, onClose }) => {
         '& .MuiDrawer-paper': {
           width: isExpanded ? 280 : drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#f8f9fa',
-          color: '#2c3e50',
-          borderRight: '1px solid #e9ecef',
+          backgroundColor: 'background.default',
+          color: 'text.primary',
+          borderRight: 1,
+          borderColor: 'divider',
           transition: 'width 0.3s ease',
           overflowX: 'hidden',
           zIndex: 1,
@@ -186,7 +187,7 @@ const Sidebar = ({ open, onClose }) => {
             size="small"
             sx={{ 
               color: 'text.secondary',
-              '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' }
+              '&:hover': { backgroundColor: 'action.hover' }
             }}
           >
             {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
@@ -194,7 +195,7 @@ const Sidebar = ({ open, onClose }) => {
         </Tooltip>
       </Box>
 
-      <Divider sx={{ borderColor: '#e9ecef' }} />
+      <Divider />
 
       {/* Информация о пользователе */}
       {(!isCollapsed || isExpanded) && (
@@ -243,7 +244,7 @@ const Sidebar = ({ open, onClose }) => {
         </Box>
       )}
 
-      <Divider sx={{ borderColor: '#e9ecef' }} />
+      <Divider />
 
       {/* Меню навигации */}
       <List sx={{ flexGrow: 1, pt: 1 }}>
@@ -257,7 +258,7 @@ const Sidebar = ({ open, onClose }) => {
                     borderRadius: 2,
                     backgroundColor: item.active ? 'primary.main' : 'transparent',
                     '&:hover': {
-                      backgroundColor: item.active ? 'primary.dark' : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: item.active ? 'primary.dark' : 'action.hover',
                     },
                     transition: 'all 0.2s ease-in-out',
                     justifyContent: 'center',
@@ -282,7 +283,7 @@ const Sidebar = ({ open, onClose }) => {
                   borderRadius: 2,
                   backgroundColor: item.active ? 'primary.main' : 'transparent',
                   '&:hover': {
-                    backgroundColor: item.active ? 'primary.dark' : 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: item.active ? 'primary.dark' : 'action.hover',
                   },
                   transition: 'all 0.2s ease-in-out',
                 }}
@@ -310,7 +311,7 @@ const Sidebar = ({ open, onClose }) => {
         ))}
       </List>
 
-      <Divider sx={{ borderColor: '#e9ecef' }} />
+      <Divider />
 
       {/* Нижнее меню */}
       <List sx={{ pb: 1 }}>
@@ -321,7 +322,7 @@ const Sidebar = ({ open, onClose }) => {
                 sx={{
                   borderRadius: 2,
                   '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    backgroundColor: 'action.hover',
                   },
                   justifyContent: 'center',
                   minHeight: 48,
@@ -337,7 +338,7 @@ const Sidebar = ({ open, onClose }) => {
               sx={{
                 borderRadius: 2,
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  backgroundColor: 'action.hover',
                 },
               }}
             >

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Card,
@@ -26,8 +26,6 @@ import {
 } from '@mui/material';
 import {
   Person,
-  Assignment,
-  Schedule,
   Warning,
   CheckCircle,
   Download,
@@ -35,9 +33,12 @@ import {
   TrendingUp,
   TrendingDown,
 } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMentorWorkloadAsync } from '../../store/slices/analyticsSlice';
+import { analyticsAPI } from '../../services/api';
 
 const MentorWorkload = () => {
+  const dispatch = useDispatch();
   const mentorWorkload = useSelector((state) => state.analytics?.mentorWorkload || []);
   const [selectedProgram, setSelectedProgram] = useState('');
   const [workloadFilter, setWorkloadFilter] = useState('all');
@@ -69,18 +70,43 @@ const MentorWorkload = () => {
     }
   };
 
-  const filteredMentors = mentorWorkload.filter(mentor => {
-    const programMatch = !selectedProgram || mentor.programs.includes(selectedProgram);
-    const workloadMatch = workloadFilter === 'all' || mentor.workload === workloadFilter;
-    return programMatch && workloadMatch;
-  });
+  useEffect(() => {
+    dispatch(fetchMentorWorkloadAsync());
+  }, [dispatch]);
 
-  const overloadedMentors = mentorWorkload.filter(mentor => 
-    mentor.workload === 'high' || mentor.workload === 'overload'
+  const filteredMentors = useMemo(
+    () =>
+      mentorWorkload.filter((mentor) => {
+        const programs = mentor.programs || [];
+        const programMatch = !selectedProgram || programs.includes(selectedProgram);
+        const workloadMatch = workloadFilter === 'all' || mentor.workload === workloadFilter;
+        return programMatch && workloadMatch;
+      }),
+    [mentorWorkload, selectedProgram, workloadFilter]
   );
 
-  const handleExport = () => {
-    console.log('Exporting mentor workload data');
+  const overloadedMentors = mentorWorkload.filter(
+    (mentor) => mentor.workload === 'high' || mentor.workload === 'overload'
+  );
+
+  const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await analyticsAPI.getMentorWorkloadExport();
+      downloadBlob(response.data, 'mentor-workload.csv');
+    } catch (error) {
+      console.error('Export mentor workload error', error);
+    }
   };
 
   const handleViewMentor = (mentorId) => {
@@ -114,8 +140,13 @@ const MentorWorkload = () => {
                   onChange={(e) => setSelectedProgram(e.target.value)}
                 >
                   <MenuItem value="">Все программы</MenuItem>
-                  <MenuItem value="program-1">Frontend разработка</MenuItem>
-                  <MenuItem value="program-2">Backend разработка</MenuItem>
+              {Array.from(
+                new Set((mentorWorkload || []).flatMap((mentor) => mentor.programs || []))
+              ).map((program) => (
+                <MenuItem key={program} value={program}>
+                  {program}
+                </MenuItem>
+              ))}
                 </Select>
               </FormControl>
             </Grid>
@@ -235,12 +266,12 @@ const MentorWorkload = () => {
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Chip
-                      label={`Качество: ${mentor.performance.qualityScore}/5`}
+                      label={`Качество: ${mentor.performance?.qualityScore ?? 0}/5`}
                       size="small"
                       variant="outlined"
                     />
                     <Chip
-                      label={`Удовлетворенность: ${mentor.performance.internSatisfaction}/5`}
+                      label={`Удовлетворенность: ${mentor.performance?.internSatisfaction ?? 0}/5`}
                       size="small"
                       variant="outlined"
                     />
