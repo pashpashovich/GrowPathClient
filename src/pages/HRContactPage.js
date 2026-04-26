@@ -58,7 +58,7 @@ const HRContactPage = () => {
             Связь с HR
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Если у вас ещё нет учетной записи в GrowPath, обратитесь в HR-отдел. Специалисты
+            Если у вас еще нет учетной записи в GrowPath, обратитесь в HR-отдел. Специалисты
             помогут оформить доступ и ответят на вопросы по программам стажировок
           </Typography>
 
@@ -97,7 +97,7 @@ const HRContactPage = () => {
               </ListItemIcon>
               <ListItemText
                 primary="Часы работы"
-                secondary="Пн–Пт, 10:00–18:00 (пример; уточните у вашего HR)"
+                secondary="Пн–Пт, 10:00–18:00"
                 primaryTypographyProps={{ variant: 'subtitle2', color: 'text.secondary' }}
               />
             </ListItem>
