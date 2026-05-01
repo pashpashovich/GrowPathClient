@@ -480,6 +480,20 @@ const ProfilePage = () => {
                     }}
                   />
                 </Grid>
+
+                {displayProfile.departmentName && (
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Департамент"
+                      value={displayProfile.departmentName}
+                      fullWidth
+                      disabled
+                      InputProps={{
+                        startAdornment: <Info sx={{ mr: 1, color: 'text.secondary' }} />,
+                      }}
+                    />
+                  </Grid>
+                )}
               </Grid>
 
               <Divider sx={{ my: 2 }} />

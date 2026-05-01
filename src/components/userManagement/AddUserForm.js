@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,9 +13,11 @@ import {
   Box,
   Typography,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { createUserAsync } from '../../store/slices/userManagementSlice';
+import { departmentAPI } from '../../services/api';
 
 const AddUserForm = ({ open, onClose }) => {
   const dispatch = useDispatch();
@@ -25,17 +27,38 @@ const AddUserForm = ({ open, onClose }) => {
     patronymicName: '',
     email: '',
     role: 'intern',
+    departmentId: '',
   });
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      loadDepartments();
+    }
+  }, [open]);
+
+  const loadDepartments = async () => {
+    try {
+      setLoadingDepartments(true);
+      const response = await departmentAPI.getDepartments();
+      setDepartments(response.data?.data || response.data || []);
+    } catch (err) {
+      console.error('Failed to load departments:', err);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
-    
+
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -64,6 +87,10 @@ const AddUserForm = ({ open, onClose }) => {
       newErrors.role = 'Выберите роль';
     }
 
+    if (!formData.departmentId) {
+      newErrors.departmentId = 'Выберите департамент';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -80,6 +107,7 @@ const AddUserForm = ({ open, onClose }) => {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       role: formData.role,
+      departmentId: parseInt(formData.departmentId, 10),
     };
     if (patronymic) {
       payload.patronymicName = patronymic;
@@ -94,6 +122,7 @@ const AddUserForm = ({ open, onClose }) => {
         patronymicName: '',
         email: '',
         role: 'intern',
+        departmentId: '',
       });
       setErrors({});
       onClose();
@@ -111,6 +140,7 @@ const AddUserForm = ({ open, onClose }) => {
         patronymicName: '',
         email: '',
         role: 'intern',
+        departmentId: '',
       });
       setErrors({});
       onClose();
@@ -191,6 +221,37 @@ const AddUserForm = ({ open, onClose }) => {
             {errors.role && (
               <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
                 {errors.role}
+              </Typography>
+            )}
+          </FormControl>
+
+          <FormControl fullWidth margin="normal" required>
+            <InputLabel>Департамент</InputLabel>
+            <Select
+              value={formData.departmentId}
+              label="Департамент"
+              onChange={(e) => handleInputChange('departmentId', e.target.value)}
+              error={!!errors.departmentId}
+              disabled={loadingDepartments}
+            >
+              {loadingDepartments ? (
+                <MenuItem disabled>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  Загрузка...
+                </MenuItem>
+              ) : departments.length === 0 ? (
+                <MenuItem disabled>Нет доступных департаментов</MenuItem>
+              ) : (
+                departments.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+            {errors.departmentId && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 2 }}>
+                {errors.departmentId}
               </Typography>
             )}
           </FormControl>

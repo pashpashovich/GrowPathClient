@@ -166,6 +166,8 @@ const DictionariesPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const config = DICTIONARY_CONFIG[selectedType];
 
@@ -246,19 +248,30 @@ const DictionariesPage = () => {
   };
 
   const handleDelete = async (item) => {
-    if (!window.confirm('Вы уверены, что хотите удалить эту запись?')) {
-      return;
-    }
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+
     try {
       setLoading(true);
-      await config.deleteFn(item.id);
+      await config.deleteFn(itemToDelete.id);
       await loadItems();
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
     } catch (err) {
       console.error('Failed to delete item:', err);
       setError('Не удалось удалить запись');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setItemToDelete(null);
   };
 
   const handleFieldChange = (fieldName, value) => {
@@ -503,6 +516,24 @@ const DictionariesPage = () => {
           <Button onClick={handleCloseDialog}>Отмена</Button>
           <Button onClick={handleSave} variant="contained" disabled={loading}>
             {loading ? 'Сохранение...' : 'Сохранить'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onClose={handleCancelDelete} maxWidth="xs" fullWidth>
+        <DialogTitle>Подтверждение удаления</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">
+            Вы уверены, что хотите удалить запись "{itemToDelete ? config.getName(itemToDelete) : ''}"?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Это действие нельзя будет отменить.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete}>Отмена</Button>
+          <Button onClick={handleConfirmDelete} variant="contained" color="error" disabled={loading}>
+            {loading ? 'Удаление...' : 'Удалить'}
           </Button>
         </DialogActions>
       </Dialog>
