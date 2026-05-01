@@ -22,9 +22,7 @@ import {
   Email,
   Badge,
   CalendarToday,
-  Edit,
   Save,
-  Cancel,
   PhotoCamera,
   Delete,
   Phone,
@@ -38,7 +36,6 @@ const ProfilePage = () => {
   const currentUser = useSelector((state) => state.auth.user);
   const isLoading = useSelector((state) => state.auth.isLoading);
   const error = useSelector((state) => state.auth.error);
-  const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -231,28 +228,26 @@ const ProfilePage = () => {
     });
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    if (profile) {
-      setFormData({
-        firstName: profile.firstName || '',
-        lastName: profile.lastName || '',
-        patronymicName: profile.patronymicName || '',
-        phoneNumber: profile.phoneNumber || '',
-      });
-    }
-  };
-
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await profileAPI.updateProfile(formData);
+
+      // Фильтруем пустые поля
+      const dataToSend = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+      };
+
+      if (formData.patronymicName) {
+        dataToSend.patronymicName = formData.patronymicName;
+      }
+
+      if (formData.phoneNumber) {
+        dataToSend.phoneNumber = formData.phoneNumber;
+      }
+
+      await profileAPI.updateProfile(dataToSend);
       await loadProfile();
-      setIsEditing(false);
       setSuccessMessage('Профиль успешно обновлен');
     } catch (err) {
       console.error('Failed to update profile:', err);
@@ -305,35 +300,15 @@ const ProfilePage = () => {
         <Typography variant="h4" component="h1" fontWeight="bold">
           Профиль пользователя
         </Typography>
-        {!isEditing ? (
-          <Button
-            variant="contained"
-            startIcon={<Edit />}
-            onClick={handleEdit}
-            size="large"
-          >
-            Редактировать
-          </Button>
-        ) : (
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="outlined"
-              startIcon={<Cancel />}
-              onClick={handleCancel}
-              disabled={isSaving}
-            >
-              Отмена
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<Save />}
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Сохранение...' : 'Сохранить'}
-            </Button>
-          </Stack>
-        )}
+        <Button
+          variant="contained"
+          startIcon={<Save />}
+          onClick={handleSave}
+          disabled={isSaving}
+          size="large"
+        >
+          {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+        </Button>
       </Box>
 
       {avatarError && (
@@ -491,7 +466,7 @@ const ProfilePage = () => {
         </Grid>
 
         <Grid item xs={12} md={8}>
-          <Card>
+          <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 4 }}>
               <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
                 Личные данные
@@ -505,7 +480,6 @@ const ProfilePage = () => {
                     onChange={handleChange('lastName')}
                     fullWidth
                     required
-                    disabled={!isEditing}
                     InputProps={{
                       startAdornment: <Person sx={{ mr: 1, color: 'text.secondary' }} />,
                     }}
@@ -519,7 +493,6 @@ const ProfilePage = () => {
                     onChange={handleChange('firstName')}
                     fullWidth
                     required
-                    disabled={!isEditing}
                     InputProps={{
                       startAdornment: <Person sx={{ mr: 1, color: 'text.secondary' }} />,
                     }}
@@ -532,7 +505,6 @@ const ProfilePage = () => {
                     value={formData.patronymicName}
                     onChange={handleChange('patronymicName')}
                     fullWidth
-                    disabled={!isEditing}
                     InputProps={{
                       startAdornment: <Person sx={{ mr: 1, color: 'text.secondary' }} />,
                     }}
@@ -545,7 +517,6 @@ const ProfilePage = () => {
                     value={formData.phoneNumber}
                     onChange={handleChange('phoneNumber')}
                     fullWidth
-                    disabled={!isEditing}
                     placeholder="+7 (999) 999-99-99"
                     InputProps={{
                       startAdornment: <Phone sx={{ mr: 1, color: 'text.secondary' }} />,
@@ -559,7 +530,6 @@ const ProfilePage = () => {
                     value={displayProfile.email}
                     fullWidth
                     disabled
-                    helperText="Email нельзя изменить"
                     InputProps={{
                       startAdornment: <Email sx={{ mr: 1, color: 'text.secondary' }} />,
                     }}
