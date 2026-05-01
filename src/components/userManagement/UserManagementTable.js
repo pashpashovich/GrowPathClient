@@ -159,6 +159,7 @@ const UserManagementTable = ({ onAddUser }) => {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteTargetUser, setInviteTargetUser] = useState(null);
@@ -261,6 +262,7 @@ const UserManagementTable = ({ onAddUser }) => {
 
   const handleEditUser = () => {
     if (selectedUser) {
+      setEditingUser(selectedUser);
       setNewRole(selectedUser.role || '');
       setNewDepartmentId(selectedUser.departmentId || '');
       setIsEditDialogOpen(true);
@@ -303,30 +305,30 @@ const UserManagementTable = ({ onAddUser }) => {
   };
 
   const handleUserUpdate = async () => {
-    if (!selectedUser) return;
+    if (!editingUser) return;
 
     try {
-      let updated = false;
+      const updateData = {};
 
-      if (newRole && newRole !== selectedUser.role) {
-        await dispatch(changeUserRoleAsync({ id: selectedUser.id, role: newRole }));
-        updated = true;
+      if (newRole) {
+        updateData.role = newRole;
       }
 
-      if (newDepartmentId && newDepartmentId !== selectedUser.departmentId) {
-        await userAPI.updateUser(selectedUser.id, { departmentId: parseInt(newDepartmentId, 10) });
-        updated = true;
+      if (newDepartmentId) {
+        updateData.departmentId = parseInt(newDepartmentId, 10);
       }
 
-      if (updated) {
+      if (Object.keys(updateData).length > 0) {
+        await dispatch(updateUserAsync({ id: editingUser.id, data: updateData }));
         setSuccessMessage('Данные пользователя обновлены');
-        loadUsers();
+        await loadUsers();
       }
     } catch (err) {
       console.error('Failed to update user:', err);
     }
 
     setIsEditDialogOpen(false);
+    setEditingUser(null);
     setNewRole('');
     setNewDepartmentId('');
   };
