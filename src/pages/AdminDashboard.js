@@ -8,6 +8,7 @@ import Sidebar from '../components/Sidebar';
 import UserManagementTable from '../components/userManagement/UserManagementTable';
 import AddUserForm from '../components/userManagement/AddUserForm';
 import ProfilePage from './ProfilePage';
+import DictionariesPage from './DictionariesPage';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -28,16 +29,7 @@ const AdminDashboard = () => {
 
   const getCurrentPage = () => {
     if (location.pathname === '/admin/settings') {
-      return (
-        <Paper sx={{ p: 3, borderRadius: 3, border: 1, borderColor: 'divider' }}>
-          <Typography variant="h2" component="h1" gutterBottom>
-            Настройки системы
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Здесь будут настройки системы (в разработке)
-          </Typography>
-        </Paper>
-      );
+      return <DictionariesPage />;
     }
 
     if (location.pathname === '/admin/users') {

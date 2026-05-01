@@ -119,7 +119,7 @@ const Sidebar = ({ open, onClose }) => {
           active: location.pathname === '/admin/users',
         },
         {
-          text: 'Настройки системы',
+          text: 'Управление справочниками',
           icon: <Settings />,
           path: '/admin/settings',
           active: location.pathname === '/admin/settings',
