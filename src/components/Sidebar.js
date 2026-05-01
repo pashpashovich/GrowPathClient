@@ -27,6 +27,7 @@ import {
   Timeline,
   EmojiEvents,
   Groups,
+  AccountCircle,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -39,6 +40,12 @@ const Sidebar = ({ open, onClose }) => {
   const [isHovered, setIsHovered] = useState(false);
 
       const menuItems = [
+        {
+          text: 'Профиль',
+          icon: <AccountCircle />,
+          path: '/mentor/profile',
+          active: location.pathname === '/mentor/profile',
+        },
         {
           text: 'Доска задач',
           icon: <Dashboard />,
@@ -69,6 +76,12 @@ const Sidebar = ({ open, onClose }) => {
 
   const hrMenuItems = [
     {
+      text: 'Профиль',
+      icon: <AccountCircle />,
+      path: '/hr/profile',
+      active: location.pathname === '/hr/profile',
+    },
+    {
       text: 'Программы стажировок',
       icon: <School />,
       path: '/hr',
@@ -96,6 +109,12 @@ const Sidebar = ({ open, onClose }) => {
 
       const adminMenuItems = [
         {
+          text: 'Профиль',
+          icon: <AccountCircle />,
+          path: '/admin/profile',
+          active: location.pathname === '/admin/profile',
+        },
+        {
           text: 'Пользователи',
           icon: <Person />,
           path: '/admin',
@@ -110,6 +129,12 @@ const Sidebar = ({ open, onClose }) => {
       ];
 
   const internMenuItems = [
+    {
+      text: 'Профиль',
+      icon: <AccountCircle />,
+      path: '/intern/profile',
+      active: location.pathname === '/intern/profile',
+    },
     {
       text: 'Мои задания',
       icon: <Assignment />,

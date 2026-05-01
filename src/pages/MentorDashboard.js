@@ -8,6 +8,7 @@ import TaskDetails from '../components/tasks/TaskDetails';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
 import RoadmapPage from './RoadmapPage';
+import ProfilePage from './ProfilePage';
 import Sidebar from '../components/Sidebar';
 import { useDispatch } from 'react-redux';
 import { deleteTaskAsync } from '../store/slices/taskSlice';
@@ -54,7 +55,9 @@ const MentorDashboard = () => {
 
 
   const getCurrentPage = () => {
-    if (location.pathname === '/mentor/roadmap') {
+    if (location.pathname === '/mentor/profile') {
+      return <ProfilePage />;
+    } else if (location.pathname === '/mentor/roadmap') {
       return <RoadmapPage canEdit={true} />;
     } else if (location.pathname === '/mentor/review') {
       return <TaskReviewPanel onViewTask={handleViewTask} />;
@@ -176,13 +179,12 @@ const MentorDashboard = () => {
                     handleCloseTaskDetails();
                     handleOpenForm(selectedTask);
                   }}
-                  canEdit={true} // Ментор может редактировать задачи
+                  canEdit={true} 
                 />
               )}
         </Box>
       </Modal>
 
-      {/* Модальное окно для создания/редактирования задачи */}
       <Modal
         open={openForm}
         onClose={handleCloseForm}

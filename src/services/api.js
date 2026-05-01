@@ -193,6 +193,14 @@ export const authAPI = {
     api.post(authV1Suffix('/auth/reset-password'), payload),
 };
 
+export const profileAPI = {
+  getProfile: () => api.get(v1ResourcePath('/profile')),
+  presignAvatarUpload: () =>
+    api.post(v1ResourcePath('/profile/avatar/presign-upload')),
+  getAvatar: () => api.get(v1ResourcePath('/profile/avatar'), { responseType: 'blob' }),
+  deleteAvatar: () => api.delete(v1ResourcePath('/profile/avatar')),
+};
+
 const usersBase = '/users';
 export const userAPI = {
   getUsers: (params) => api.get(usersBase, { params }),

@@ -44,7 +44,13 @@ function App() {
                       <MentorDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
+                  <Route path="/mentor/profile" element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <MentorDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/mentor/roadmap" element={
                     <ProtectedRoute requiredRole="mentor">
                       <MentorDashboard />
@@ -68,7 +74,13 @@ function App() {
                       <InternDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
+                  <Route path="/intern/profile" element={
+                    <ProtectedRoute requiredRole="intern">
+                      <InternDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/intern/roadmap" element={
                     <ProtectedRoute requiredRole="intern">
                       <InternDashboard />
@@ -92,7 +104,13 @@ function App() {
                       <HRDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
+                  <Route path="/hr/profile" element={
+                    <ProtectedRoute requiredRole="hr">
+                      <HRDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/hr/rating" element={
                     <ProtectedRoute requiredRole="hr">
                       <HRDashboard />
@@ -116,7 +134,13 @@ function App() {
                       <AdminDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
+                  <Route path="/admin/profile" element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/admin/settings" element={
                     <ProtectedRoute requiredRole="admin">
                       <AdminDashboard />

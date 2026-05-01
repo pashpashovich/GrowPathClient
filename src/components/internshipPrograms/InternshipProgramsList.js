@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -16,7 +16,13 @@ import {
   Grid,
   CircularProgress,
   Alert,
-  Tooltip,
+  TextField,
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  Stack,
+  Pagination,
 } from '@mui/material';
 import {
   MoreVert,
@@ -29,16 +35,16 @@ import {
   CheckCircle,
   Schedule,
   Cancel,
+  Search,
+  FilterList,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   deleteInternshipProgramAsync,
   setCurrentProgram,
 } from '../../store/slices/internshipProgramSlice';
-import {
-  isInternshipProgramEditable,
-  getInternshipProgramEditLockReason,
-} from '../../utils/internshipProgramApi';
+
+const ITEMS_PER_PAGE = 9;
 
 const InternshipProgramsList = ({ onEdit, onView }) => {
   const dispatch = useDispatch();
@@ -49,6 +55,50 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [programToDelete, setProgramToDelete] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    itDirection: '',
+  });
+
+  const uniqueItDirections = useMemo(() => {
+    const directions = new Set();
+    programs.forEach((program) => {
+      const direction = program.itDirectionRef?.displayName || program.itDirection;
+      if (direction) directions.add(direction);
+    });
+    return Array.from(directions).sort();
+  }, [programs]);
+
+  const filteredPrograms = useMemo(() => {
+    return programs.filter((program) => {
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesTitle = program.title?.toLowerCase().includes(searchLower);
+        const matchesDescription = program.description?.toLowerCase().includes(searchLower);
+        if (!matchesTitle && !matchesDescription) return false;
+      }
+
+      if (filters.status && program.status !== filters.status) {
+        return false;
+      }
+
+      if (filters.itDirection) {
+        const direction = program.itDirectionRef?.displayName || program.itDirection;
+        if (direction !== filters.itDirection) return false;
+      }
+
+      return true;
+    });
+  }, [programs, filters]);
+
+  const totalPages = Math.ceil(filteredPrograms.length / ITEMS_PER_PAGE);
+  const paginatedPrograms = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredPrograms.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredPrograms, currentPage]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -91,6 +141,23 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
     });
   };
 
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+    setCurrentPage(1); 
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ search: '', status: '', itDirection: '' });
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const hasActiveFilters = filters.search || filters.status || filters.itDirection;
+
   const handleMenuOpen = (event, program) => {
     setAnchorEl(event.currentTarget);
     setSelectedProgram(program);
@@ -132,20 +199,84 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
     setProgramToDelete(null);
   };
 
-  if (isLoading && programs.length === 0) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
+      )}
+
+      <Box sx={{ mb: 3 }}>
+        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+          <TextField
+            placeholder="Поиск по названию или описанию..."
+            value={filters.search}
+            onChange={(e) => handleFilterChange('search', e.target.value)}
+            size="small"
+            sx={{ minWidth: 280, flexGrow: 1 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Статус</InputLabel>
+            <Select
+              value={filters.status}
+              label="Статус"
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+            >
+              <MenuItem value="">Все</MenuItem>
+              <MenuItem value="active">Активная</MenuItem>
+              <MenuItem value="draft">Черновик</MenuItem>
+              <MenuItem value="completed">Завершена</MenuItem>
+              <MenuItem value="cancelled">Отменена</MenuItem>
+              <MenuItem value="archived">В архиве</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>IT-направление</InputLabel>
+            <Select
+              value={filters.itDirection}
+              label="IT-направление"
+              onChange={(e) => handleFilterChange('itDirection', e.target.value)}
+            >
+              <MenuItem value="">Все</MenuItem>
+              {uniqueItDirections.map((direction) => (
+                <MenuItem key={direction} value={direction}>
+                  {direction}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {hasActiveFilters && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleClearFilters}
+              startIcon={<FilterList />}
+            >
+              Сбросить
+            </Button>
+          )}
+        </Stack>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Найдено программ: {filteredPrograms.length} из {programs.length}
+        </Typography>
+      </Box>
+
+      {!isLoading && filteredPrograms.length === 0 && programs.length > 0 && (
+        <Typography color="text.secondary" sx={{ py: 2 }}>
+          По заданным фильтрам программы не найдены.
+        </Typography>
       )}
 
       {!isLoading && programs.length === 0 && (
@@ -155,12 +286,33 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
       )}
 
       <Grid container spacing={3}>
-        {programs.map((program) => (
-          <Grid item xs={12} md={6} lg={4} key={program.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flexGrow: 1 }}>
+        {paginatedPrograms.map((program) => (
+          <Grid item xs={12} sm={6} md={4} key={program.id}>
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 480,
+              }}
+            >
+              <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                  <Typography variant="h6" component="h3" sx={{ flexGrow: 1, mr: 1 }}>
+                  <Typography
+                    variant="h6"
+                    component="h3"
+                    sx={{
+                      flexGrow: 1,
+                      mr: 1,
+                      minHeight: 64,
+                      lineHeight: 1.4,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                  >
                     {program.title}
                   </Typography>
                   <IconButton
@@ -171,12 +323,24 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                   </IconButton>
                 </Box>
 
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    mb: 2,
+                    minHeight: 60,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                  }}
+                >
                   {program.description}
                 </Typography>
 
                 {(program.itDirectionRef?.displayName || program.itDirection) && (
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, minHeight: 20 }}>
                     Направление: {program.itDirectionRef?.displayName || program.itDirection}
                   </Typography>
                 )}
@@ -197,14 +361,14 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                       Начало: {formatDate(program.startDate)}
                     </Typography>
                   </Box>
-                  
+
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <School sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
                     <Typography variant="body2" color="text.secondary">
                       Длительность: {program.duration} мес.
                     </Typography>
                   </Box>
-                  
+
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <People sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
                     <Typography variant="body2" color="text.secondary">
@@ -213,48 +377,68 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                   </Box>
                 </Box>
 
-                {(program.requirements || []).length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                      Требования:
-                    </Typography>
-                    {(program.requirements || []).slice(0, 3).map((requirement, index) => (
-                      <Chip
-                        key={index}
-                        label={requirement}
-                        size="small"
-                        variant="outlined"
-                        sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem' }}
-                      />
-                    ))}
-                    {(program.requirements || []).length > 3 && (
+                <Box sx={{ mt: 'auto' }}>
+                  {(program.requirements || []).length > 0 && (
+                    <Box sx={{ mb: 2, minHeight: 60 }}>
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                        Требования:
+                      </Typography>
+                      {(program.requirements || []).slice(0, 3).map((requirement, index) => (
+                        <Chip
+                          key={index}
+                          label={requirement}
+                          size="small"
+                          variant="outlined"
+                          sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem' }}
+                        />
+                      ))}
+                      {(program.requirements || []).length > 3 && (
+                        <Typography variant="caption" color="text.secondary">
+                          +{(program.requirements || []).length - 3} еще
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    {(program.goals || []).length > 0 && (
                       <Typography variant="caption" color="text.secondary">
-                        +{(program.requirements || []).length - 3} еще
+                        Целей: {(program.goals || []).length}
+                      </Typography>
+                    )}
+
+                    {(program.selectionStages || []).length > 0 && (
+                      <Typography variant="caption" color="text.secondary">
+                        Этапов отбора: {(program.selectionStages || []).length}
                       </Typography>
                     )}
                   </Box>
-                )}
-
-                {(program.goals || []).length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Целей: {(program.goals || []).length}
-                    </Typography>
-                  </Box>
-                )}
-
-                {(program.selectionStages || []).length > 0 && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Этапов отбора: {(program.selectionStages || []).length}
-                    </Typography>
-                  </Box>
-                )}
+                </Box>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
+
+      {totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            color="primary"
+            size="large"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress />
+        </Box>
+      )}
 
       <Menu
         anchorEl={anchorEl}
@@ -273,23 +457,10 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
           <Visibility sx={{ mr: 1 }} />
           Просмотр
         </MenuItem>
-        <Tooltip
-          title={
-            selectedProgram && !isInternshipProgramEditable(selectedProgram)
-              ? getInternshipProgramEditLockReason(selectedProgram)
-              : ''
-          }
-        >
-          <span>
-            <MenuItem
-              onClick={handleEdit}
-              disabled={selectedProgram ? !isInternshipProgramEditable(selectedProgram) : true}
-            >
-              <Edit sx={{ mr: 1 }} />
-              Редактировать
-            </MenuItem>
-          </span>
-        </Tooltip>
+        <MenuItem onClick={handleEdit}>
+          <Edit sx={{ mr: 1 }} />
+          Редактировать
+        </MenuItem>
         <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
           <Delete sx={{ mr: 1 }} />
           Удалить

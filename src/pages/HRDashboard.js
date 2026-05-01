@@ -14,6 +14,7 @@ import InternshipProgramsList from '../components/internshipPrograms/InternshipP
 import InternshipProgramForm from '../components/internshipPrograms/InternshipProgramForm';
 import InternshipProgramDetails from '../components/internshipPrograms/InternshipProgramDetails';
 import AnalyticsPage from './AnalyticsPage';
+import ProfilePage from './ProfilePage';
 
 const HRDashboard = () => {
   const dispatch = useDispatch();
@@ -75,6 +76,10 @@ const HRDashboard = () => {
   };
 
   const getCurrentPage = () => {
+    if (location.pathname.startsWith('/hr/profile')) {
+      return <ProfilePage />;
+    }
+
     if (location.pathname.startsWith('/hr/rating')) {
       return <HRRatingPage />;
     }
