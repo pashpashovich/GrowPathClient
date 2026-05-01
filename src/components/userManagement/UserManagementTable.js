@@ -49,6 +49,7 @@ import {
   changeUserRoleAsync,
   inviteUserAsync,
   deleteUserAsync,
+  updateUserAsync,
   setFilters,
   clearError,
 } from '../../store/slices/userManagementSlice';
