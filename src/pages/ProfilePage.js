@@ -15,6 +15,7 @@ import {
   Stack,
   IconButton,
   Tooltip,
+  Snackbar,
 } from '@mui/material';
 import {
   Person,
@@ -26,6 +27,7 @@ import {
   Cancel,
   PhotoCamera,
   Delete,
+  Phone,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { getCurrentUserAsync } from '../store/slices/authSlice';
@@ -40,13 +42,15 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     patronymicName: '',
-    email: '',
+    phoneNumber: '',
   });
 
   const loadProfile = async () => {
@@ -58,7 +62,7 @@ const ProfilePage = () => {
         firstName: response.data.firstName || '',
         lastName: response.data.lastName || '',
         patronymicName: response.data.patronymicName || '',
-        email: response.data.email || '',
+        phoneNumber: response.data.phoneNumber || '',
       });
 
       if (response.data.avatarUrl) {
@@ -86,7 +90,6 @@ const ProfilePage = () => {
       dispatch(getCurrentUserAsync());
     }
 
-    // Cleanup avatar URL on unmount
     return () => {
       if (avatarUrl) {
         URL.revokeObjectURL(avatarUrl);
@@ -98,8 +101,7 @@ const ProfilePage = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Валидация
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
     if (file.size > maxSize) {
@@ -133,6 +135,7 @@ const ProfilePage = () => {
 
       await new Promise(resolve => setTimeout(resolve, 500));
       await loadProfile();
+      setSuccessMessage('Аватар успешно обновлен');
     } catch (err) {
       console.error('Failed to get presigned URL:', err);
     } finally {
@@ -146,13 +149,13 @@ const ProfilePage = () => {
       setAvatarError(null);
       await profileAPI.deleteAvatar();
 
-      // Revoke old avatar URL
       if (avatarUrl) {
         URL.revokeObjectURL(avatarUrl);
       }
       setAvatarUrl(null);
 
       await loadProfile();
+      setSuccessMessage('Аватар успешно удален');
     } catch (err) {
       console.error('Failed to delete avatar:', err);
       setAvatarError('Не удалось удалить аватар');
@@ -234,20 +237,29 @@ const ProfilePage = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
-    if (currentUser) {
+    if (profile) {
       setFormData({
-        firstName: currentUser.firstName || '',
-        lastName: currentUser.lastName || '',
-        patronymicName: currentUser.patronymicName || '',
-        email: currentUser.email || '',
+        firstName: profile.firstName || '',
+        lastName: profile.lastName || '',
+        patronymicName: profile.patronymicName || '',
+        phoneNumber: profile.phoneNumber || '',
       });
     }
   };
 
-  const handleSave = () => {
-    // TODO: Implement update user profile API call
-    console.log('Saving profile:', formData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      await profileAPI.updateProfile(formData);
+      await loadProfile();
+      setIsEditing(false);
+      setSuccessMessage('Профиль успешно обновлен');
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setAvatarError('Не удалось обновить профиль');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleChange = (field) => (event) => {
@@ -288,41 +300,63 @@ const ProfilePage = () => {
     .join(' ');
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h2" component="h1">
-          Профиль
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" component="h1" fontWeight="bold">
+          Профиль пользователя
         </Typography>
-        {!isEditing && (
+        {!isEditing ? (
           <Button
-            variant="outlined"
+            variant="contained"
             startIcon={<Edit />}
             onClick={handleEdit}
+            size="large"
           >
             Редактировать
           </Button>
+        ) : (
+          <Stack direction="row" spacing={2}>
+            <Button
+              variant="outlined"
+              startIcon={<Cancel />}
+              onClick={handleCancel}
+              disabled={isSaving}
+            >
+              Отмена
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Save />}
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Сохранение...' : 'Сохранить'}
+            </Button>
+          </Stack>
         )}
       </Box>
 
       {avatarError && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setAvatarError(null)}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setAvatarError(null)}>
           {avatarError}
         </Alert>
       )}
 
       <Grid container spacing={3}>
-        {/* Основная информация */}
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ height: '100%' }}>
             <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
+              <Box sx={{ position: 'relative', display: 'inline-block', mb: 3 }}>
                 <Avatar
                   src={avatarUrl}
                   sx={{
-                    width: 120,
-                    height: 120,
-                    fontSize: '3rem',
+                    width: 150,
+                    height: 150,
+                    fontSize: '4rem',
                     backgroundColor: 'primary.main',
+                    border: '4px solid',
+                    borderColor: 'background.paper',
+                    boxShadow: 3,
                   }}
                 >
                   {!avatarUrl && (displayProfile.firstName?.charAt(0) || 'U')}
@@ -330,7 +364,7 @@ const ProfilePage = () => {
 
                 {isUploadingAvatar && (
                   <CircularProgress
-                    size={120}
+                    size={150}
                     sx={{
                       position: 'absolute',
                       top: 0,
@@ -342,10 +376,10 @@ const ProfilePage = () => {
                 <Box
                   sx={{
                     position: 'absolute',
-                    bottom: 0,
-                    right: 0,
+                    bottom: 5,
+                    right: 5,
                     display: 'flex',
-                    gap: 0.5,
+                    gap: 1,
                   }}
                 >
                   <Tooltip title="Загрузить фото">
@@ -356,6 +390,7 @@ const ProfilePage = () => {
                         backgroundColor: 'primary.main',
                         color: 'white',
                         '&:hover': { backgroundColor: 'primary.dark' },
+                        boxShadow: 2,
                       }}
                       disabled={isUploadingAvatar}
                     >
@@ -378,6 +413,7 @@ const ProfilePage = () => {
                           backgroundColor: 'error.main',
                           color: 'white',
                           '&:hover': { backgroundColor: 'error.dark' },
+                          boxShadow: 2,
                         }}
                         disabled={isUploadingAvatar}
                       >
@@ -392,29 +428,29 @@ const ProfilePage = () => {
                 {fullName || 'Пользователь'}
               </Typography>
 
-              <Typography variant="body2" color="text.secondary" gutterBottom>
+              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
                 {displayProfile.email}
               </Typography>
 
-              <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
+              <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 3 }}>
                 <Chip
                   label={getRoleLabel(displayProfile.role)}
                   color={getRoleColor(displayProfile.role)}
-                  size="small"
+                  size="medium"
                 />
                 <Chip
                   label={getStatusLabel(displayProfile.status)}
                   color={getStatusColor(displayProfile.status)}
-                  size="small"
+                  size="medium"
                 />
               </Stack>
 
               <Divider sx={{ my: 3 }} />
 
-              <Box sx={{ textAlign: 'left' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <CalendarToday sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
-                  <Box>
+              <Stack spacing={2} alignItems="flex-start">
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <CalendarToday sx={{ mr: 2, fontSize: 20, color: 'text.secondary' }} />
+                  <Box sx={{ textAlign: 'left' }}>
                     <Typography variant="caption" color="text.secondary" display="block">
                       Дата регистрации
                     </Typography>
@@ -425,9 +461,9 @@ const ProfilePage = () => {
                 </Box>
 
                 {displayProfile.lastLogin && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <CalendarToday sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
-                    <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <CalendarToday sx={{ mr: 2, fontSize: 20, color: 'text.secondary' }} />
+                    <Box sx={{ textAlign: 'left' }}>
                       <Typography variant="caption" color="text.secondary" display="block">
                         Последний вход
                       </Typography>
@@ -437,165 +473,119 @@ const ProfilePage = () => {
                     </Box>
                   </Box>
                 )}
-              </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <Badge sx={{ mr: 2, fontSize: 20, color: 'text.secondary' }} />
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      ID пользователя
+                    </Typography>
+                    <Typography variant="body2">
+                      {displayProfile.id}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} md={8}>
           <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
+            <CardContent sx={{ p: 4 }}>
+              <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
                 Личные данные
               </Typography>
 
-              <Divider sx={{ mb: 3 }} />
-
-              {isEditing ? (
-                <Stack spacing={3}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
                   <TextField
                     label="Фамилия"
                     value={formData.lastName}
                     onChange={handleChange('lastName')}
                     fullWidth
                     required
+                    disabled={!isEditing}
+                    InputProps={{
+                      startAdornment: <Person sx={{ mr: 1, color: 'text.secondary' }} />,
+                    }}
                   />
+                </Grid>
 
+                <Grid item xs={12} sm={6}>
                   <TextField
                     label="Имя"
                     value={formData.firstName}
                     onChange={handleChange('firstName')}
                     fullWidth
                     required
+                    disabled={!isEditing}
+                    InputProps={{
+                      startAdornment: <Person sx={{ mr: 1, color: 'text.secondary' }} />,
+                    }}
                   />
+                </Grid>
 
+                <Grid item xs={12} sm={6}>
                   <TextField
                     label="Отчество"
                     value={formData.patronymicName}
                     onChange={handleChange('patronymicName')}
                     fullWidth
+                    disabled={!isEditing}
+                    InputProps={{
+                      startAdornment: <Person sx={{ mr: 1, color: 'text.secondary' }} />,
+                    }}
                   />
+                </Grid>
 
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Номер телефона"
+                    value={formData.phoneNumber}
+                    onChange={handleChange('phoneNumber')}
+                    fullWidth
+                    disabled={!isEditing}
+                    placeholder="+7 (999) 999-99-99"
+                    InputProps={{
+                      startAdornment: <Phone sx={{ mr: 1, color: 'text.secondary' }} />,
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
                   <TextField
                     label="Email"
-                    value={formData.email}
-                    onChange={handleChange('email')}
+                    value={displayProfile.email}
                     fullWidth
-                    required
-                    type="email"
                     disabled
                     helperText="Email нельзя изменить"
+                    InputProps={{
+                      startAdornment: <Email sx={{ mr: 1, color: 'text.secondary' }} />,
+                    }}
                   />
+                </Grid>
+              </Grid>
 
-                  <Stack direction="row" spacing={2} justifyContent="flex-end">
-                    <Button
-                      variant="outlined"
-                      startIcon={<Cancel />}
-                      onClick={handleCancel}
-                    >
-                      Отмена
-                    </Button>
-                    <Button
-                      variant="contained"
-                      startIcon={<Save />}
-                      onClick={handleSave}
-                    >
-                      Сохранить
-                    </Button>
-                  </Stack>
-                </Stack>
-              ) : (
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Person sx={{ mr: 2, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Фамилия
-                        </Typography>
-                        <Typography variant="body1">
-                          {displayProfile.lastName || 'Не указано'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Person sx={{ mr: 2, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Имя
-                        </Typography>
-                        <Typography variant="body1">
-                          {displayProfile.firstName || 'Не указано'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Person sx={{ mr: 2, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Отчество
-                        </Typography>
-                        <Typography variant="body1">
-                          {displayProfile.patronymicName || 'Не указано'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Email sx={{ mr: 2, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Email
-                        </Typography>
-                        <Typography variant="body1">
-                          {displayProfile.email}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Badge sx={{ mr: 2, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          ID пользователя
-                        </Typography>
-                        <Typography variant="body1">
-                          {displayProfile.id}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-
-                  {displayProfile.invitedBy && (
+              {displayProfile.invitedBy && (
+                <>
+                  <Divider sx={{ my: 4 }} />
+                  <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
+                    Дополнительная информация
+                  </Typography>
+                  <Grid container spacing={3}>
                     <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Person sx={{ mr: 2, color: 'text.secondary' }} />
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Приглашен пользователем
-                          </Typography>
-                          <Typography variant="body1">
-                            ID: {displayProfile.invitedBy}
-                          </Typography>
-                        </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Приглашен пользователем
+                        </Typography>
+                        <Typography variant="body1">
+                          ID: {displayProfile.invitedBy}
+                        </Typography>
                       </Box>
                     </Grid>
-                  )}
-
-                  {displayProfile.invitationSentAt && (
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <CalendarToday sx={{ mr: 2, color: 'text.secondary' }} />
+                    {displayProfile.invitationSentAt && (
+                      <Grid item xs={12} sm={6}>
                         <Box>
                           <Typography variant="caption" color="text.secondary" display="block">
                             Приглашение отправлено
@@ -604,15 +594,26 @@ const ProfilePage = () => {
                             {formatDate(displayProfile.invitationSentAt)}
                           </Typography>
                         </Box>
-                      </Box>
-                    </Grid>
-                  )}
-                </Grid>
+                      </Grid>
+                    )}
+                  </Grid>
+                </>
               )}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={4000}
+        onClose={() => setSuccessMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSuccessMessage('')} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

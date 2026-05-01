@@ -195,6 +195,7 @@ export const authAPI = {
 
 export const profileAPI = {
   getProfile: () => api.get(v1ResourcePath('/profile')),
+  updateProfile: (data) => api.put(v1ResourcePath('/profile'), data),
   presignAvatarUpload: () =>
     api.post(v1ResourcePath('/profile/avatar/presign-upload')),
   getAvatar: () => api.get(v1ResourcePath('/profile/avatar'), { responseType: 'blob' }),
