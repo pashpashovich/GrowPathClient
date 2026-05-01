@@ -303,11 +303,11 @@ const ProfilePage = () => {
       )}
 
       <Card>
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
+        <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
             <Box sx={{ flex: '0 0 25%' }}>
               <Box>
-                <Box sx={{ position: 'relative', display: 'inline-block', mb: 1.5 }}>
+                <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
                   <Avatar
                     src={avatarUrl}
                     sx={{
