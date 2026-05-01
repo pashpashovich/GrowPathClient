@@ -311,11 +311,11 @@ const UserManagementTable = ({ onAddUser }) => {
     try {
       const updateData = {};
 
-      if (newRole) {
+      if (newRole && newRole.trim()) {
         updateData.role = newRole;
       }
 
-      if (newDepartmentId) {
+      if (newDepartmentId && newDepartmentId !== '') {
         updateData.departmentId = parseInt(newDepartmentId, 10);
       }
 
