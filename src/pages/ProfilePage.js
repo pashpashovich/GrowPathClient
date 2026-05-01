@@ -26,6 +26,7 @@ import {
   PhotoCamera,
   Delete,
   Phone,
+  Info,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { getCurrentUserAsync } from '../store/slices/authSlice';
@@ -232,7 +233,6 @@ const ProfilePage = () => {
     try {
       setIsSaving(true);
 
-      // Фильтруем пустые поля
       const dataToSend = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -295,185 +295,130 @@ const ProfilePage = () => {
     .join(' ');
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Профиль пользователя
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Save />}
-          onClick={handleSave}
-          disabled={isSaving}
-          size="large"
-        >
-          {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
-        </Button>
-      </Box>
-
+    <Box sx={{ maxWidth: 1400, mx: 'auto', p: 3 }}>
       {avatarError && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setAvatarError(null)}>
           {avatarError}
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <Box sx={{ position: 'relative', display: 'inline-block', mb: 3 }}>
-                <Avatar
-                  src={avatarUrl}
-                  sx={{
-                    width: 150,
-                    height: 150,
-                    fontSize: '4rem',
-                    backgroundColor: 'primary.main',
-                    border: '4px solid',
-                    borderColor: 'background.paper',
-                    boxShadow: 3,
-                  }}
-                >
-                  {!avatarUrl && (displayProfile.firstName?.charAt(0) || 'U')}
-                </Avatar>
+      <Card>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
+            <Box sx={{ flex: '0 0 25%' }}>
+              <Box>
+                <Box sx={{ position: 'relative', display: 'inline-block', mb: 1.5 }}>
+                  <Avatar
+                    src={avatarUrl}
+                    sx={{
+                      width: 100,
+                      height: 100,
+                      fontSize: '2rem',
+                      backgroundColor: 'primary.main',
+                      border: '3px solid',
+                      borderColor: 'background.paper',
+                      boxShadow: 2,
+                    }}
+                  >
+                    {!avatarUrl && (displayProfile.firstName?.charAt(0) || 'U')}
+                  </Avatar>
 
-                {isUploadingAvatar && (
-                  <CircularProgress
-                    size={150}
+                  {isUploadingAvatar && (
+                    <CircularProgress
+                      size={100}
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                      }}
+                    />
+                  )}
+
+                  <Box
                     sx={{
                       position: 'absolute',
-                      top: 0,
-                      left: 0,
+                      bottom: 0,
+                      right: 0,
+                      display: 'flex',
+                      gap: 0.5,
                     }}
-                  />
-                )}
-
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    bottom: 5,
-                    right: 5,
-                    display: 'flex',
-                    gap: 1,
-                  }}
-                >
-                  <Tooltip title="Загрузить фото">
-                    <IconButton
-                      component="label"
-                      size="small"
-                      sx={{
-                        backgroundColor: 'primary.main',
-                        color: 'white',
-                        '&:hover': { backgroundColor: 'primary.dark' },
-                        boxShadow: 2,
-                      }}
-                      disabled={isUploadingAvatar}
-                    >
-                      <PhotoCamera fontSize="small" />
-                      <input
-                        type="file"
-                        hidden
-                        accept="image/jpeg,image/png,image/gif,image/webp"
-                        onChange={handleAvatarUpload}
-                      />
-                    </IconButton>
-                  </Tooltip>
-
-                  {avatarUrl && (
-                    <Tooltip title="Удалить фото">
+                  >
+                    <Tooltip title="Загрузить фото">
                       <IconButton
+                        component="label"
                         size="small"
-                        onClick={handleAvatarDelete}
                         sx={{
-                          backgroundColor: 'error.main',
+                          backgroundColor: 'primary.main',
                           color: 'white',
-                          '&:hover': { backgroundColor: 'error.dark' },
+                          '&:hover': { backgroundColor: 'primary.dark' },
                           boxShadow: 2,
                         }}
                         disabled={isUploadingAvatar}
                       >
-                        <Delete fontSize="small" />
+                        <PhotoCamera fontSize="small" />
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/jpeg,image/png,image/gif,image/webp"
+                          onChange={handleAvatarUpload}
+                        />
                       </IconButton>
                     </Tooltip>
-                  )}
+
+                    {avatarUrl && (
+                      <Tooltip title="Удалить фото">
+                        <IconButton
+                          size="small"
+                          onClick={handleAvatarDelete}
+                          sx={{
+                            backgroundColor: 'error.main',
+                            color: 'white',
+                            '&:hover': { backgroundColor: 'error.dark' },
+                            boxShadow: 2,
+                          }}
+                          disabled={isUploadingAvatar}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
                 </Box>
+
+                <Typography variant="body1" gutterBottom fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
+                  {fullName || 'Пользователь'}
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 1, fontSize: '0.75rem' }}>
+                  {displayProfile.email}
+                </Typography>
+
+                <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap" sx={{ mb: 1.5 }}>
+                  <Chip
+                    label={getRoleLabel(displayProfile.role)}
+                    color={getRoleColor(displayProfile.role)}
+                    size="small"
+                    sx={{ fontSize: '0.65rem', height: '20px' }}
+                  />
+                  <Chip
+                    label={getStatusLabel(displayProfile.status)}
+                    color={getStatusColor(displayProfile.status)}
+                    size="small"
+                    sx={{ fontSize: '0.65rem', height: '20px' }}
+                  />
+                </Stack>
               </Box>
+            </Box>
 
-              <Typography variant="h5" gutterBottom fontWeight="bold">
-                {fullName || 'Пользователь'}
-              </Typography>
-
-              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
-                {displayProfile.email}
-              </Typography>
-
-              <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 3 }}>
-                <Chip
-                  label={getRoleLabel(displayProfile.role)}
-                  color={getRoleColor(displayProfile.role)}
-                  size="medium"
-                />
-                <Chip
-                  label={getStatusLabel(displayProfile.status)}
-                  color={getStatusColor(displayProfile.status)}
-                  size="medium"
-                />
-              </Stack>
-
-              <Divider sx={{ my: 3 }} />
-
-              <Stack spacing={2} alignItems="flex-start">
-                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <CalendarToday sx={{ mr: 2, fontSize: 20, color: 'text.secondary' }} />
-                  <Box sx={{ textAlign: 'left' }}>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      Дата регистрации
-                    </Typography>
-                    <Typography variant="body2">
-                      {formatDate(displayProfile.createdAt)}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {displayProfile.lastLogin && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <CalendarToday sx={{ mr: 2, fontSize: 20, color: 'text.secondary' }} />
-                    <Box sx={{ textAlign: 'left' }}>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Последний вход
-                      </Typography>
-                      <Typography variant="body2">
-                        {formatDate(displayProfile.lastLogin)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
-
-                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <Badge sx={{ mr: 2, fontSize: 20, color: 'text.secondary' }} />
-                  <Box sx={{ textAlign: 'left' }}>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      ID пользователя
-                    </Typography>
-                    <Typography variant="body2">
-                      {displayProfile.id}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={8}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
-                Личные данные
-              </Typography>
-
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
+            <Box sx={{ flex: '1' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Person sx={{ color: 'primary.main', fontSize: 20 }} />
+                <Typography variant="h6" fontWeight="bold" sx={{ fontSize: '1rem' }}>
+                  Личные данные
+                </Typography>
+              </Box>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     label="Фамилия"
                     value={formData.lastName}
@@ -486,7 +431,7 @@ const ProfilePage = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     label="Имя"
                     value={formData.firstName}
@@ -499,7 +444,7 @@ const ProfilePage = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     label="Отчество"
                     value={formData.patronymicName}
@@ -511,13 +456,13 @@ const ProfilePage = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     label="Номер телефона"
                     value={formData.phoneNumber}
                     onChange={handleChange('phoneNumber')}
                     fullWidth
-                    placeholder="+375 (29) 999-99-99"
+                    placeholder="+375 (XX) XXX-XX-XX"
                     InputProps={{
                       startAdornment: <Phone sx={{ mr: 1, color: 'text.secondary' }} />,
                     }}
@@ -537,42 +482,34 @@ const ProfilePage = () => {
                 </Grid>
               </Grid>
 
-              {displayProfile.invitedBy && (
-                <>
-                  <Divider sx={{ my: 4 }} />
-                  <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
-                    Дополнительная информация
-                  </Typography>
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Приглашен пользователем
-                        </Typography>
-                        <Typography variant="body1">
-                          ID: {displayProfile.invitedBy}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    {displayProfile.invitationSentAt && (
-                      <Grid item xs={12} sm={6}>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Приглашение отправлено
-                          </Typography>
-                          <Typography variant="body1">
-                            {formatDate(displayProfile.invitationSentAt)}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    )}
-                  </Grid>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+              <Divider sx={{ my: 2 }} />
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="contained"
+                  startIcon={<Save />}
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  size="medium"
+                >
+                  {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+
+      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+        <Alert severity="info" icon={<Info fontSize="small" />} sx={{ borderRadius: 2, py: 1, maxWidth: 800 }}>
+          <Typography variant="body2" fontWeight="bold" gutterBottom sx={{ fontSize: '0.85rem' }}>
+            Безопасность учетной записи
+          </Typography>
+          <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+            Убедитесь, что ваш адрес электронной почты и номер телефона актуальны для получения уведомлений.
+          </Typography>
+        </Alert>
+      </Box>
 
       <Snackbar
         open={!!successMessage}
