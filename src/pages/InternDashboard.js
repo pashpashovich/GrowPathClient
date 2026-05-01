@@ -7,6 +7,7 @@ import TaskSubmissionForm from '../components/tasks/TaskSubmissionForm';
 import TaskDetails from '../components/tasks/TaskDetails';
 import RoadmapPage from './RoadmapPage';
 import InternRatingPage from './InternRatingPage';
+import ProfilePage from './ProfilePage';
 import Sidebar from '../components/Sidebar';
 import { useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -64,13 +65,15 @@ const InternDashboard = () => {
           </Typography>
         </Box>
       );
-    } else {
+    } else if (location.pathname === '/intern/tasks') {
       return (
         <InternTaskList
           onViewTask={handleViewTask}
           onSubmitTask={handleSubmitTask}
         />
       );
+    } else {
+      return <ProfilePage />;
     }
   };
 

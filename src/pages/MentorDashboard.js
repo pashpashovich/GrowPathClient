@@ -70,9 +70,7 @@ const MentorDashboard = () => {
           </Typography>
         </Box>
       );
-    } else if (location.pathname === '/mentor' || location.pathname === '/mentor/profile') {
-      return <ProfilePage />;
-    } else {
+    } else if (location.pathname === '/mentor/tasks') {
       return (
         <KanbanBoard
           onEdit={handleOpenForm}
@@ -80,6 +78,8 @@ const MentorDashboard = () => {
           onView={handleViewTask}
         />
       );
+    } else {
+      return <ProfilePage />;
     }
   };
 

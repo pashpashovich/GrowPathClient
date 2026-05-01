@@ -51,18 +51,24 @@ function App() {
                     </ProtectedRoute>
                   } />
 
+                  <Route path="/mentor/tasks" element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <MentorDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/mentor/roadmap" element={
                     <ProtectedRoute requiredRole="mentor">
                       <MentorDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
                   <Route path="/mentor/review" element={
                     <ProtectedRoute requiredRole="mentor">
                       <MentorDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
                   <Route path="/mentor/stats" element={
                     <ProtectedRoute requiredRole="mentor">
                       <MentorDashboard />
@@ -81,18 +87,24 @@ function App() {
                     </ProtectedRoute>
                   } />
 
+                  <Route path="/intern/tasks" element={
+                    <ProtectedRoute requiredRole="intern">
+                      <InternDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/intern/roadmap" element={
                     <ProtectedRoute requiredRole="intern">
                       <InternDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
                   <Route path="/intern/stats" element={
                     <ProtectedRoute requiredRole="intern">
                       <InternDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
                   <Route path="/intern/rating" element={
                     <ProtectedRoute requiredRole="intern">
                       <InternDashboard />
@@ -111,12 +123,18 @@ function App() {
                     </ProtectedRoute>
                   } />
 
+                  <Route path="/hr/programs" element={
+                    <ProtectedRoute requiredRole="hr">
+                      <HRDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/hr/rating" element={
                     <ProtectedRoute requiredRole="hr">
                       <HRDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
                   <Route path="/hr/analytics" element={
                     <ProtectedRoute requiredRole="hr">
                       <HRDashboard />
@@ -136,6 +154,12 @@ function App() {
                   } />
 
                   <Route path="/admin/profile" element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/admin/users" element={
                     <ProtectedRoute requiredRole="admin">
                       <AdminDashboard />
                     </ProtectedRoute>

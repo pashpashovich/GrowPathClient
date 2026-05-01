@@ -97,23 +97,23 @@ const HRDashboard = () => {
       );
     }
 
-    if (location.pathname === '/hr' || location.pathname.startsWith('/hr/profile')) {
-      return <ProfilePage />;
+    if (location.pathname === '/hr/programs') {
+      return (
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+            <Typography variant="h2" component="h1">
+              Программы стажировок
+            </Typography>
+            <Button variant="contained" color="primary" onClick={handleCreateProgram} sx={{ fontWeight: 700 }}>
+              Создать программу
+            </Button>
+          </Box>
+          <InternshipProgramsList onEdit={handleEditProgram} onView={handleViewProgram} />
+        </Box>
+      );
     }
 
-    return (
-      <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Typography variant="h2" component="h1">
-            Программы стажировок
-          </Typography>
-          <Button variant="contained" color="primary" onClick={handleCreateProgram} sx={{ fontWeight: 700 }}>
-            Создать программу
-          </Button>
-        </Box>
-        <InternshipProgramsList onEdit={handleEditProgram} onView={handleViewProgram} />
-      </Box>
-    );
+    return <ProfilePage />;
   };
 
   return (

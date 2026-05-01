@@ -40,11 +40,11 @@ const AdminDashboard = () => {
       );
     }
 
-    if (location.pathname === '/admin' || location.pathname === '/admin/profile') {
-      return <ProfilePage />;
+    if (location.pathname === '/admin/users') {
+      return <UserManagementTable onAddUser={handleAddUser} />;
     }
 
-    return <UserManagementTable onAddUser={handleAddUser} />;
+    return <ProfilePage />;
   };
 
   return (

@@ -43,14 +43,14 @@ const Sidebar = ({ open, onClose }) => {
         {
           text: 'Профиль',
           icon: <AccountCircle />,
-          path: '/mentor/profile',
-          active: location.pathname === '/mentor/profile',
+          path: '/mentor',
+          active: location.pathname === '/mentor' || location.pathname === '/mentor/profile',
         },
         {
           text: 'Доска задач',
           icon: <Dashboard />,
-          path: '/mentor',
-          active: location.pathname === '/mentor' || location.pathname === '/',
+          path: '/mentor/tasks',
+          active: location.pathname === '/mentor/tasks',
         },
         {
           text: 'Дорожная карта',
@@ -72,20 +72,18 @@ const Sidebar = ({ open, onClose }) => {
         },
       ];
 
-  const hrBase = location.pathname.replace(/\/$/, '') || '/';
-
   const hrMenuItems = [
     {
       text: 'Профиль',
       icon: <AccountCircle />,
-      path: '/hr/profile',
-      active: location.pathname === '/hr/profile',
+      path: '/hr',
+      active: location.pathname === '/hr' || location.pathname === '/hr/profile',
     },
     {
       text: 'Программы стажировок',
       icon: <School />,
-      path: '/hr',
-      active: hrBase === '/hr',
+      path: '/hr/programs',
+      active: location.pathname === '/hr/programs',
     },
     {
       text: 'Аналитика и отчеты',
@@ -111,14 +109,14 @@ const Sidebar = ({ open, onClose }) => {
         {
           text: 'Профиль',
           icon: <AccountCircle />,
-          path: '/admin/profile',
-          active: location.pathname === '/admin/profile',
+          path: '/admin',
+          active: location.pathname === '/admin' || location.pathname === '/admin/profile',
         },
         {
           text: 'Пользователи',
           icon: <Person />,
-          path: '/admin',
-          active: location.pathname === '/admin',
+          path: '/admin/users',
+          active: location.pathname === '/admin/users',
         },
         {
           text: 'Настройки системы',
@@ -132,14 +130,14 @@ const Sidebar = ({ open, onClose }) => {
     {
       text: 'Профиль',
       icon: <AccountCircle />,
-      path: '/intern/profile',
-      active: location.pathname === '/intern/profile',
+      path: '/intern',
+      active: location.pathname === '/intern' || location.pathname === '/intern/profile',
     },
     {
       text: 'Мои задания',
       icon: <Assignment />,
-      path: '/intern',
-      active: location.pathname === '/intern',
+      path: '/intern/tasks',
+      active: location.pathname === '/intern/tasks',
     },
     {
       text: 'Дорожная карта',
