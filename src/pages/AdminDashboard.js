@@ -7,6 +7,7 @@ import DashboardAppBar, { DASHBOARD_APP_BAR_HEIGHT } from '../components/Dashboa
 import Sidebar from '../components/Sidebar';
 import UserManagementTable from '../components/userManagement/UserManagementTable';
 import AddUserForm from '../components/userManagement/AddUserForm';
+import ProfilePage from './ProfilePage';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -37,6 +38,10 @@ const AdminDashboard = () => {
           </Typography>
         </Paper>
       );
+    }
+
+    if (location.pathname === '/admin' || location.pathname === '/admin/profile') {
+      return <ProfilePage />;
     }
 
     return <UserManagementTable onAddUser={handleAddUser} />;

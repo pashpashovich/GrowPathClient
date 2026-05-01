@@ -76,10 +76,6 @@ const HRDashboard = () => {
   };
 
   const getCurrentPage = () => {
-    if (location.pathname.startsWith('/hr/profile')) {
-      return <ProfilePage />;
-    }
-
     if (location.pathname.startsWith('/hr/rating')) {
       return <HRRatingPage />;
     }
@@ -99,6 +95,10 @@ const HRDashboard = () => {
           </Typography>
         </Box>
       );
+    }
+
+    if (location.pathname === '/hr' || location.pathname.startsWith('/hr/profile')) {
+      return <ProfilePage />;
     }
 
     return (

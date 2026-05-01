@@ -55,9 +55,7 @@ const MentorDashboard = () => {
 
 
   const getCurrentPage = () => {
-    if (location.pathname === '/mentor/profile') {
-      return <ProfilePage />;
-    } else if (location.pathname === '/mentor/roadmap') {
+    if (location.pathname === '/mentor/roadmap') {
       return <RoadmapPage canEdit={true} />;
     } else if (location.pathname === '/mentor/review') {
       return <TaskReviewPanel onViewTask={handleViewTask} />;
@@ -72,6 +70,8 @@ const MentorDashboard = () => {
           </Typography>
         </Box>
       );
+    } else if (location.pathname === '/mentor' || location.pathname === '/mentor/profile') {
+      return <ProfilePage />;
     } else {
       return (
         <KanbanBoard
