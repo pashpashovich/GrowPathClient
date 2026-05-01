@@ -306,15 +306,22 @@ const UserManagementTable = ({ onAddUser }) => {
     if (!selectedUser) return;
 
     try {
-      const updates = {};
+      let updated = false;
+
       if (newRole && newRole !== selectedUser.role) {
         await dispatch(changeUserRoleAsync({ id: selectedUser.id, role: newRole }));
+        updated = true;
       }
+
       if (newDepartmentId && newDepartmentId !== selectedUser.departmentId) {
         await userAPI.updateUser(selectedUser.id, { departmentId: parseInt(newDepartmentId, 10) });
+        updated = true;
       }
-      setSuccessMessage('Данные пользователя обновлены');
-      loadUsers();
+
+      if (updated) {
+        setSuccessMessage('Данные пользователя обновлены');
+        loadUsers();
+      }
     } catch (err) {
       console.error('Failed to update user:', err);
     }
