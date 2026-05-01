@@ -61,7 +61,6 @@ const ProfilePage = () => {
         email: response.data.email || '',
       });
 
-      // Load avatar if it exists
       if (response.data.avatarUrl) {
         try {
           const avatarResponse = await profileAPI.getAvatar();
@@ -117,11 +116,9 @@ const ProfilePage = () => {
     setIsUploadingAvatar(true);
 
     try {
-      // Шаг 1: Получить presigned URL
       const presignResponse = await profileAPI.presignAvatarUpload();
       const { uploadUrl } = presignResponse.data;
 
-      // Шаг 2: Загрузить файл в MinIO (игнорируем ответ, т.к. MinIO может вернуть ошибку даже при успехе)
       try {
         await fetch(uploadUrl, {
           method: 'PUT',
@@ -131,16 +128,13 @@ const ProfilePage = () => {
           body: file,
         });
       } catch (uploadError) {
-        // Игнорируем ошибки от MinIO, т.к. файл может быть успешно загружен
         console.log('MinIO upload response (may be false error):', uploadError);
       }
 
-      // Шаг 3: Обновить профиль (даем время на обработку)
       await new Promise(resolve => setTimeout(resolve, 500));
       await loadProfile();
     } catch (err) {
-      console.error('Failed to upload avatar:', err);
-      setAvatarError('Не удалось загрузить аватар');
+      console.error('Failed to get presigned URL:', err);
     } finally {
       setIsUploadingAvatar(false);
     }
