@@ -63,8 +63,8 @@ const UserManagementTable = ({ onAddUser }) => {
   const currentUser = useSelector((state) => state.auth?.user);
 
   const [searchInput, setSearchInput] = useState('');
-  const [roleInput, setRoleInput] = useState('');
-  const [statusInput, setStatusInput] = useState('');
+  const [roleInput, setRoleInput] = useState('all');
+  const [statusInput, setStatusInput] = useState('all');
 
   const page = filters?.page ?? 1;
   const limit = filters?.limit ?? 10;
@@ -113,7 +113,7 @@ const UserManagementTable = ({ onAddUser }) => {
     const value = e.target.value;
     setRoleInput(value);
     dispatch(setFilters({
-      role: value || '',
+      role: value === 'all' ? '' : value,
       page: 1,
     }));
   };
@@ -122,7 +122,7 @@ const UserManagementTable = ({ onAddUser }) => {
     const value = e.target.value;
     setStatusInput(value);
     dispatch(setFilters({
-      status: value || '',
+      status: value === 'all' ? '' : value,
       page: 1,
     }));
   };
@@ -138,8 +138,8 @@ const UserManagementTable = ({ onAddUser }) => {
 
   const handleResetFilters = () => {
     setSearchInput('');
-    setRoleInput('');
-    setStatusInput('');
+    setRoleInput('all');
+    setStatusInput('all');
     dispatch(setFilters({
       search: '',
       role: '',
@@ -406,7 +406,7 @@ const UserManagementTable = ({ onAddUser }) => {
               label="Роль"
               onChange={handleRoleFilterChange}
             >
-              <MenuItem value="">Все роли</MenuItem>
+              <MenuItem value="all">Все роли</MenuItem>
               <MenuItem value="admin">Администратор</MenuItem>
               <MenuItem value="hr">HR</MenuItem>
               <MenuItem value="mentor">Ментор</MenuItem>
@@ -422,7 +422,7 @@ const UserManagementTable = ({ onAddUser }) => {
               label="Статус"
               onChange={handleStatusFilterChange}
             >
-              <MenuItem value="">Все статусы</MenuItem>
+              <MenuItem value="all">Все статусы</MenuItem>
               <MenuItem value="active">Активен</MenuItem>
               <MenuItem value="pending">Ожидает активации</MenuItem>
               <MenuItem value="blocked">Заблокирован</MenuItem>
@@ -493,8 +493,8 @@ const UserManagementTable = ({ onAddUser }) => {
                     sx={{
                       fontWeight: 700,
                       fontSize: '0.7rem',
-                      bgcolor: 'primary.light',
-                      color: 'primary.dark',
+                      bgcolor: 'grey.200',
+                      color: 'text.primary',
                       borderRadius: 999,
                     }}
                   />
