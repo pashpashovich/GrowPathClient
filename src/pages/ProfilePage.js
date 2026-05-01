@@ -517,7 +517,7 @@ const ProfilePage = () => {
                     value={formData.phoneNumber}
                     onChange={handleChange('phoneNumber')}
                     fullWidth
-                    placeholder="+7 (999) 999-99-99"
+                    placeholder="+375 (29) 999-99-99"
                     InputProps={{
                       startAdornment: <Phone sx={{ mr: 1, color: 'text.secondary' }} />,
                     }}
