@@ -1,22 +1,22 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
-const Logo = ({ size = 'medium' }) => {
+const Logo = ({ size = 'medium', showText = true }) => {
   const getSizeStyles = () => {
     switch (size) {
       case 'small':
-        return { width: 24, height: 24, fontSize: '0.8rem' };
-      case 'large':
-        return { width: 40, height: 40, fontSize: '1.2rem' };
-      default:
         return { width: 32, height: 32, fontSize: '1rem' };
+      case 'large':
+        return { width: 48, height: 48, fontSize: '1.5rem' };
+      default:
+        return { width: 40, height: 40, fontSize: '1.2rem' };
     }
   };
 
   const sizeStyles = getSizeStyles();
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
       {/* Логотип - изображение */}
       <Box
         component="img"
@@ -28,19 +28,22 @@ const Logo = ({ size = 'medium' }) => {
           objectFit: 'contain',
         }}
       />
-      
+
       {/* Текст логотипа */}
-      <Typography
-        variant="h6"
-        component="div"
-        sx={{
-          fontWeight: 'bold',
-          fontSize: sizeStyles.fontSize,
-          color: 'inherit',
-        }}
-      >
-        GrowPath
-      </Typography>
+      {showText && (
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            fontWeight: 700,
+            fontSize: sizeStyles.fontSize,
+            color: 'inherit',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          GrowPath
+        </Typography>
+      )}
     </Box>
   );
 };

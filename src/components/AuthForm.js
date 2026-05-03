@@ -16,12 +16,12 @@ import {
   Visibility,
   VisibilityOff,
   Mail,
-  TrendingUp,
 } from '@mui/icons-material';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginAsync } from '../store/slices/authSlice';
 import { getNormalizedRole } from '../utils/resolveAppRole';
+import Logo from './Logo';
 
 const AuthForm = () => {
   const navigate = useNavigate();
@@ -195,34 +195,10 @@ const AuthForm = () => {
               alignItems: 'center',
               gap: 1.5,
               mb: 1,
+              color: 'primary.main',
             }}
           >
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: 2,
-              }}
-            >
-              <TrendingUp sx={{ fontSize: 22 }} />
-            </Box>
-            <Typography
-              variant="h1"
-              component="span"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              GrowPath
-            </Typography>
+            <Logo size="large" />
           </Box>
         </Box>
 
