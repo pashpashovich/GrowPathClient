@@ -9,27 +9,12 @@ import {
   Alert,
   CircularProgress,
   Link,
+  Paper,
 } from '@mui/material';
 import { Lock, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
 import { authAPI } from '../services/api';
-
-const fieldSx = {
-  mb: 3,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 3,
-    backgroundColor: '#f5f5f5',
-    height: '56px',
-    '& fieldset': { border: 'none' },
-    '&:hover fieldset': { border: 'none' },
-    '&.Mui-focused fieldset': { border: 'none' },
-  },
-  '& .MuiInputBase-input': {
-    padding: '16px 14px',
-    fontSize: '16px',
-    '&::placeholder': { color: '#999', opacity: 1 },
-  },
-};
+import Logo from '../components/Logo';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -78,142 +63,286 @@ const RegisterConfirmPage = () => {
     }
   };
 
+  const getFieldSx = (extra = {}) => ({
+    ...extra,
+    '& .MuiOutlinedInput-root': {
+      bgcolor: 'grey.100',
+      pl: 0.5,
+      '& fieldset': {
+        borderWidth: 2,
+        borderColor: 'transparent',
+      },
+      '&:hover fieldset': {
+        borderColor: 'transparent',
+      },
+      '&.Mui-focused fieldset': {
+        borderWidth: 2,
+      },
+    },
+    '& .MuiInputBase-input': {
+      typography: 'body2',
+      py: 2.25,
+      '&::placeholder': {
+        color: 'grey.600',
+        opacity: 1,
+      },
+    },
+  });
+
   return (
     <Box
       sx={{
+        position: 'relative',
         minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'white',
         px: 2,
+        py: 2,
+        bgcolor: 'background.default',
+        color: 'text.primary',
       }}
     >
-      <Box sx={{ mb: 5, textAlign: 'center', width: '100%', maxWidth: 420 }}>
-        <Typography
-          variant="h3"
-          component="h1"
-          sx={{ fontWeight: 'bold', color: '#000', mb: 1, fontSize: { xs: '1.85rem', sm: '2.5rem' } }}
-        >
-          Завершение регистрации
-        </Typography>
-        <Typography variant="h6" sx={{ color: '#000', fontWeight: 400, fontSize: '1.05rem' }}>
-          Придумайте пароль для входа в GrowPath
-        </Typography>
+      <Box
+        aria-hidden
+        sx={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 0,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '-10%',
+            left: '-5%',
+            width: '40%',
+            height: '40%',
+            borderRadius: '50%',
+            bgcolor: 'primary.main',
+            opacity: 0.03,
+            filter: 'blur(120px)',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: '5%',
+            right: '5%',
+            width: '30%',
+            height: '30%',
+            borderRadius: '50%',
+            bgcolor: 'secondary.main',
+            opacity: 0.03,
+            filter: 'blur(100px)',
+          }}
+        />
       </Box>
 
-      <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', maxWidth: 420 }}>
-        {!token && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            В ссылке нет токена. Откройте страницу из письма с приглашением или{' '}
-            <Link component={RouterLink} to="/login">
-              перейдите ко входу
-            </Link>
-            .
-          </Alert>
-        )}
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        <TextField
-          fullWidth
-          type={showPassword ? 'text' : 'password'}
-          label="Пароль"
-          placeholder="Введите пароль"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            setError('');
-          }}
-          disabled={loading || !token}
-          autoComplete="new-password"
-          sx={fieldSx}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start" sx={{ ml: 1 }}>
-                <Lock sx={{ color: '#000', fontSize: '20px' }} />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end" sx={{ mr: 1 }}>
-                <IconButton
-                  onClick={() => setShowPassword((v) => !v)}
-                  edge="end"
-                  disabled={loading}
-                  sx={{ color: '#000' }}
-                  aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
-                >
-                  {showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-
-        <TextField
-          fullWidth
-          type={showConfirm ? 'text' : 'password'}
-          label="Подтвердите пароль"
-          placeholder="Повторите пароль"
-          value={confirmPassword}
-          onChange={(e) => {
-            setConfirmPassword(e.target.value);
-            setError('');
-          }}
-          disabled={loading || !token}
-          autoComplete="new-password"
-          sx={{ ...fieldSx, mb: 4 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start" sx={{ ml: 1 }}>
-                <Lock sx={{ color: '#000', fontSize: '20px' }} />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end" sx={{ mr: 1 }}>
-                <IconButton
-                  onClick={() => setShowConfirm((v) => !v)}
-                  edge="end"
-                  disabled={loading}
-                  sx={{ color: '#000' }}
-                  aria-label={showConfirm ? 'Скрыть пароль' : 'Показать пароль'}
-                >
-                  {showConfirm ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          disabled={loading || !token || !password || !confirmPassword}
+      <Box sx={{ width: '100%', maxWidth: 448, position: 'relative', zIndex: 1 }}>
+        <Box
           sx={{
-            py: 2,
-            borderRadius: 3,
-            backgroundColor: '#1976d2',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            textTransform: 'none',
-            height: '56px',
-            '&:hover': { backgroundColor: '#1565c0' },
-            '&:disabled': { backgroundColor: '#ccc', color: '#666' },
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            mb: 5,
           }}
         >
-          {loading ? <CircularProgress size={24} color="inherit" /> : 'Сохранить пароль и войти'}
-        </Button>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              mb: 1,
+              color: 'primary.main',
+            }}
+          >
+            <Logo size="large" />
+          </Box>
+        </Box>
 
-        <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 4, sm: 5 },
+            borderRadius: 3,
+            bgcolor: 'background.paper',
+            border: 1,
+            borderColor: 'divider',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="h2" component="h1" sx={{ mb: 1.25 }}>
+              Завершение регистрации
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+              Придумайте пароль для входа в GrowPath
+            </Typography>
+          </Box>
+
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {!token && (
+              <Alert severity="warning">
+                В ссылке нет токена. Откройте страницу из письма с приглашением или{' '}
+                <Link component={RouterLink} to="/login">
+                  перейдите ко входу
+                </Link>
+                .
+              </Alert>
+            )}
+
+            {error && <Alert severity="error">{error}</Alert>}
+
+            <Box>
+              <Typography
+                component="label"
+                htmlFor="register-password"
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  color: 'grey.600',
+                  mb: 1,
+                }}
+              >
+                Пароль
+              </Typography>
+              <TextField
+                id="register-password"
+                name="password"
+                fullWidth
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
+                disabled={loading || !token}
+                sx={getFieldSx()}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ ml: 0.5, mr: 0 }}>
+                      <Lock sx={{ color: 'grey.600', fontSize: 22 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end" sx={{ mr: 0.5 }}>
+                      <IconButton
+                        aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                        onClick={() => setShowPassword((v) => !v)}
+                        edge="end"
+                        disabled={loading}
+                        size="small"
+                        sx={{
+                          color: 'grey.600',
+                          '&:hover': { color: 'text.primary' },
+                        }}
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography
+                component="label"
+                htmlFor="register-confirm-password"
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  color: 'grey.600',
+                  mb: 1,
+                }}
+              >
+                Подтвердите пароль
+              </Typography>
+              <TextField
+                id="register-confirm-password"
+                name="confirmPassword"
+                fullWidth
+                type={showConfirm ? 'text' : 'password'}
+                autoComplete="new-password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setError('');
+                }}
+                disabled={loading || !token}
+                sx={getFieldSx()}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ ml: 0.5, mr: 0 }}>
+                      <Lock sx={{ color: 'grey.600', fontSize: 22 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end" sx={{ mr: 0.5 }}>
+                      <IconButton
+                        aria-label={showConfirm ? 'Скрыть пароль' : 'Показать пароль'}
+                        onClick={() => setShowConfirm((v) => !v)}
+                        edge="end"
+                        disabled={loading}
+                        size="small"
+                        sx={{
+                          color: 'grey.600',
+                          '&:hover': { color: 'text.primary' },
+                        }}
+                      >
+                        {showConfirm ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              disabled={loading || !token || !password || !confirmPassword}
+              sx={{
+                mt: 0.5,
+                py: 2.25,
+                typography: 'h3',
+                borderRadius: 2,
+                boxShadow: 1,
+                transition: 'transform 0.15s ease, filter 0.15s ease',
+                '&:hover:not(:disabled)': {
+                  filter: 'brightness(1.1)',
+                },
+                '&:active:not(:disabled)': {
+                  transform: 'scale(0.98)',
+                },
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Сохранить пароль и войти'}
+            </Button>
+          </Box>
+        </Paper>
+
+        <Box sx={{ mt: 5, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary" component="p" sx={{ lineHeight: 1.7 }}>
             Уже есть аккаунт?{' '}
-            <Link component={RouterLink} to="/login" underline="hover" fontWeight={600}>
+            <Link
+              component={RouterLink}
+              to="/login"
+              sx={{
+                fontWeight: 600,
+                color: 'primary.main',
+                textDecoration: 'none',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
               Войти
             </Link>
           </Typography>

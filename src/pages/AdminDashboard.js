@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, Snackbar, Alert } from '@mui/material';
 import { useDispatch } from 'react-redux';
 import { logoutAsync } from '../store/slices/authSlice';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -17,6 +17,7 @@ const AdminDashboard = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAddUserFormOpen, setIsAddUserFormOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleLogout = async () => {
     await dispatch(logoutAsync());
@@ -25,6 +26,10 @@ const AdminDashboard = () => {
 
   const handleAddUser = () => {
     setIsAddUserFormOpen(true);
+  };
+
+  const handleUserCreated = (message) => {
+    setSuccessMessage(message);
   };
 
   const getCurrentPage = () => {
@@ -61,7 +66,22 @@ const AdminDashboard = () => {
         </Box>
       </Box>
 
-      <AddUserForm open={isAddUserFormOpen} onClose={() => setIsAddUserFormOpen(false)} />
+      <AddUserForm
+        open={isAddUserFormOpen}
+        onClose={() => setIsAddUserFormOpen(false)}
+        onSuccess={handleUserCreated}
+      />
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={4000}
+        onClose={() => setSuccessMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSuccessMessage('')} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

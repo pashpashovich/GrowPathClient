@@ -19,7 +19,7 @@ import { useDispatch } from 'react-redux';
 import { createUserAsync } from '../../store/slices/userManagementSlice';
 import { departmentAPI } from '../../services/api';
 
-const AddUserForm = ({ open, onClose }) => {
+const AddUserForm = ({ open, onClose, onSuccess }) => {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -126,6 +126,9 @@ const AddUserForm = ({ open, onClose }) => {
       });
       setErrors({});
       onClose();
+      if (onSuccess) {
+        onSuccess('Пользователь успешно создан');
+      }
     } else {
       setSubmitError(result.payload || 'Не удалось создать пользователя');
     }
