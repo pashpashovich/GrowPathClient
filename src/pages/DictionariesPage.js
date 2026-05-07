@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Snackbar,
 } from '@mui/material';
 import {
   Edit,
@@ -168,6 +169,7 @@ const DictionariesPage = () => {
   const [formData, setFormData] = useState({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const config = DICTIONARY_CONFIG[selectedType];
 
@@ -234,8 +236,10 @@ const DictionariesPage = () => {
       setLoading(true);
       if (editingItem) {
         await config.updateFn(editingItem.id, formData);
+        setSuccessMessage('Запись успешно обновлена');
       } else {
         await config.createFn(formData);
+        setSuccessMessage('Запись успешно создана');
       }
       await loadItems();
       handleCloseDialog();
@@ -258,6 +262,7 @@ const DictionariesPage = () => {
     try {
       setLoading(true);
       await config.deleteFn(itemToDelete.id);
+      setSuccessMessage('Запись успешно удалена');
       await loadItems();
       setDeleteDialogOpen(false);
       setItemToDelete(null);
@@ -541,6 +546,17 @@ const DictionariesPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={4000}
+        onClose={() => setSuccessMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setSuccessMessage('')} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
