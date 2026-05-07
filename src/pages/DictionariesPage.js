@@ -417,7 +417,11 @@ const DictionariesPage = () => {
                     <TableHead>
                       <TableRow sx={{ bgcolor: 'grey.50' }}>
                         <TableCell>Название</TableCell>
-                        {!config.hideDescription && <TableCell>Описание</TableCell>}
+                        {!config.hideDescription && (
+                          <TableCell>
+                            {selectedType === DICTIONARY_TYPES.IT_DIRECTIONS ? 'Код' : 'Описание'}
+                          </TableCell>
+                        )}
                         {selectedType === DICTIONARY_TYPES.SELECTION_STAGES && (
                           <TableCell align="center">Статус</TableCell>
                         )}

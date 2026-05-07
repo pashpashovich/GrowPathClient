@@ -144,17 +144,6 @@ const ResetPasswordPage = () => {
       </Box>
 
       <Box sx={{ width: '100%', maxWidth: 448, position: 'relative', zIndex: 1 }}>
-        {!success && (
-          <Button
-            component={RouterLink}
-            to="/login"
-            startIcon={<ArrowBack />}
-            sx={{ mb: 2, color: 'text.secondary' }}
-          >
-            Назад ко входу
-          </Button>
-        )}
-
         <Paper
           elevation={0}
           sx={{
@@ -295,6 +284,26 @@ const ResetPasswordPage = () => {
             </>
           )}
         </Paper>
+
+        {!success && (
+          <Box sx={{ mt: 5, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary" component="p" sx={{ lineHeight: 1.7 }}>
+              Вспомнили пароль?{' '}
+              <Link
+                component={RouterLink}
+                to="/login"
+                sx={{
+                  fontWeight: 600,
+                  color: 'primary.main',
+                  textDecoration: 'none',
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                Войти
+              </Link>
+            </Typography>
+          </Box>
+        )}
       </Box>
     </Box>
   );
