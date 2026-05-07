@@ -239,27 +239,34 @@ export const hrAPI = {
   getCompetencies: () => api.get(competenciesPath),
   createCompetency: (data) => api.post(competenciesPath, data),
   updateCompetency: (id, data) => api.put(`${competenciesPath}/${id}`, data),
+  deleteCompetency: (id) => api.delete(`${competenciesPath}/${id}`),
 
   getItDirections: () => api.get(itDirectionsPath),
   createItDirection: (data) => api.post(itDirectionsPath, data),
   updateItDirection: (id, data) => api.put(`${itDirectionsPath}/${id}`, data),
+  deleteItDirection: (id) => api.delete(`${itDirectionsPath}/${id}`),
 
   getProgramRequirementDefinitions: () => api.get(programRequirementDefinitionsPath),
   createProgramRequirementDefinition: (data) =>
     api.post(programRequirementDefinitionsPath, data),
   updateProgramRequirementDefinition: (id, data) =>
     api.put(`${programRequirementDefinitionsPath}/${id}`, data),
+  deleteProgramRequirementDefinition: (id) =>
+    api.delete(`${programRequirementDefinitionsPath}/${id}`),
 
   getProgramGoalDefinitions: () => api.get(programGoalDefinitionsPath),
   createProgramGoalDefinition: (data) => api.post(programGoalDefinitionsPath, data),
   updateProgramGoalDefinition: (id, data) =>
     api.put(`${programGoalDefinitionsPath}/${id}`, data),
+  deleteProgramGoalDefinition: (id) => api.delete(`${programGoalDefinitionsPath}/${id}`),
 
   getProgramSelectionStageDefinitions: () => api.get(programSelectionStageDefinitionsPath),
   createProgramSelectionStageDefinition: (data) =>
     api.post(programSelectionStageDefinitionsPath, data),
   updateProgramSelectionStageDefinition: (id, data) =>
     api.put(`${programSelectionStageDefinitionsPath}/${id}`, data),
+  deleteProgramSelectionStageDefinition: (id) =>
+    api.delete(`${programSelectionStageDefinitionsPath}/${id}`),
 
   getInternshipPrograms: (params) => api.get(internshipProgramsPath, { params }),
   getInternshipProgramById: (id) => api.get(`${internshipProgramsPath}/${id}`),

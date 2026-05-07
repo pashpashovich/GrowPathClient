@@ -60,7 +60,7 @@ const DICTIONARY_CONFIG = {
     fetchFn: () => hrAPI.getItDirections(),
     createFn: (data) => hrAPI.createItDirection(data),
     updateFn: (id, data) => hrAPI.updateItDirection(id, data),
-    deleteFn: (id) => hrAPI.updateItDirection(id, { isActive: false }),
+    deleteFn: (id) => hrAPI.deleteItDirection(id),
     fields: [
       { name: 'code', label: 'Код', required: true, maxLength: 50 },
       { name: 'displayName', label: 'Название', required: true, maxLength: 200 },
@@ -94,7 +94,7 @@ const DICTIONARY_CONFIG = {
     fetchFn: () => hrAPI.getCompetencies(),
     createFn: (data) => hrAPI.createCompetency(data),
     updateFn: (id, data) => hrAPI.updateCompetency(id, data),
-    deleteFn: (id) => hrAPI.updateCompetency(id, { isActive: false }),
+    deleteFn: (id) => hrAPI.deleteCompetency(id),
     fields: [
       { name: 'name', label: 'Название', required: true, maxLength: 255 },
     ],
@@ -111,7 +111,7 @@ const DICTIONARY_CONFIG = {
     fetchFn: () => hrAPI.getProgramRequirementDefinitions(),
     createFn: (data) => hrAPI.createProgramRequirementDefinition(data),
     updateFn: (id, data) => hrAPI.updateProgramRequirementDefinition(id, data),
-    deleteFn: (id) => hrAPI.updateProgramRequirementDefinition(id, { isActive: false }),
+    deleteFn: (id) => hrAPI.deleteProgramRequirementDefinition(id),
     fields: [
       { name: 'requirementText', label: 'Текст требования', required: true, multiline: true },
     ],
@@ -128,7 +128,7 @@ const DICTIONARY_CONFIG = {
     fetchFn: () => hrAPI.getProgramSelectionStageDefinitions(),
     createFn: (data) => hrAPI.createProgramSelectionStageDefinition(data),
     updateFn: (id, data) => hrAPI.updateProgramSelectionStageDefinition(id, data),
-    deleteFn: (id) => hrAPI.updateProgramSelectionStageDefinition(id, { isActive: false }),
+    deleteFn: (id) => hrAPI.deleteProgramSelectionStageDefinition(id),
     fields: [
       { name: 'name', label: 'Название', required: true, maxLength: 255 },
       { name: 'description', label: 'Описание', multiline: true },
@@ -146,7 +146,7 @@ const DICTIONARY_CONFIG = {
     fetchFn: () => hrAPI.getProgramGoalDefinitions(),
     createFn: (data) => hrAPI.createProgramGoalDefinition(data),
     updateFn: (id, data) => hrAPI.updateProgramGoalDefinition(id, data),
-    deleteFn: (id) => hrAPI.updateProgramGoalDefinition(id, { isActive: false }),
+    deleteFn: (id) => hrAPI.deleteProgramGoalDefinition(id),
     fields: [
       { name: 'title', label: 'Заголовок', required: true, maxLength: 500 },
       { name: 'description', label: 'Описание', multiline: true },
