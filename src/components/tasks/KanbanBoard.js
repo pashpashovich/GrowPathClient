@@ -376,10 +376,6 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
         <Typography variant="h4" gutterBottom>
           Доска задач
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Перетащите карточку в другую колонку, чтобы запросить смену статуса на сервере (доступные переходы
-          зависят от роли и текущего состояния задачи).
-        </Typography>
       </Box>
 
       {/* Фильтр по стажировкам */}

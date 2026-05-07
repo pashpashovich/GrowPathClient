@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Drawer,
   List,
@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { profileAPI } from '../services/api';
 
 const Sidebar = ({ open, onClose }) => {
   const location = useLocation();
@@ -38,6 +39,30 @@ const Sidebar = ({ open, onClose }) => {
   const currentUser = useSelector((state) => state.auth.user);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  useEffect(() => {
+    const loadAvatar = async () => {
+      try {
+        const avatarResponse = await profileAPI.getAvatar();
+        const avatarBlob = new Blob([avatarResponse.data], {
+          type: avatarResponse.headers['content-type'] || 'image/jpeg'
+        });
+        const avatarObjectUrl = URL.createObjectURL(avatarBlob);
+        setAvatarUrl(avatarObjectUrl);
+      } catch (err) {
+        setAvatarUrl(null);
+      }
+    };
+
+    loadAvatar();
+
+    return () => {
+      if (avatarUrl) {
+        URL.revokeObjectURL(avatarUrl);
+      }
+    };
+  }, []);
 
       const menuItems = [
         {
@@ -239,6 +264,7 @@ const Sidebar = ({ open, onClose }) => {
         <Box sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar
+              src={avatarUrl}
               sx={{
                 width: 40,
                 height: 40,
@@ -246,7 +272,7 @@ const Sidebar = ({ open, onClose }) => {
                 fontSize: '1rem',
               }}
             >
-              {currentUser?.name?.charAt(0) || 'U'}
+              {!avatarUrl && (currentUser?.name?.charAt(0) || 'U')}
             </Avatar>
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Typography variant="subtitle2" fontWeight="bold" noWrap>
@@ -271,6 +297,7 @@ const Sidebar = ({ open, onClose }) => {
       {isCollapsed && !isExpanded && (
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
           <Avatar
+            src={avatarUrl}
             sx={{
               width: 40,
               height: 40,
@@ -278,7 +305,7 @@ const Sidebar = ({ open, onClose }) => {
               fontSize: '1rem',
             }}
           >
-            {currentUser?.name?.charAt(0) || 'U'}
+            {!avatarUrl && (currentUser?.name?.charAt(0) || 'U')}
           </Avatar>
         </Box>
       )}

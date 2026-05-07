@@ -290,10 +290,9 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
           <Grid item xs={12} sm={6} md={4} key={program.id}>
             <Card
               sx={{
-                height: '100%',
+                height: 520,
                 display: 'flex',
                 flexDirection: 'column',
-                minHeight: 480,
               }}
             >
               <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
@@ -304,7 +303,7 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                     sx={{
                       flexGrow: 1,
                       mr: 1,
-                      minHeight: 64,
+                      height: 56,
                       lineHeight: 1.4,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -328,7 +327,7 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                   color="text.secondary"
                   sx={{
                     mb: 2,
-                    minHeight: 60,
+                    height: 60,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     display: '-webkit-box',
@@ -339,11 +338,13 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                   {program.description}
                 </Typography>
 
-                {(program.itDirectionRef?.displayName || program.itDirection) && (
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, minHeight: 20 }}>
-                    Направление: {program.itDirectionRef?.displayName || program.itDirection}
-                  </Typography>
-                )}
+                <Box sx={{ height: 28, mb: 1 }}>
+                  {(program.itDirectionRef?.displayName || program.itDirection) && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Направление: {program.itDirectionRef?.displayName || program.itDirection}
+                    </Typography>
+                  )}
+                </Box>
 
                 <Box sx={{ mb: 2 }}>
                   <Chip
@@ -378,27 +379,29 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                 </Box>
 
                 <Box sx={{ mt: 'auto' }}>
-                  {(program.requirements || []).length > 0 && (
-                    <Box sx={{ mb: 2, minHeight: 60 }}>
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                        Требования:
-                      </Typography>
-                      {(program.requirements || []).slice(0, 3).map((requirement, index) => (
-                        <Chip
-                          key={index}
-                          label={requirement}
-                          size="small"
-                          variant="outlined"
-                          sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem' }}
-                        />
-                      ))}
-                      {(program.requirements || []).length > 3 && (
-                        <Typography variant="caption" color="text.secondary">
-                          +{(program.requirements || []).length - 3} еще
+                  <Box sx={{ mb: 2, height: 80 }}>
+                    {(program.requirements || []).length > 0 && (
+                      <>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                          Требования:
                         </Typography>
-                      )}
-                    </Box>
-                  )}
+                        {(program.requirements || []).slice(0, 3).map((requirement, index) => (
+                          <Chip
+                            key={index}
+                            label={requirement}
+                            size="small"
+                            variant="outlined"
+                            sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem' }}
+                          />
+                        ))}
+                        {(program.requirements || []).length > 3 && (
+                          <Typography variant="caption" color="text.secondary">
+                            +{(program.requirements || []).length - 3} еще
+                          </Typography>
+                        )}
+                      </>
+                    )}
+                  </Box>
 
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     {(program.goals || []).length > 0 && (
