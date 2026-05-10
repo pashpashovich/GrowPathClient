@@ -86,6 +86,8 @@ const AuthForm = () => {
           navigate('/intern');
         } else if (resolvedRole === 'hr') {
           navigate('/hr');
+        } else if (resolvedRole === 'department_head') {
+          navigate('/department-head');
         } else if (resolvedRole === 'admin') {
           navigate('/admin');
         } else {
