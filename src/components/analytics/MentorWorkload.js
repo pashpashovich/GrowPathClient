@@ -174,7 +174,9 @@ const MentorWorkload = () => {
                 <Select
                   value={selectedProgram}
                   label="Программа"
+                  displayEmpty
                   onChange={(e) => setSelectedProgram(e.target.value)}
+                  renderValue={(value) => value || <em>Все программы</em>}
                   MenuProps={{
                     PaperProps: { sx: { maxHeight: 600 } },
                   }}

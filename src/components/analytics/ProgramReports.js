@@ -146,6 +146,7 @@ const ProgramReports = () => {
                 <Select
                   value={selectedProgram}
                   label="Программа"
+                  displayEmpty
                   onChange={(e) => setSelectedProgram(e.target.value)}
                   renderValue={(value) => {
                     if (!value) return <em>Все программы</em>;

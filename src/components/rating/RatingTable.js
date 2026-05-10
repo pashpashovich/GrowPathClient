@@ -382,6 +382,7 @@ const RatingTable = () => {
             <Select
               value={selectedInternshipId || ''}
               label="Программа"
+              displayEmpty
               onChange={(e) => dispatch(setSelectedInternship(e.target.value || null))}
               renderValue={(value) => {
                 if (!value) return <em>Все программы</em>;
