@@ -104,15 +104,6 @@ const ForgotPasswordPage = () => {
       </Box>
 
       <Box sx={{ width: '100%', maxWidth: 448, position: 'relative', zIndex: 1 }}>
-        <Button
-          component={RouterLink}
-          to="/login"
-          startIcon={<ArrowBack />}
-          sx={{ mb: 2, color: 'text.secondary' }}
-        >
-          Назад ко входу
-        </Button>
-
         <Paper
           elevation={0}
           sx={{
