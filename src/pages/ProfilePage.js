@@ -172,6 +172,8 @@ const ProfilePage = () => {
         return 'Ментор';
       case 'intern':
         return 'Стажер';
+      case 'department_head':
+        return `Глава отдела ${displayProfile?.departmentName || ''}`.trim();
       default:
         return role;
     }
@@ -187,6 +189,8 @@ const ProfilePage = () => {
         return 'success';
       case 'intern':
         return 'info';
+      case 'department_head':
+        return 'warning';
       default:
         return 'default';
     }
