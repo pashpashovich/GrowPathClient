@@ -151,6 +151,63 @@ const Sidebar = ({ open, onClose }) => {
         },
       ];
 
+  const departmentHeadMenuItems = [
+    {
+      text: 'Профиль',
+      icon: <AccountCircle />,
+      path: '/department-head',
+      active: location.pathname === '/department-head' || location.pathname === '/department-head/profile',
+    },
+    {
+      text: 'Программы стажировок',
+      icon: <School />,
+      path: '/department-head/programs',
+      active: location.pathname === '/department-head/programs',
+    },
+    {
+      text: 'Аналитика и отчеты',
+      icon: <BarChart />,
+      path: '/department-head/analytics',
+      active: location.pathname.startsWith('/department-head/analytics'),
+    },
+    {
+      text: 'Рейтинг стажеров',
+      icon: <EmojiEvents />,
+      path: '/department-head/rating',
+      active: location.pathname.startsWith('/department-head/rating'),
+    },
+    {
+      text: 'Менторы',
+      icon: <Groups />,
+      path: '/department-head/mentors',
+      active: location.pathname.startsWith('/department-head/mentors'),
+    },
+    {
+      text: 'Доска задач',
+      icon: <Dashboard />,
+      path: '/department-head/tasks',
+      active: location.pathname === '/department-head/tasks',
+    },
+    {
+      text: 'Дорожная карта',
+      icon: <Timeline />,
+      path: '/department-head/roadmap',
+      active: location.pathname === '/department-head/roadmap',
+    },
+    {
+      text: 'Проверка заданий',
+      icon: <CheckCircle />,
+      path: '/department-head/review',
+      active: location.pathname === '/department-head/review',
+    },
+    {
+      text: 'Статистика',
+      icon: <BarChart />,
+      path: '/department-head/stats',
+      active: location.pathname === '/department-head/stats',
+    },
+  ];
+
   const internMenuItems = [
     {
       text: 'Профиль',
@@ -187,8 +244,9 @@ const Sidebar = ({ open, onClose }) => {
   const isMentor = currentUser?.role === 'mentor' || location.pathname.includes('/mentor');
   const isHR = currentUser?.role === 'hr' || location.pathname.includes('/hr');
   const isAdmin = currentUser?.role === 'admin' || location.pathname.includes('/admin');
-  
-  const items = isAdmin ? adminMenuItems : (isHR ? hrMenuItems : (isMentor ? menuItems : internMenuItems));
+  const isDepartmentHead = currentUser?.role === 'department_head' || location.pathname.includes('/department-head');
+
+  const items = isAdmin ? adminMenuItems : (isHR ? hrMenuItems : (isDepartmentHead ? departmentHeadMenuItems : (isMentor ? menuItems : internMenuItems)));
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -237,9 +295,11 @@ const Sidebar = ({ open, onClose }) => {
                     ? 'Панель администратора'
                     : isHR
                       ? 'Панель HR'
-                      : isMentor
-                        ? 'Панель ментора'
-                        : 'Панель стажера'}
+                      : isDepartmentHead
+                        ? 'Панель руководителя отдела'
+                        : isMentor
+                          ? 'Панель ментора'
+                          : 'Панель стажера'}
                 </Typography>
           </Box>
         )}
@@ -283,7 +343,7 @@ const Sidebar = ({ open, onClose }) => {
               </Typography>
                   <Chip
                     label={
-                      isAdmin ? 'Админ' : isHR ? 'HR' : isMentor ? 'Ментор' : 'Стажер'
+                      isAdmin ? 'Админ' : isHR ? 'HR' : isDepartmentHead ? 'Руководитель' : isMentor ? 'Ментор' : 'Стажер'
                     }
                     size="small"
                     color="primary"

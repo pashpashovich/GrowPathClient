@@ -12,6 +12,7 @@ import MentorDashboard from './pages/MentorDashboard';
 import InternDashboard from './pages/InternDashboard';
 import HRDashboard from './pages/HRDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import DepartmentHeadDashboard from './pages/DepartmentHeadDashboard';
 import TestPage from './pages/TestPage';
 import HRContactPage from './pages/HRContactPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -146,7 +147,67 @@ function App() {
                       <HRDashboard />
                     </ProtectedRoute>
                   } />
-                  
+
+                  <Route path="/department-head" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/profile" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/programs" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/rating" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/analytics" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/mentors" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/tasks" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/roadmap" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/review" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/stats" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/admin" element={
                     <ProtectedRoute requiredRole="admin">
                       <AdminDashboard />

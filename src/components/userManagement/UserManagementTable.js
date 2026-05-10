@@ -188,6 +188,7 @@ const UserManagementTable = ({ onAddUser }) => {
       case 'mentor': return 'Ментор';
       case 'intern': return 'Стажер';
       case 'hr': return 'HR';
+      case 'department_head': return 'Руководитель отдела';
       case 'admin': return 'Администратор';
       default: return role;
     }
@@ -419,6 +420,7 @@ const UserManagementTable = ({ onAddUser }) => {
               <MenuItem value="all">Все роли</MenuItem>
               <MenuItem value="admin">Администратор</MenuItem>
               <MenuItem value="hr">HR</MenuItem>
+              <MenuItem value="department_head">Руководитель отдела</MenuItem>
               <MenuItem value="mentor">Ментор</MenuItem>
               <MenuItem value="intern">Стажер</MenuItem>
             </Select>
@@ -609,6 +611,7 @@ const UserManagementTable = ({ onAddUser }) => {
                 <MenuItem value="mentor">Ментор</MenuItem>
                 <MenuItem value="intern">Стажер</MenuItem>
                 <MenuItem value="hr">HR</MenuItem>
+                <MenuItem value="department_head">Руководитель отдела</MenuItem>
                 <MenuItem value="admin">Администратор</MenuItem>
               </Select>
             </FormControl>

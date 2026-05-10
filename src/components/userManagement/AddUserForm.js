@@ -219,6 +219,7 @@ const AddUserForm = ({ open, onClose, onSuccess }) => {
               <MenuItem value="mentor">Ментор</MenuItem>
               <MenuItem value="intern">Стажер</MenuItem>
               <MenuItem value="hr">HR</MenuItem>
+              <MenuItem value="department_head">Руководитель отдела</MenuItem>
               <MenuItem value="admin">Администратор</MenuItem>
             </Select>
             {errors.role && (

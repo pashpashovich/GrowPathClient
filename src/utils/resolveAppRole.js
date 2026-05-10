@@ -7,10 +7,12 @@ function mapKeycloakFragmentToAppRole(fragment) {
     hr_manager: 'hr',
     mentor: 'mentor',
     intern: 'intern',
+    department_head: 'department_head',
   };
   if (table[fragment]) return table[fragment];
   if (fragment.startsWith('hr')) return 'hr';
   if (fragment.includes('admin')) return 'admin';
+  if (fragment.startsWith('department')) return 'department_head';
   if (fragment.startsWith('mentor')) return 'mentor';
   if (fragment.startsWith('intern')) return 'intern';
   return fragment;
@@ -24,7 +26,7 @@ export function getNormalizedRole(user) {
       .filter((r) => typeof r === 'string')
       .map((r) => mapKeycloakFragmentToAppRole(r.replace(/^ROLE_/, '').toLowerCase()));
     const unique = [...new Set(appRoles)];
-    const priority = ['admin', 'hr', 'mentor', 'intern'];
+    const priority = ['admin', 'hr', 'department_head', 'mentor', 'intern'];
     for (const p of priority) {
       if (unique.includes(p)) return p;
     }
