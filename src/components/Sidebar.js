@@ -201,10 +201,10 @@ const Sidebar = ({ open, onClose }) => {
       active: location.pathname === '/department-head/review',
     },
     {
-      text: 'Статистика',
-      icon: <BarChart />,
-      path: '/department-head/stats',
-      active: location.pathname === '/department-head/stats',
+      text: 'Дашборд',
+      icon: <Dashboard />,
+      path: '/department-head/dashboard',
+      active: location.pathname === '/department-head/dashboard',
     },
   ];
 

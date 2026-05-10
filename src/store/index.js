@@ -10,6 +10,7 @@ import internshipProgramReducer from './slices/internshipProgramSlice';
 import userManagementReducer from './slices/userManagementSlice';
 import ratingReducer from './slices/ratingSlice';
 import analyticsReducer from './slices/analyticsSlice';
+import dashboardReducer from './slices/dashboardSlice';
 
 export const store = configureStore({
   reducer: {
@@ -24,5 +25,6 @@ export const store = configureStore({
     userManagement: userManagementReducer,
     rating: ratingReducer,
     analytics: analyticsReducer,
+    dashboard: dashboardReducer,
   },
 });

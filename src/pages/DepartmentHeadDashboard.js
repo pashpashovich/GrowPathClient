@@ -22,6 +22,7 @@ import TaskDetails from '../components/tasks/TaskDetails';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
 import RoadmapPage from './RoadmapPage';
+import DashboardPage from './DashboardPage';
 
 const DepartmentHeadDashboard = () => {
   const dispatch = useDispatch();
@@ -167,6 +168,10 @@ const DepartmentHeadDashboard = () => {
       return <TaskReviewPanel onViewTask={handleViewTask} />;
     }
 
+    if (location.pathname === '/department-head/dashboard') {
+      return <DashboardPage />;
+    }
+
     if (location.pathname === '/department-head/stats') {
       return (
         <Box>
@@ -192,6 +197,7 @@ const DepartmentHeadDashboard = () => {
   const getPageTitle = () => {
     if (location.pathname === '/department-head/roadmap') return 'Дорожная карта';
     if (location.pathname === '/department-head/review') return 'Проверка заданий';
+    if (location.pathname === '/department-head/dashboard') return 'Дашборд';
     if (location.pathname === '/department-head/stats') return 'Статистика';
     if (location.pathname === '/department-head/tasks') return 'Доска задач';
     if (location.pathname === '/department-head/programs') return 'Программы стажировок';

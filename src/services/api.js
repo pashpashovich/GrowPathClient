@@ -370,4 +370,14 @@ export const ratingAPI = {
   getInternRating: (internId) => api.get(`${ratingsPath}/interns/${internId}`),
 };
 
+export const dashboardAPI = {
+  getData: (params) => api.get(dashboardPath, { params }),
+  getUpcomingDeadlines: (params) => api.get(`${dashboardPath}/upcoming-deadlines`, { params }),
+  getTrends: (params) => api.get(`${dashboardPath}/trends`, { params }),
+  getTasksStats: (params) => api.get(`${dashboardPath}/tasks-stats`, { params }),
+  getProgramsStats: (params) => api.get(`${dashboardPath}/programs-stats`, { params }),
+  getMentorsStats: (params) => api.get(`${dashboardPath}/mentors-stats`, { params }),
+  getInternsStats: (params) => api.get(`${dashboardPath}/interns-stats`, { params }),
+};
+
 export default api;

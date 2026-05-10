@@ -202,6 +202,12 @@ function App() {
                     </ProtectedRoute>
                   } />
 
+                  <Route path="/department-head/dashboard" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/department-head/stats" element={
                     <ProtectedRoute requiredRole="department_head">
                       <DepartmentHeadDashboard />
