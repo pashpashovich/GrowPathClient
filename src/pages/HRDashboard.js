@@ -30,6 +30,7 @@ const HRDashboard = () => {
   const isProgramsTab = normalizedPath === '/hr';
   const shouldLoadProgramList =
     isProgramsTab ||
+    location.pathname.startsWith('/hr/programs') ||
     location.pathname.startsWith('/hr/rating') ||
     location.pathname.startsWith('/hr/analytics');
 
