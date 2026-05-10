@@ -102,7 +102,7 @@ const InternRating = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: 4 }}>
         Мой рейтинг
       </Typography>
 

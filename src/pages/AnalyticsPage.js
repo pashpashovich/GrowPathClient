@@ -66,7 +66,7 @@ const AnalyticsPage = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: 4 }}>
         Аналитика и отчеты
       </Typography>
 

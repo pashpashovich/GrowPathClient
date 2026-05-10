@@ -14,9 +14,15 @@ import {
   Select,
   MenuItem,
   FormControl,
+  InputLabel,
   Avatar,
   CircularProgress,
   Tooltip,
+  TablePagination,
+  TextField,
+  InputAdornment,
+  Grid,
+  ListSubheader,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -24,11 +30,7 @@ import {
   TrendingFlat,
   Download,
   Refresh,
-  FilterList,
-  ExpandMore,
-  PersonSearch,
-  Star,
-  WorkspacePremium,
+  Search,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -36,16 +38,15 @@ import {
   recalculateRanks,
   setSelectedInternship,
 } from '../../store/slices/ratingSlice';
-import { designTokens } from '../../theme';
-
-const TABLE_HEAD_BG = 'rgba(243, 244, 246, 0.5)';
-const FILTER_PILL_BORDER = 'rgba(195, 198, 214, 0.5)';
 
 const DIRECTION_CHIP_STYLES = [
   { bg: '#dae2ff', color: '#0040a2' },
   { bg: '#82f9be', color: '#005235' },
   { bg: '#ffddb3', color: '#624000' },
 ];
+
+const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
+const DROPDOWN_PER_PAGE = 10;
 
 function hashStr(s) {
   let h = 0;
@@ -60,11 +61,6 @@ function getProgressPercent(rating) {
   }
   const or = Number(rating.overallRating) || 0;
   return Math.min(100, Math.round((or / 10) * 100));
-}
-
-function avgProgress(list) {
-  if (!list.length) return 0;
-  return Math.round(list.reduce((a, r) => a + getProgressPercent(r), 0) / list.length);
 }
 
 const RatingTable = () => {
@@ -87,16 +83,31 @@ const RatingTable = () => {
     }));
   }, [programs, internships]);
 
-  const [page, setPage] = useState(0);
-  const [rowsPerPage] = useState(10);
-  const [sortBy, setSortBy] = useState('rank');
+  const programMap = useMemo(() => {
+    const map = new Map();
+    programs.forEach((p) => map.set(p.id, p));
+    internships.forEach((i) => {
+      if (!map.has(i.id)) map.set(i.id, i);
+    });
+    return map;
+  }, [programs, internships]);
 
-  const [draftDirection, setDraftDirection] = useState('all');
-  const [draftMentor, setDraftMentor] = useState('all');
-  const [draftRank, setDraftRank] = useState('all');
-  const [appliedDirection, setAppliedDirection] = useState('all');
-  const [appliedMentor, setAppliedMentor] = useState('all');
-  const [appliedRank, setAppliedRank] = useState('all');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState('rank');
+  const [searchInput, setSearchInput] = useState('');
+
+  const [filterDirection, setFilterDirection] = useState('all');
+  const [filterMentor, setFilterMentor] = useState('all');
+  const [filterRank, setFilterRank] = useState('all');
+
+  // Dropdown search & pagination
+  const [programSearch, setProgramSearch] = useState('');
+  const [programPage, setProgramPage] = useState(0);
+  const [directionSearch, setDirectionSearch] = useState('');
+  const [directionPage, setDirectionPage] = useState(0);
+  const [mentorSearch, setMentorSearch] = useState('');
+  const [mentorPage, setMentorPage] = useState(0);
 
   useEffect(() => {
     dispatch(fetchRatingsAsync(selectedInternshipId ? { internshipId: selectedInternshipId } : undefined));
@@ -126,49 +137,94 @@ const RatingTable = () => {
   const directionOptions = useMemo(() => {
     const set = new Set();
     sortedRatings.forEach((r) => {
-      if (r.position) set.add(r.position);
+      const program = programMap.get(r.internshipId);
+      const direction = program?.itDirectionRef?.displayName || program?.itDirection || r.position;
+      if (direction) set.add(direction);
     });
-    return ['all', ...Array.from(set).sort()];
-  }, [sortedRatings]);
+    return Array.from(set).sort();
+  }, [sortedRatings, programMap]);
 
   const mentorOptions = useMemo(() => {
     const set = new Set();
     sortedRatings.forEach((r) => {
       if (r.mentorName) set.add(r.mentorName);
     });
-    return ['all', ...Array.from(set).sort()];
+    return Array.from(set).sort();
   }, [sortedRatings]);
 
   const displayRows = useMemo(() => {
     let rows = sortedRatings;
 
-    if (appliedDirection !== 'all') {
-      rows = rows.filter((r) => r.position === appliedDirection);
+    if (searchInput.trim()) {
+      const q = searchInput.toLowerCase();
+      rows = rows.filter((r) => {
+        const program = programMap.get(r.internshipId);
+        const programTitle = program?.title || '';
+        const directionName = program?.itDirectionRef?.displayName || program?.itDirection || r.position || '';
+        return (
+          r.internName?.toLowerCase().includes(q) ||
+          r.mentorName?.toLowerCase().includes(q) ||
+          r.position?.toLowerCase().includes(q) ||
+          programTitle.toLowerCase().includes(q) ||
+          directionName.toLowerCase().includes(q)
+        );
+      });
     }
-    if (appliedMentor !== 'all') {
-      rows = rows.filter((r) => r.mentorName === appliedMentor);
+
+    if (filterDirection !== 'all') {
+      rows = rows.filter((r) => {
+        const program = programMap.get(r.internshipId);
+        const direction = program?.itDirectionRef?.displayName || program?.itDirection || r.position;
+        return direction === filterDirection;
+      });
     }
-    if (appliedRank === 'top') {
+    if (filterMentor !== 'all') {
+      rows = rows.filter((r) => r.mentorName === filterMentor);
+    }
+    if (filterRank === 'top') {
       rows = rows.filter((r) => (r.rank ?? 99) <= 15 || (r.overallRating ?? 0) >= 4.5);
     }
 
     return rows;
-  }, [sortedRatings, appliedDirection, appliedMentor, appliedRank]);
+  }, [sortedRatings, searchInput, filterDirection, filterMentor, filterRank, programMap]);
 
-  const activeCount = displayRows.length;
-  const completedCount = displayRows.filter((r) => getProgressPercent(r) >= 90).length;
-  const avgProgressVal = avgProgress(displayRows);
-  const topTalentCount = displayRows.filter((r) => (r.overallRating ?? 0) >= 4.5).length;
+  // Dropdown paged options
+  const filteredProgramOptions = useMemo(() => {
+    const q = programSearch.toLowerCase();
+    return q ? internshipOptions.filter((o) => o.title.toLowerCase().includes(q)) : internshipOptions;
+  }, [internshipOptions, programSearch]);
 
-  const pageCount = Math.max(1, Math.ceil(displayRows.length / rowsPerPage));
-  const safePage = Math.min(page, pageCount - 1);
-  const pagedRows = displayRows.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
-  const from = displayRows.length === 0 ? 0 : safePage * rowsPerPage + 1;
-  const to = Math.min((safePage + 1) * rowsPerPage, displayRows.length);
+  const pagedProgramOptions = useMemo(
+    () => filteredProgramOptions.slice(programPage * DROPDOWN_PER_PAGE, (programPage + 1) * DROPDOWN_PER_PAGE),
+    [filteredProgramOptions, programPage]
+  );
+  const totalProgramPages = Math.ceil(filteredProgramOptions.length / DROPDOWN_PER_PAGE);
+
+  const filteredDirectionOptions = useMemo(() => {
+    const q = directionSearch.toLowerCase();
+    return q ? directionOptions.filter((d) => d.toLowerCase().includes(q)) : directionOptions;
+  }, [directionOptions, directionSearch]);
+
+  const pagedDirectionOptions = useMemo(
+    () => filteredDirectionOptions.slice(directionPage * DROPDOWN_PER_PAGE, (directionPage + 1) * DROPDOWN_PER_PAGE),
+    [filteredDirectionOptions, directionPage]
+  );
+  const totalDirectionPages = Math.ceil(filteredDirectionOptions.length / DROPDOWN_PER_PAGE);
+
+  const filteredMentorOptions = useMemo(() => {
+    const q = mentorSearch.toLowerCase();
+    return q ? mentorOptions.filter((m) => m.toLowerCase().includes(q)) : mentorOptions;
+  }, [mentorOptions, mentorSearch]);
+
+  const pagedMentorOptions = useMemo(
+    () => filteredMentorOptions.slice(mentorPage * DROPDOWN_PER_PAGE, (mentorPage + 1) * DROPDOWN_PER_PAGE),
+    [filteredMentorOptions, mentorPage]
+  );
+  const totalMentorPages = Math.ceil(filteredMentorOptions.length / DROPDOWN_PER_PAGE);
 
   useEffect(() => {
     setPage(0);
-  }, [appliedDirection, appliedMentor, appliedRank, selectedInternshipId]);
+  }, [filterDirection, filterMentor, filterRank, selectedInternshipId, searchInput]);
 
   const getTrendIcon = (trend) => {
     switch (trend) {
@@ -183,15 +239,20 @@ const RatingTable = () => {
 
   const handleExportCSV = () => {
     const csvContent = [
-      ['Стажер', 'Рейтинг', 'Ментор', 'Направление', 'Прогресс %', 'Тренд'],
-      ...displayRows.map((rating) => [
-        rating.internName,
-        rating.overallRating,
-        rating.mentorName,
-        rating.position,
-        getProgressPercent(rating),
-        rating.trend,
-      ]),
+      ['Ранг', 'Стажер', 'Рейтинг', 'Ментор', 'Программа', 'Направление', 'Прогресс %', 'Тренд'],
+      ...displayRows.map((rating) => {
+        const program = programMap.get(rating.internshipId);
+        return [
+          rating.rank,
+          rating.internName,
+          rating.overallRating,
+          rating.mentorName,
+          program?.title || '—',
+          program?.itDirectionRef?.displayName || program?.itDirection || rating.position || '—',
+          getProgressPercent(rating),
+          rating.trend,
+        ];
+      }),
     ]
       .map((row) => row.join(','))
       .join('\n');
@@ -212,40 +273,60 @@ const RatingTable = () => {
     dispatch(recalculateRanks());
   };
 
-  const applyFilters = () => {
-    setAppliedDirection(draftDirection);
-    setAppliedMentor(draftMentor);
-    setAppliedRank(draftRank);
-  };
-
   const resetFilters = () => {
-    setDraftDirection('all');
-    setDraftMentor('all');
-    setDraftRank('all');
-    setAppliedDirection('all');
-    setAppliedMentor('all');
-    setAppliedRank('all');
+    setSearchInput('');
+    setFilterDirection('all');
+    setFilterMentor('all');
+    setFilterRank('all');
+    setSortBy('rank');
     dispatch(setSelectedInternship(null));
   };
 
-  const filterSelectSx = {
-    minWidth: 0,
-    fontSize: '0.875rem',
-    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-    '& .MuiSelect-select': { py: 0.5, pr: 3 },
+  const handlePageChange = (_, newPage) => {
+    setPage(newPage);
   };
 
-  const pillOuterSx = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
-    px: 1.5,
-    py: 1,
-    bgcolor: 'grey.100',
-    borderRadius: 2,
-    border: 1,
-    borderColor: FILTER_PILL_BORDER,
+  const handleRowsPerPageChange = (e) => {
+    setRowsPerPage(parseInt(e.target.value, 10));
+    setPage(0);
   };
+
+  const dropdownNav = (page, totalPages, setPage) => {
+    if (totalPages <= 1) return null;
+    return (
+      <ListSubheader sx={{ display: 'flex', justifyContent: 'center', gap: 1, pt: 0.5 }}>
+        <Button size="small" disabled={page === 0} onClick={(e) => { e.stopPropagation(); setPage((p) => p - 1); }}>
+          Назад
+        </Button>
+        <Typography variant="caption" sx={{ alignSelf: 'center' }}>
+          {page + 1} / {totalPages}
+        </Typography>
+        <Button size="small" disabled={page >= totalPages - 1} onClick={(e) => { e.stopPropagation(); setPage((p) => p + 1); }}>
+          Далее
+        </Button>
+      </ListSubheader>
+    );
+  };
+
+  const searchableSelectHeader = (value, onChange, placeholder) => (
+    <ListSubheader>
+      <TextField
+        size="small"
+        placeholder={placeholder}
+        fullWidth
+        value={value}
+        onChange={(e) => { onChange(e.target.value); }}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation(); }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start"><Search fontSize="small" /></InputAdornment>
+          ),
+        }}
+        sx={{ mb: 1 }}
+      />
+    </ListSubheader>
+  );
 
   if (isLoading && !ratings.length) {
     return (
@@ -256,267 +337,170 @@ const RatingTable = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(4, minmax(0, 1fr))' },
-          gap: 2,
-        }}
-      >
-        <Paper
-          elevation={0}
-          sx={{
-            gridColumn: { md: 'span 2' },
-            p: 3,
-            borderRadius: 3,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-            border: 1,
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minHeight: 200,
-          }}
-        >
-          <Box>
-            <Typography variant="h1" component="h1" sx={{ mb: 1, fontSize: '1.875rem' }}>
-              Рейтинг стажеров
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Отслеживайте прогресс и эффективность подготовки будущих ИТ-специалистов в реальном времени.
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 3, mt: 3, flexWrap: 'wrap' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'secondary.main' }} />
-              <Typography variant="caption" color="text.secondary">
-                {activeCount} активных
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'primary.main' }} />
-              <Typography variant="caption" color="text.secondary">
-                {completedCount} завершили
-              </Typography>
-            </Box>
-          </Box>
-        </Paper>
-
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            borderRadius: 3,
-            bgcolor: 'primary.main',
-            color: 'primary.contrastText',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          }}
-        >
-          <TrendingUp sx={{ fontSize: 40, mb: 2, opacity: 0.95 }} />
-          <Typography variant="h2" sx={{ color: 'inherit' }}>
-            {avgProgressVal}%
-          </Typography>
-          <Typography variant="caption" sx={{ opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Средний прогресс
-          </Typography>
-        </Paper>
-
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            borderRadius: 3,
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-            border: 1,
-            borderColor: 'divider',
-          }}
-        >
-          <WorkspacePremium sx={{ fontSize: 40, mb: 2, color: 'warning.dark' }} />
-          <Typography variant="h2">{Math.min(topTalentCount, 15)}</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Топ-талантов
-          </Typography>
-        </Paper>
+    <Box>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+        <Typography variant="h4" fontWeight="bold">
+          Рейтинг стажеров
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Tooltip title="Обновить">
+            <IconButton onClick={handleRefresh} size="small">
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Экспорт CSV">
+            <IconButton onClick={handleExportCSV} size="small">
+              <Download />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
-      <Paper
-        elevation={0}
-        sx={{
-          p: 2,
-          borderRadius: 3,
-          border: 1,
-          borderColor: 'divider',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: 2,
+      {/* Search */}
+      <TextField
+        fullWidth
+        size="medium"
+        placeholder="Поиск по имени, ментору или направлению..."
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search sx={{ color: 'text.secondary' }} />
+            </InputAdornment>
+          ),
         }}
-      >
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <Select
-            value={selectedInternshipId || ''}
-            displayEmpty
-            onChange={(e) => dispatch(setSelectedInternship(e.target.value || null))}
-            sx={filterSelectSx}
-          >
-            <MenuItem value="">
-              <em>Все программы</em>
-            </MenuItem>
-            {internshipOptions.map((internship) => (
-              <MenuItem key={internship.id} value={internship.id}>
-                {internship.title}
+        sx={{ mb: 3 }}
+      />
+
+      {/* Filters */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Программа</InputLabel>
+            <Select
+              value={selectedInternshipId || ''}
+              label="Программа"
+              onChange={(e) => dispatch(setSelectedInternship(e.target.value || null))}
+              renderValue={(value) => {
+                if (!value) return <em>Все программы</em>;
+                const option = internshipOptions.find((o) => o.id === value);
+                return option ? option.title : '';
+              }}
+              MenuProps={{ PaperProps: { sx: { maxHeight: 600 } } }}
+            >
+              {searchableSelectHeader(programSearch, (v) => { setProgramSearch(v); setProgramPage(0); }, 'Поиск программы...')}
+              <MenuItem value="">
+                <em>Все программы</em>
               </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Box sx={{ ...pillOuterSx, py: 0.5 }}>
-          <FilterList sx={{ fontSize: 18, color: 'text.secondary' }} />
-          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-            Направление:
-          </Typography>
-          <FormControl size="small" variant="standard">
-            <Select
-              value={draftDirection}
-              onChange={(e) => setDraftDirection(e.target.value)}
-              sx={filterSelectSx}
-              IconComponent={ExpandMore}
-            >
-              {directionOptions.map((d) => (
-                <MenuItem key={d} value={d}>
-                  {d === 'all' ? 'Все' : d}
+              {pagedProgramOptions.map((internship) => (
+                <MenuItem key={internship.id} value={internship.id}>
+                  {internship.title}
                 </MenuItem>
               ))}
+              {dropdownNav(programPage, totalProgramPages, setProgramPage)}
             </Select>
           </FormControl>
-        </Box>
-
-        <Box sx={{ ...pillOuterSx, py: 0.5 }}>
-          <PersonSearch sx={{ fontSize: 18, color: 'text.secondary' }} />
-          <Typography variant="body2" color="text.secondary">
-            Ментор:
-          </Typography>
-          <FormControl size="small" variant="standard">
+        </Grid>
+        <Grid item xs={12} md={2}>
+          <FormControl fullWidth>
+            <InputLabel>Направление</InputLabel>
             <Select
-              value={draftMentor}
-              onChange={(e) => setDraftMentor(e.target.value)}
-              sx={filterSelectSx}
-              IconComponent={ExpandMore}
+              value={filterDirection}
+              label="Направление"
+              onChange={(e) => setFilterDirection(e.target.value)}
+              MenuProps={{ PaperProps: { sx: { maxHeight: 600 } } }}
             >
-              {mentorOptions.map((m) => (
-                <MenuItem key={m} value={m}>
-                  {m === 'all' ? 'Любой' : m}
-                </MenuItem>
+              {searchableSelectHeader(directionSearch, (v) => { setDirectionSearch(v); setDirectionPage(0); }, 'Поиск...')}
+              <MenuItem value="all">Все</MenuItem>
+              {pagedDirectionOptions.map((d) => (
+                <MenuItem key={d} value={d}>{d}</MenuItem>
               ))}
+              {dropdownNav(directionPage, totalDirectionPages, setDirectionPage)}
             </Select>
           </FormControl>
-        </Box>
-
-        <Box sx={{ ...pillOuterSx, py: 0.5 }}>
-          <Star sx={{ fontSize: 18, color: 'text.secondary' }} />
-          <Typography variant="body2" color="text.secondary">
-            Ранг:
-          </Typography>
-          <FormControl size="small" variant="standard">
+        </Grid>
+        <Grid item xs={12} md={2}>
+          <FormControl fullWidth>
+            <InputLabel>Ментор</InputLabel>
             <Select
-              value={draftRank}
-              onChange={(e) => setDraftRank(e.target.value)}
-              sx={filterSelectSx}
-              IconComponent={ExpandMore}
+              value={filterMentor}
+              label="Ментор"
+              onChange={(e) => setFilterMentor(e.target.value)}
+              MenuProps={{ PaperProps: { sx: { maxHeight: 600 } } }}
+            >
+              {searchableSelectHeader(mentorSearch, (v) => { setMentorSearch(v); setMentorPage(0); }, 'Поиск...')}
+              <MenuItem value="all">Любой</MenuItem>
+              {pagedMentorOptions.map((m) => (
+                <MenuItem key={m} value={m}>{m}</MenuItem>
+              ))}
+              {dropdownNav(mentorPage, totalMentorPages, setMentorPage)}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={2}>
+          <FormControl fullWidth>
+            <InputLabel>Ранг</InputLabel>
+            <Select
+              value={filterRank}
+              label="Ранг"
+              onChange={(e) => setFilterRank(e.target.value)}
             >
               <MenuItem value="all">Все</MenuItem>
               <MenuItem value="top">Топ-15 / 4.5+</MenuItem>
             </Select>
           </FormControl>
-        </Box>
-
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} sx={filterSelectSx}>
-            <MenuItem value="rank">По рангу</MenuItem>
-            <MenuItem value="rating">По баллу</MenuItem>
-            <MenuItem value="experience">По опыту</MenuItem>
-            <MenuItem value="tasks">По задачам</MenuItem>
-          </Select>
-        </FormControl>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: { xs: 0, md: 'auto' } }}>
-          <Tooltip title="Обновить">
-            <IconButton onClick={handleRefresh} size="small" aria-label="Обновить">
-              <Refresh />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Экспорт CSV">
-            <IconButton onClick={handleExportCSV} size="small" aria-label="Экспорт CSV">
-              <Download />
-            </IconButton>
-          </Tooltip>
-          <Button variant="text" color="primary" onClick={resetFilters} sx={{ fontWeight: 600 }}>
+        </Grid>
+        <Grid item xs={12} md={1.5}>
+          <FormControl fullWidth>
+            <InputLabel>Сортировка</InputLabel>
+            <Select value={sortBy} label="Сортировка" onChange={(e) => setSortBy(e.target.value)}>
+              <MenuItem value="rank">По рангу</MenuItem>
+              <MenuItem value="rating">По баллу</MenuItem>
+              <MenuItem value="experience">По опыту</MenuItem>
+              <MenuItem value="tasks">По задачам</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={1.5}>
+          <Button fullWidth variant="outlined" onClick={resetFilters} sx={{ height: '56px' }}>
             Сбросить
           </Button>
-          <Button variant="contained" color="primary" onClick={applyFilters} sx={{ fontWeight: 700 }}>
-            Применить
-          </Button>
-        </Box>
-      </Paper>
+        </Grid>
+      </Grid>
 
+      {/* Table */}
       <TableContainer
         component={Paper}
         elevation={0}
-        sx={{
-          borderRadius: 3,
-          border: 1,
-          borderColor: 'divider',
-          overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-        }}
+        sx={{ borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}
       >
         <Table sx={{ minWidth: 800 }}>
           <TableHead>
-            <TableRow
-              sx={{
-                bgcolor: TABLE_HEAD_BG,
-                borderBottom: 1,
-                borderColor: 'divider',
-                '& th': {
-                  typography: 'caption',
-                  color: 'text.secondary',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  py: 2,
-                  px: 3,
-                },
-              }}
-            >
-              <TableCell>Ранг</TableCell>
-              <TableCell>Стажер</TableCell>
-              <TableCell>Ментор</TableCell>
-              <TableCell>Направление</TableCell>
-              <TableCell>Ср. балл</TableCell>
-              <TableCell sx={{ minWidth: 180 }}>Прогресс</TableCell>
-              <TableCell>Тренд</TableCell>
-              <TableCell align="right" />
+            <TableRow sx={{ bgcolor: 'grey.100', '& th': { typography: 'caption', fontWeight: 700, color: 'text.secondary', letterSpacing: '0.06em' } }}>
+              <TableCell sx={{ py: 2, px: 3 }}>Ранг</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Стажер</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Ментор</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Программа</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Направление</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Ср. балл</TableCell>
+              <TableCell sx={{ py: 2, px: 3, minWidth: 180 }}>Прогресс</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }}>Тренд</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {pagedRows.map((rating) => {
+            {displayRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((rating) => {
               const rank = rating.rank ?? 0;
               const progress = getProgressPercent(rating);
-              const chipStyle = DIRECTION_CHIP_STYLES[hashStr(rating.position || '') % 3];
+              const program = programMap.get(rating.internshipId);
+              const directionName = program?.itDirectionRef?.displayName || program?.itDirection || rating.position || '';
+              const chipStyle = DIRECTION_CHIP_STYLES[hashStr(directionName) % 3];
               const score = Number(rating.overallRating);
               const safeScore = Number.isFinite(score) ? score : 0;
 
               return (
-                <TableRow
-                  key={rating.id || rating.internId}
-                  hover
-                  sx={{
-                    '&:hover': { bgcolor: 'rgba(12, 86, 208, 0.06)' },
-                    '&:hover .profile-btn': { opacity: 1 },
-                    cursor: 'pointer',
-                  }}
-                >
+                <TableRow key={rating.id || rating.internId} hover sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
                   <TableCell sx={{ px: 3, py: 2 }}>
                     <Box
                       sx={{
@@ -537,16 +521,8 @@ const RatingTable = () => {
                   </TableCell>
                   <TableCell sx={{ px: 3, py: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Avatar
-                        src={rating.avatarUrl}
-                        variant="rounded"
-                        sx={{ width: 40, height: 40, fontSize: '0.875rem' }}
-                      >
-                        {(rating.internName || '?')
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')
-                          .slice(0, 2)}
+                      <Avatar src={rating.avatarUrl} sx={{ width: 40, height: 40 }}>
+                        {(rating.internName || '?').split(' ').map((n) => n[0]).join('').slice(0, 2)}
                       </Avatar>
                       <Box>
                         <Typography variant="body2" fontWeight={700}>
@@ -562,22 +538,26 @@ const RatingTable = () => {
                     <Typography variant="body2">{rating.mentorName || '—'}</Typography>
                   </TableCell>
                   <TableCell sx={{ px: 3, py: 2 }}>
-                    <Box
-                      component="span"
-                      sx={{
-                        display: 'inline-block',
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 999,
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        bgcolor: chipStyle.bg,
-                        color: chipStyle.color,
-                      }}
-                    >
-                      {rating.position || '—'}
-                    </Box>
+                    <Typography variant="body2">{program?.title || '—'}</Typography>
+                  </TableCell>
+                  <TableCell sx={{ px: 3, py: 2 }}>
+                    {directionName ? (
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'inline-block',
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 999,
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          bgcolor: chipStyle.bg,
+                          color: chipStyle.color,
+                        }}
+                      >
+                        {directionName}
+                      </Box>
+                    ) : '—'}
                   </TableCell>
                   <TableCell sx={{ px: 3, py: 2 }}>
                     <Typography fontWeight={700} color="secondary.main">
@@ -610,144 +590,24 @@ const RatingTable = () => {
                     </Box>
                   </TableCell>
                   <TableCell sx={{ px: 3, py: 2 }}>{getTrendIcon(rating.trend)}</TableCell>
-                  <TableCell align="right" sx={{ px: 3, py: 2 }}>
-                    <Button
-                      size="small"
-                      className="profile-btn"
-                      sx={{ opacity: 0, fontWeight: 700, transition: 'opacity 0.15s' }}
-                    >
-                      Профиль
-                    </Button>
-                  </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
-
-        <Box
-          sx={{
-            px: 3,
-            py: 2,
-            borderTop: 1,
-            borderColor: 'divider',
-            bgcolor: 'grey.50',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            Показано {from}–{to} из {displayRows.length} стажеров
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              size="small"
-              disabled={safePage <= 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              sx={{ border: 1, borderColor: 'divider', borderRadius: 2 }}
-            >
-              <Typography component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
-                ‹
-              </Typography>
-            </IconButton>
-            {Array.from({ length: pageCount }, (_, i) => i)
-              .slice(Math.max(0, safePage - 1), Math.min(pageCount, safePage + 2))
-              .map((i) => (
-                <Button
-                  key={i}
-                  size="small"
-                  onClick={() => setPage(i)}
-                  sx={{
-                    minWidth: 40,
-                    height: 40,
-                    borderRadius: 2,
-                    fontWeight: 700,
-                    ...(safePage === i
-                      ? { bgcolor: 'primary.dark', color: 'primary.contrastText' }
-                      : { border: 1, borderColor: 'divider', color: 'text.primary' }),
-                  }}
-                >
-                  {i + 1}
-                </Button>
-              ))}
-            <IconButton
-              size="small"
-              disabled={safePage >= pageCount - 1}
-              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-              sx={{ border: 1, borderColor: 'divider', borderRadius: 2 }}
-            >
-              <Typography component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
-                ›
-              </Typography>
-            </IconButton>
-          </Box>
-        </Box>
+        <TablePagination
+          component="div"
+          count={displayRows.length}
+          page={page}
+          onPageChange={handlePageChange}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+          labelRowsPerPage="Строк на странице:"
+          labelDisplayedRows={({ from, to, count }) => `${from}–${to} из ${count !== -1 ? count : `более ${to}`}`}
+          sx={{ borderTop: 1, borderColor: 'divider', bgcolor: 'grey.50' }}
+        />
       </TableContainer>
-
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          borderRadius: 3,
-          bgcolor: 'grey.200',
-          border: 1,
-          borderColor: 'divider',
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: 'center',
-          gap: 3,
-        }}
-      >
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h3" component="h3" gutterBottom>
-            Инсайт по качеству подготовки
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Текущий поток показывает на 12% выше результаты по Backend-компетенциям по сравнению с прошлым
-            кварталом. Используйте фильтры и экспорт для детального разбора по направлениям.
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {[designTokens.colors.primaryContainer, designTokens.colors.secondary, designTokens.colors.tertiary].map(
-            (bg, idx) => (
-              <Avatar
-                key={idx}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  bgcolor: bg,
-                  color: 'common.white',
-                  border: 2,
-                  borderColor: 'background.paper',
-                  ml: idx === 0 ? 0 : -1.5,
-                  fontSize: '0.75rem',
-                }}
-              >
-                {idx + 1}
-              </Avatar>
-            )
-          )}
-          <Avatar
-            sx={{
-              width: 40,
-              height: 40,
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              border: 2,
-              borderColor: 'background.paper',
-              ml: -1.5,
-              fontSize: '0.75rem',
-              fontWeight: 700,
-            }}
-          >
-            +
-            {Math.max(0, displayRows.length - 3)}
-          </Avatar>
-        </Box>
-      </Paper>
     </Box>
   );
 };

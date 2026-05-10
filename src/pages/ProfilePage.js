@@ -306,6 +306,12 @@ const ProfilePage = () => {
         </Alert>
       )}
 
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight="bold">
+          Профиль
+        </Typography>
+      </Box>
+
       <Card>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>

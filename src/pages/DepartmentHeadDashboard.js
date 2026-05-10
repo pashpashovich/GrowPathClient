@@ -136,8 +136,8 @@ const DepartmentHeadDashboard = () => {
     if (location.pathname === '/department-head/programs') {
       return (
         <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-            <Typography variant="h2" component="h1">
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+            <Typography variant="h4" fontWeight="bold">
               Программы стажировок
             </Typography>
             <Button variant="contained" color="primary" onClick={handleCreateProgram} sx={{ fontWeight: 700 }}>

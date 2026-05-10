@@ -290,7 +290,7 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
           <Grid item xs={12} sm={6} md={4} key={program.id}>
             <Card
               sx={{
-                height: 520,
+                width: '100%',
                 display: 'flex',
                 flexDirection: 'column',
               }}
@@ -303,7 +303,6 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                     sx={{
                       flexGrow: 1,
                       mr: 1,
-                      height: 56,
                       lineHeight: 1.4,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -327,7 +326,6 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                   color="text.secondary"
                   sx={{
                     mb: 2,
-                    height: 60,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     display: '-webkit-box',
@@ -338,13 +336,11 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                   {program.description}
                 </Typography>
 
-                <Box sx={{ height: 28, mb: 1 }}>
-                  {(program.itDirectionRef?.displayName || program.itDirection) && (
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      Направление: {program.itDirectionRef?.displayName || program.itDirection}
-                    </Typography>
-                  )}
-                </Box>
+                {(program.itDirectionRef?.displayName || program.itDirection) && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                    Направление: {program.itDirectionRef?.displayName || program.itDirection}
+                  </Typography>
+                )}
 
                 <Box sx={{ mb: 2 }}>
                   <Chip
@@ -379,29 +375,32 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
                 </Box>
 
                 <Box sx={{ mt: 'auto' }}>
-                  <Box sx={{ mb: 2, height: 80 }}>
-                    {(program.requirements || []).length > 0 && (
-                      <>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                          Требования:
-                        </Typography>
-                        {(program.requirements || []).slice(0, 3).map((requirement, index) => (
+                  {((program.requirementRefs || program.requirements || [])).length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                        Требования:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {(program.requirementRefs || program.requirements || []).slice(0, 3).map((req, index) => (
                           <Chip
                             key={index}
-                            label={requirement}
+                            label={req.requirementText || req}
                             size="small"
                             variant="outlined"
-                            sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem' }}
+                            sx={{ fontSize: '0.7rem' }}
                           />
                         ))}
-                        {(program.requirements || []).length > 3 && (
-                          <Typography variant="caption" color="text.secondary">
-                            +{(program.requirements || []).length - 3} еще
-                          </Typography>
+                        {(program.requirementRefs || program.requirements || []).length > 3 && (
+                          <Chip
+                            label={`+${(program.requirementRefs || program.requirements || []).length - 3}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontSize: '0.7rem' }}
+                          />
                         )}
-                      </>
-                    )}
-                  </Box>
+                      </Box>
+                    </Box>
+                  )}
 
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     {(program.goals || []).length > 0 && (
@@ -423,7 +422,7 @@ const InternshipProgramsList = ({ onEdit, onView }) => {
         ))}
       </Grid>
 
-      {totalPages > 1 && (
+      {filteredPrograms.length > 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Pagination
             count={totalPages}
