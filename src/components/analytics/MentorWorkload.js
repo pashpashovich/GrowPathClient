@@ -170,7 +170,7 @@ const MentorWorkload = () => {
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={3}>
               <FormControl fullWidth>
-                <InputLabel>Программа</InputLabel>
+                <InputLabel shrink>Программа</InputLabel>
                 <Select
                   value={selectedProgram}
                   label="Программа"

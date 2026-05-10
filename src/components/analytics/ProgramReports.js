@@ -142,7 +142,7 @@ const ProgramReports = () => {
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={4}>
               <FormControl fullWidth>
-                <InputLabel>Программа</InputLabel>
+                <InputLabel shrink>Программа</InputLabel>
                 <Select
                   value={selectedProgram}
                   label="Программа"

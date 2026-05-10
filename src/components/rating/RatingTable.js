@@ -38,6 +38,7 @@ import {
   recalculateRanks,
   setSelectedInternship,
 } from '../../store/slices/ratingSlice';
+import { fetchInternshipProgramsAsync } from '../../store/slices/internshipProgramSlice';
 
 const DIRECTION_CHIP_STYLES = [
   { bg: '#dae2ff', color: '#0040a2' },
@@ -73,21 +74,22 @@ const RatingTable = () => {
   const internshipOptions = useMemo(() => {
     if (programs.length > 0) {
       return programs.map((p) => ({
-        id: p.id,
+        id: Number(p.id),
         title: p.title || p.name || `Программа ${p.id}`,
       }));
     }
     return internships.map((i) => ({
-      id: i.id,
+      id: Number(i.id),
       title: i.title || i.name || `Стажировка ${i.id}`,
     }));
   }, [programs, internships]);
 
   const programMap = useMemo(() => {
     const map = new Map();
-    programs.forEach((p) => map.set(p.id, p));
+    programs.forEach((p) => map.set(Number(p.id), p));
     internships.forEach((i) => {
-      if (!map.has(i.id)) map.set(i.id, i);
+      const numId = Number(i.id);
+      if (!map.has(numId)) map.set(numId, i);
     });
     return map;
   }, [programs, internships]);
@@ -113,6 +115,12 @@ const RatingTable = () => {
     dispatch(fetchRatingsAsync(selectedInternshipId ? { internshipId: selectedInternshipId } : undefined));
   }, [dispatch, selectedInternshipId]);
 
+  useEffect(() => {
+    if (programs.length === 0) {
+      dispatch(fetchInternshipProgramsAsync());
+    }
+  }, [dispatch, programs]);
+
   const filteredRatings = useMemo(() => {
     if (!selectedInternshipId) return ratings;
     return ratings.filter((rating) => rating.internshipId === selectedInternshipId);
@@ -137,7 +145,7 @@ const RatingTable = () => {
   const directionOptions = useMemo(() => {
     const set = new Set();
     sortedRatings.forEach((r) => {
-      const program = programMap.get(r.internshipId);
+      const program = programMap.get(Number(r.internshipId));
       const direction = program?.itDirectionRef?.displayName || program?.itDirection || r.position;
       if (direction) set.add(direction);
     });
@@ -158,7 +166,7 @@ const RatingTable = () => {
     if (searchInput.trim()) {
       const q = searchInput.toLowerCase();
       rows = rows.filter((r) => {
-        const program = programMap.get(r.internshipId);
+        const program = programMap.get(Number(r.internshipId));
         const programTitle = program?.title || '';
         const directionName = program?.itDirectionRef?.displayName || program?.itDirection || r.position || '';
         return (
@@ -173,7 +181,7 @@ const RatingTable = () => {
 
     if (filterDirection !== 'all') {
       rows = rows.filter((r) => {
-        const program = programMap.get(r.internshipId);
+        const program = programMap.get(Number(r.internshipId));
         const direction = program?.itDirectionRef?.displayName || program?.itDirection || r.position;
         return direction === filterDirection;
       });
@@ -241,7 +249,7 @@ const RatingTable = () => {
     const csvContent = [
       ['Ранг', 'Стажер', 'Рейтинг', 'Ментор', 'Программа', 'Направление', 'Прогресс %', 'Тренд'],
       ...displayRows.map((rating) => {
-        const program = programMap.get(rating.internshipId);
+        const program = programMap.get(Number(rating.internshipId));
         return [
           rating.rank,
           rating.internName,
@@ -378,12 +386,12 @@ const RatingTable = () => {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
-            <InputLabel>Программа</InputLabel>
+            <InputLabel shrink>Программа</InputLabel>
             <Select
               value={selectedInternshipId || ''}
               label="Программа"
               displayEmpty
-              onChange={(e) => dispatch(setSelectedInternship(e.target.value || null))}
+              onChange={(e) => dispatch(setSelectedInternship(Number(e.target.value) || null))}
               renderValue={(value) => {
                 if (!value) return <em>Все программы</em>;
                 const option = internshipOptions.find((o) => o.id === value);
@@ -494,7 +502,7 @@ const RatingTable = () => {
             {displayRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((rating) => {
               const rank = rating.rank ?? 0;
               const progress = getProgressPercent(rating);
-              const program = programMap.get(rating.internshipId);
+              const program = programMap.get(Number(rating.internshipId));
               const directionName = program?.itDirectionRef?.displayName || program?.itDirection || rating.position || '';
               const chipStyle = DIRECTION_CHIP_STYLES[hashStr(directionName) % 3];
               const score = Number(rating.overallRating);
