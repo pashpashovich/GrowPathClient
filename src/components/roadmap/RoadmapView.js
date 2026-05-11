@@ -206,68 +206,75 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
     await handleReorderByOrder(reordered);
   };
 
+  const getStatusBorderColor = (status) => {
+    switch (status) {
+      case 'pending': return '#9e9e9e';
+      case 'in_progress': return '#1976d2';
+      case 'completed': return '#2e7d32';
+      case 'delayed': return '#d32f2f';
+      default: return '#9e9e9e';
+    }
+  };
+
   return (
     <Box>
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box>
-            <Typography variant="h4" component="h1">
-              Дорожная карта стажировки
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" fontWeight="bold">
+              Общий прогресс
             </Typography>
-            {currentInternship && (
-              <Typography variant="subtitle1" color="text.secondary">
-                {currentInternship.title}
-              </Typography>
+            {canEdit && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<Add />}
+                onClick={() => onEdit(null)}
+                disabled={!currentInternshipId}
+              >
+                Добавить этап
+              </Button>
             )}
           </Box>
-          {canEdit && (
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => onEdit(null)}
-              disabled={!currentInternshipId}
-            >
-              Добавить этап
-            </Button>
-          )}
-        </Box>
 
-        <Box sx={{ mb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="h6">Общий прогресс</Typography>
+          <LinearProgress
+            variant="determinate"
+            value={getProgressPercentage()}
+            sx={{ height: 10, borderRadius: 5 }}
+          />
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5 }}>
             <Typography variant="body2" color="text.secondary">
-              {currentStages.filter(s => s.status === 'completed').length} из {currentStages.length} этапов завершено
+              {Math.round(getProgressPercentage())}% завершено
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {currentStages.filter(s => s.status === 'completed').length} из {currentStages.length} этапов
             </Typography>
           </Box>
-          <LinearProgress 
-            variant="determinate" 
-            value={getProgressPercentage()} 
-            sx={{ height: 8, borderRadius: 4 }}
-          />
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            {Math.round(getProgressPercentage())}% завершено
-          </Typography>
-        </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-          {['pending', 'in_progress', 'completed', 'delayed'].map(status => {
-            const count = currentStages.filter(s => s.status === status).length;
-            const statusInfo = getStatusInfo(status);
-            return (
-              <Box key={status} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Divider sx={{ my: 2 }} />
+
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            {['pending', 'in_progress', 'completed', 'delayed'].map(status => {
+              const count = currentStages.filter(s => s.status === status).length;
+              const statusInfo = getStatusInfo(status);
+              return (
                 <Chip
+                  key={status}
                   label={`${statusInfo.label}: ${count}`}
                   color={statusInfo.color}
                   icon={statusInfo.icon}
                   size="small"
+                  variant="outlined"
                 />
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
+              );
+            })}
+          </Box>
+        </CardContent>
+      </Card>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
       {!currentInternshipId ? (
         <Alert severity="info">
           Выберите стажировку для просмотра дорожной карты.
@@ -289,18 +296,19 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
               <Card
                 key={stage.id}
                 sx={{
-                  border: `2px solid ${statusInfo.bgColor}`,
-                  backgroundColor: statusInfo.bgColor,
+                  borderLeft: 6,
+                  borderColor: getStatusBorderColor(stage.status),
+                  boxShadow: 1,
                   '&:hover': {
                     boxShadow: 3,
                   },
                 }}
               >
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <Typography variant="h6" component="h3">
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="subtitle1" fontWeight="bold">
                           {index + 1}. {stage.title}
                         </Typography>
                         <Chip
@@ -313,6 +321,7 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
                           label={getPriorityLabel(stage.priority)}
                           color={getPriorityColor(stage.priority)}
                           size="small"
+                          variant="outlined"
                         />
                         {stage.isCheckpoint && (
                           <Chip
@@ -320,55 +329,62 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
                             color="primary"
                             icon={<Flag />}
                             size="small"
+                            variant="outlined"
                           />
                         )}
                       </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {stage.description}
-                      </Typography>
+                      {stage.description && (
+                        <Typography variant="body2" color="text.secondary">
+                          {stage.description}
+                        </Typography>
+                      )}
                     </Box>
 
                     {canEdit && (
                       <IconButton
                         onClick={(e) => handleMenuOpen(e, stage)}
                         size="small"
+                        sx={{ ml: 1 }}
                       >
                         <MoreVert />
                       </IconButton>
                     )}
                   </Box>
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        <Schedule sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle' }} />
-                        {formatDate(stage.startDate)} - {formatDate(stage.endDate)}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      <Schedule sx={{ fontSize: 16, mr: 0.5, verticalAlign: 'middle' }} />
+                      {formatDate(stage.startDate)} – {formatDate(stage.endDate)}
+                    </Typography>
+                    {daysRemaining !== null && (
+                      <Typography
+                        variant="caption"
+                        color={isOverdue ? 'error.main' : daysRemaining <= 3 ? 'warning.main' : 'text.secondary'}
+                        fontWeight={isOverdue || daysRemaining <= 3 ? 700 : 400}
+                      >
+                        {isOverdue
+                          ? `Просрочено на ${Math.abs(daysRemaining)} дн.`
+                          : daysRemaining === 0
+                          ? 'Завершается сегодня'
+                          : `Осталось ${daysRemaining} дн.`}
                       </Typography>
-                      {daysRemaining !== null && (
-                        <Typography 
-                          variant="caption" 
-                          color={isOverdue ? 'error.main' : daysRemaining <= 3 ? 'warning.main' : 'text.secondary'}
-                        >
-                          {isOverdue ? `Просрочено на ${Math.abs(daysRemaining)} дн.` : 
-                           daysRemaining === 0 ? 'Завершается сегодня' :
-                           `Осталось ${daysRemaining} дн.`}
-                        </Typography>
-                      )}
-                    </Box>
+                    )}
                   </Box>
 
                   {stage.comments && (
                     <>
-                      <Divider sx={{ my: 1 }} />
-                      <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                        {stage.comments}
-                      </Typography>
+                      <Divider sx={{ my: 1.5 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                          {stage.comments}
+                        </Typography>
+                      </Box>
                     </>
                   )}
                 </CardContent>
 
                 {canEdit && (
-                  <CardActions>
+                  <CardActions sx={{ pt: 0 }}>
                     <Button
                       size="small"
                       onClick={() => openStatusDialog(stage)}
@@ -376,8 +392,12 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
                     >
                       Изменить статус
                     </Button>
-                    <Button size="small" onClick={() => moveStage(stage.id, -1)}>Вверх</Button>
-                    <Button size="small" onClick={() => moveStage(stage.id, 1)}>Вниз</Button>
+                    <Button size="small" onClick={() => moveStage(stage.id, -1)}>
+                      Вверх
+                    </Button>
+                    <Button size="small" onClick={() => moveStage(stage.id, 1)}>
+                      Вниз
+                    </Button>
                   </CardActions>
                 )}
               </Card>

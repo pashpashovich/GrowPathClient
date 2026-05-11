@@ -161,7 +161,16 @@ const DepartmentHeadDashboard = () => {
     }
 
     if (location.pathname === '/department-head/roadmap') {
-      return <RoadmapPage canEdit={true} />;
+      return (
+        <Box>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Дорожная карта
+            </Typography>
+          </Box>
+          <RoadmapPage canEdit={true} />
+        </Box>
+      );
     }
 
     if (location.pathname === '/department-head/review') {
@@ -190,7 +199,6 @@ const DepartmentHeadDashboard = () => {
 
   const showTaskButton =
     location.pathname === '/department-head/tasks' ||
-    location.pathname === '/department-head/roadmap' ||
     location.pathname === '/department-head/review' ||
     location.pathname === '/department-head/stats';
 

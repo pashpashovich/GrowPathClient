@@ -88,7 +88,8 @@ const InternshipSelector = ({
   };
 
   const handleInternshipChange = (event) => {
-    dispatch(setCurrentInternship(event.target.value));
+    const value = event.target.value;
+    dispatch(setCurrentInternship(value || null));
   };
 
   const currentInternship = isIntern 
@@ -145,6 +146,9 @@ const InternshipSelector = ({
             label={entityViewMode === 'iprs' ? 'Активный ИПР' : 'Активный шаблон'}
             onChange={handleInternshipChange}
           >
+            <MenuItem value="">
+              <em>Выберите...</em>
+            </MenuItem>
             {internships.map((internship) => {
               const statusInfo = getStatusInfo(internship.status);
               return (
