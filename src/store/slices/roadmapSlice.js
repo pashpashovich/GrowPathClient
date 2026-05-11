@@ -261,28 +261,18 @@ const roadmapSlice = createSlice({
       .addCase(fetchInternshipsAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.internships = action.payload;
-        if (!state.currentInternshipId && action.payload.length > 0) {
-          state.currentInternshipId = action.payload[0].id;
-        }
       })
       .addCase(fetchInternshipsProfileAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.internships = action.payload;
-        state.currentInternshipId = action.payload[0]?.id || null;
       })
       .addCase(fetchInternshipsByProgramAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.internships = action.payload;
-        if (!state.currentInternshipId && action.payload.length > 0) {
-          state.currentInternshipId = action.payload[0].id;
-        }
       })
       .addCase(fetchIprsAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.internships = action.payload;
-        if (!state.currentInternshipId && action.payload.length > 0) {
-          state.currentInternshipId = action.payload[0].id;
-        }
       })
       .addCase(updateInternshipAsync.fulfilled, (state, action) => {
         const idx = state.internships.findIndex((x) => x.id === action.payload.id);
@@ -293,7 +283,7 @@ const roadmapSlice = createSlice({
         state.internships = state.internships.filter((x) => x.id !== id);
         delete state.stages[id];
         if (state.currentInternshipId === id) {
-          state.currentInternshipId = state.internships[0]?.id || null;
+          state.currentInternshipId = null;
         }
       })
       .addCase(fetchStagesAsync.fulfilled, (state, action) => {

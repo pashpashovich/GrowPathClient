@@ -51,15 +51,35 @@ const InternDashboard = () => {
 
   const getCurrentPage = () => {
     if (location.pathname === '/intern/roadmap') {
-      return <RoadmapPage canEdit={false} />;
+      return (
+        <Box>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Дорожная карта
+            </Typography>
+          </Box>
+          <RoadmapPage canEdit={false} />
+        </Box>
+      );
     } else if (location.pathname === '/intern/rating') {
-      return <InternRatingPage />;
+      return (
+        <Box>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Мой рейтинг
+            </Typography>
+          </Box>
+          <InternRatingPage />
+        </Box>
+      );
     } else if (location.pathname === '/intern/stats') {
       return (
         <Box>
-          <Typography variant="h4" gutterBottom>
-            Статистика выполнения
-          </Typography>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Статистика
+            </Typography>
+          </Box>
           <Typography variant="body1" color="text.secondary">
             Здесь будет отображаться статистика выполнения заданий, прогресс и достижения.
           </Typography>
@@ -67,10 +87,17 @@ const InternDashboard = () => {
       );
     } else if (location.pathname === '/intern/tasks') {
       return (
-        <InternTaskList
-          onViewTask={handleViewTask}
-          onSubmitTask={handleSubmitTask}
-        />
+        <Box>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Мои задания
+            </Typography>
+          </Box>
+          <InternTaskList
+            onViewTask={handleViewTask}
+            onSubmitTask={handleSubmitTask}
+          />
+        </Box>
       );
     } else {
       return <ProfilePage />;
@@ -94,30 +121,10 @@ const InternDashboard = () => {
             backgroundColor: 'background.default',
           }}
         >
-        {/* Верхняя панель */}
-        <Box sx={{ 
-          backgroundColor: 'background.paper',
-          color: 'text.primary',
-          boxShadow: 1,
-          p: 2,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-          mt: 2
-        }}>
-          <Typography variant="h6" component="div">
-            {location.pathname === '/intern/roadmap' ? 'Дорожная карта' :
-             location.pathname === '/intern/rating' ? 'Мой рейтинг' :
-             location.pathname === '/intern/stats' ? 'Статистика' : 'Мои задания'}
-          </Typography>
+          <Box sx={{ py: 3, px: 3, overflowX: 'auto', width: '100%', maxWidth: 'none' }}>
+            {getCurrentPage()}
+          </Box>
         </Box>
-
-        {/* Основной контент */}
-        <Box sx={{ py: 3, px: 3, overflowX: 'auto', width: '100%', maxWidth: 'none' }}>
-          {getCurrentPage()}
-        </Box>
-      </Box>
 
       {/* Модальное окно для просмотра деталей задачи */}
       <Modal

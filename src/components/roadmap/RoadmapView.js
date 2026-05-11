@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -17,6 +17,7 @@ import {
   MenuItem,
   Tooltip,
   Alert,
+  Snackbar,
   Divider,
   FormControl,
   InputLabel,
@@ -34,12 +35,15 @@ import {
   Warning,
   Flag,
   Timeline,
+  KeyboardArrowUp,
+  KeyboardArrowDown,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   deleteStageAsync,
   changeStageStatusAsync,
   reorderStagesAsync,
+  clearError,
 } from '../../store/slices/roadmapSlice';
 
 const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
@@ -273,8 +277,6 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
         </CardContent>
       </Card>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
       {!currentInternshipId ? (
         <Alert severity="info">
           Выберите стажировку для просмотра дорожной карты.
@@ -392,12 +394,12 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
                     >
                       Изменить статус
                     </Button>
-                    <Button size="small" onClick={() => moveStage(stage.id, -1)}>
-                      Вверх
-                    </Button>
-                    <Button size="small" onClick={() => moveStage(stage.id, 1)}>
-                      Вниз
-                    </Button>
+                    <IconButton size="small" onClick={() => moveStage(stage.id, -1)}>
+                      <KeyboardArrowUp />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => moveStage(stage.id, 1)}>
+                      <KeyboardArrowDown />
+                    </IconButton>
                   </CardActions>
                 )}
               </Card>
@@ -483,6 +485,17 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
           <Button onClick={handleStatusUpdate} variant="contained">Сохранить</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!error}
+        autoHideDuration={4000}
+        onClose={() => dispatch(clearError())}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => dispatch(clearError())} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

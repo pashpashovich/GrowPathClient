@@ -174,7 +174,16 @@ const DepartmentHeadDashboard = () => {
     }
 
     if (location.pathname === '/department-head/review') {
-      return <TaskReviewPanel onViewTask={handleViewTask} />;
+      return (
+        <Box>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Проверка заданий
+            </Typography>
+          </Box>
+          <TaskReviewPanel onViewTask={handleViewTask} />
+        </Box>
+      );
     }
 
     if (location.pathname === '/department-head/dashboard') {
@@ -184,9 +193,11 @@ const DepartmentHeadDashboard = () => {
     if (location.pathname === '/department-head/stats') {
       return (
         <Box>
-          <Typography variant="h4" gutterBottom>
-            Статистика заданий
-          </Typography>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Статистика
+            </Typography>
+          </Box>
           <Typography variant="body1" color="text.secondary">
             Здесь будет отображаться статистика по заданиям, прогрессу стажеров и аналитика.
           </Typography>
@@ -198,9 +209,7 @@ const DepartmentHeadDashboard = () => {
   };
 
   const showTaskButton =
-    location.pathname === '/department-head/tasks' ||
-    location.pathname === '/department-head/review' ||
-    location.pathname === '/department-head/stats';
+    location.pathname === '/department-head/tasks';
 
   const getPageTitle = () => {
     if (location.pathname === '/department-head/roadmap') return 'Дорожная карта';

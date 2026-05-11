@@ -93,7 +93,12 @@ const DashboardPage = () => {
       status: null,
     };
     dispatch(setFilters(initialFilters));
-    fetchAll(buildParams(initialFilters));
+    const params = buildParams(initialFilters);
+    if (!data) dispatch(fetchDashboardDataAsync(params));
+    if (!tasksStats) dispatch(fetchTasksStatsAsync(params));
+    if (!programsStats) dispatch(fetchProgramsStatsAsync(params));
+    if (!mentorsStats) dispatch(fetchMentorsStatsAsync(params));
+    if (!internsStats) dispatch(fetchInternsStatsAsync(params));
   }, []);
 
   const handleApply = (newFilters) => {

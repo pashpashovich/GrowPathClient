@@ -56,15 +56,35 @@ const MentorDashboard = () => {
 
   const getCurrentPage = () => {
     if (location.pathname === '/mentor/roadmap') {
-      return <RoadmapPage canEdit={true} />;
+      return (
+        <Box>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Дорожная карта
+            </Typography>
+          </Box>
+          <RoadmapPage canEdit={true} />
+        </Box>
+      );
     } else if (location.pathname === '/mentor/review') {
-      return <TaskReviewPanel onViewTask={handleViewTask} />;
+      return (
+        <Box>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Проверка заданий
+            </Typography>
+          </Box>
+          <TaskReviewPanel onViewTask={handleViewTask} />
+        </Box>
+      );
     } else if (location.pathname === '/mentor/stats') {
       return (
         <Box>
-          <Typography variant="h4" gutterBottom>
-            Статистика заданий
-          </Typography>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Статистика
+            </Typography>
+          </Box>
           <Typography variant="body1" color="text.secondary">
             Здесь будет отображаться статистика по заданиям, прогрессу стажеров и аналитика.
           </Typography>
@@ -72,11 +92,21 @@ const MentorDashboard = () => {
       );
     } else if (location.pathname === '/mentor/tasks') {
       return (
-        <KanbanBoard
-          onEdit={handleOpenForm}
-          onDelete={handleDeleteTask}
-          onView={handleViewTask}
-        />
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+            <Typography variant="h4" fontWeight="bold">
+              Доска задач
+            </Typography>
+            <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenForm()}>
+              Создать задание
+            </Button>
+          </Box>
+          <KanbanBoard
+            onEdit={handleOpenForm}
+            onDelete={handleDeleteTask}
+            onView={handleViewTask}
+          />
+        </Box>
       );
     } else {
       return <ProfilePage />;
@@ -104,50 +134,21 @@ const MentorDashboard = () => {
             backgroundColor: 'background.default',
           }}
         >
-        {/* Верхняя панель */}
-        <Box sx={{ 
-          backgroundColor: 'background.paper',
-          color: 'text.primary',
-          boxShadow: 1,
-          p: 2,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-          mt: 2,
-          flexShrink: 0,
-        }}>
-          <Typography variant="h6" component="div">
-            {location.pathname === '/mentor/roadmap' ? 'Дорожная карта' :
-             location.pathname === '/mentor/review' ? 'Проверка заданий' :
-             location.pathname === '/mentor/stats' ? 'Статистика' :
-             'Доска задач'}
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => handleOpenForm()}
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              py: 3,
+              px: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+            }}
           >
-            Создать задание
-          </Button>
+            {getCurrentPage()}
+          </Box>
         </Box>
-
-        {/* Основной контент: flex-1 чтобы дочерние экраны (канбан) могли занять высоту и скроллить внутри себя */}
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            py: 3,
-            px: 3,
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-          }}
-        >
-          {getCurrentPage()}
-        </Box>
-      </Box>
 
       {/* Модальное окно для просмотра деталей задачи */}
       <Modal
