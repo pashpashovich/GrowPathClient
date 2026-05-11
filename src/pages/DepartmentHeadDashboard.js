@@ -221,9 +221,12 @@ const DepartmentHeadDashboard = () => {
             ml: sidebarOpen ? '280px' : '80px',
             transition: 'margin-left 0.3s ease',
             minHeight: `calc(100vh - ${DASHBOARD_APP_BAR_HEIGHT}px)`,
+            maxHeight: `calc(100vh - ${DASHBOARD_APP_BAR_HEIGHT}px)`,
             backgroundColor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
+            overflow: 'hidden',
+            width: '100%',
           }}
         >
           {showTaskButton && (
@@ -259,9 +262,10 @@ const DepartmentHeadDashboard = () => {
               py: showTaskButton ? 0 : 3,
               px: 3,
               overflowY: 'auto',
+              minWidth: 0,
             }}
           >
-            <Box sx={{ maxWidth: 1280, mx: 'auto' }}>{getCurrentPage()}</Box>
+            <Box sx={{ maxWidth: 1280, mx: 'auto', width: '100%' }}>{getCurrentPage()}</Box>
           </Box>
         </Box>
       </Box>

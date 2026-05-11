@@ -86,59 +86,68 @@ const InternsStatsChart = ({ data }) => {
           )}
         </Stack>
 
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" fontWeight={600} gutterBottom>
-              По статусам
-            </Typography>
-            {statusDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie
-                    data={statusDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {statusDistribution.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <Typography variant="body2" color="text.secondary">Нет данных</Typography>
-            )}
-          </Grid>
+        <Box sx={{ overflow: 'hidden' }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" fontWeight={600} gutterBottom>
+                По статусам
+              </Typography>
+              {statusDistribution.length > 0 ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie
+                      data={statusDistribution}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={30}
+                      outerRadius={55}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {statusDistribution.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend
+                      layout="horizontal"
+                      align="center"
+                      verticalAlign="bottom"
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: 12 }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+              )}
+            </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Typography variant="body2" fontWeight={600} gutterBottom>
-              По программам
-            </Typography>
-            {programDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={programDistribution} layout="vertical" margin={{ left: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
-                  <XAxis type="number" tick={{ fontSize: 12 }} />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={100} />
-                  <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e1e2e4' }} />
-                  <Bar dataKey="Количество" radius={[0, 4, 4, 0]}>
-                    {programDistribution.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Typography variant="body2" color="text.secondary">Нет данных</Typography>
-            )}
+            <Grid item xs={12} md={6}>
+              <Typography variant="body2" fontWeight={600} gutterBottom>
+                По программам
+              </Typography>
+              {programDistribution.length > 0 ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={programDistribution} layout="vertical" margin={{ left: 10, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
+                    <XAxis type="number" tick={{ fontSize: 12 }} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={100} />
+                    <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e1e2e4' }} />
+                    <Bar dataKey="Количество" radius={[0, 4, 4, 0]}>
+                      {programDistribution.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+              )}
+            </Grid>
           </Grid>
-        </Grid>
+        </Box>
 
         {data.topPerformers && data.topPerformers.length > 0 && (
           <Box sx={{ mt: 2 }}>

@@ -7,7 +7,6 @@ import {
   fetchProgramsStatsAsync,
   fetchMentorsStatsAsync,
   fetchInternsStatsAsync,
-  fetchUpcomingDeadlinesAsync,
   setFilters,
   clearFilters as clearDashboardFilters,
 } from '../store/slices/dashboardSlice';
@@ -20,7 +19,6 @@ import TasksStatsCharts from '../components/dashboard/TasksStatsCharts';
 import ProgramsStatsChart from '../components/dashboard/ProgramsStatsChart';
 import MentorsStatsChart from '../components/dashboard/MentorsStatsChart';
 import InternsStatsChart from '../components/dashboard/InternsStatsChart';
-import UpcomingDeadlines from '../components/dashboard/UpcomingDeadlines';
 
 const DEFAULT_PERIOD_DAYS = 30;
 
@@ -32,7 +30,6 @@ const DashboardPage = () => {
     programsStats,
     mentorsStats,
     internsStats,
-    deadlines,
     filters,
     isLoading,
     error,
@@ -79,7 +76,6 @@ const DashboardPage = () => {
       dispatch(fetchProgramsStatsAsync(params));
       dispatch(fetchMentorsStatsAsync(params));
       dispatch(fetchInternsStatsAsync(params));
-      dispatch(fetchUpcomingDeadlinesAsync({ days: 7, ...params }));
     },
     [dispatch]
   );
@@ -127,6 +123,12 @@ const DashboardPage = () => {
 
   return (
     <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight="bold">
+          Дашборд
+        </Typography>
+      </Box>
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -153,25 +155,27 @@ const DashboardPage = () => {
         <TrendsChart dateFrom={dateFromISO} dateTo={dateToISO} />
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <TasksStatsCharts data={tasksStats} />
+      <Box sx={{ overflow: 'hidden', mb: 3 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <TasksStatsCharts data={tasksStats} />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <ProgramsStatsChart data={programsStats} />
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <ProgramsStatsChart data={programsStats} />
-        </Grid>
-      </Grid>
+      </Box>
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <MentorsStatsChart data={mentorsStats} />
+      <Box sx={{ overflow: 'hidden', mb: 3 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <MentorsStatsChart data={mentorsStats} />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <InternsStatsChart data={internsStats} />
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <InternsStatsChart data={internsStats} />
-        </Grid>
-      </Grid>
-
-      <UpcomingDeadlines data={deadlines} />
+      </Box>
     </Box>
   );
 };
