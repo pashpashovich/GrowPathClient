@@ -225,7 +225,6 @@ const DepartmentHeadDashboard = () => {
             backgroundColor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
             width: '100%',
           }}
         >

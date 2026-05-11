@@ -155,27 +155,23 @@ const DashboardPage = () => {
         <TrendsChart dateFrom={dateFromISO} dateTo={dateToISO} />
       </Box>
 
-      <Box sx={{ overflow: 'hidden', mb: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <TasksStatsCharts data={tasksStats} />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <ProgramsStatsChart data={programsStats} />
-          </Grid>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={6}>
+          <TasksStatsCharts data={tasksStats} />
         </Grid>
-      </Box>
+        <Grid item xs={12} md={6}>
+          <ProgramsStatsChart data={programsStats} />
+        </Grid>
+      </Grid>
 
-      <Box sx={{ overflow: 'hidden', mb: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <MentorsStatsChart data={mentorsStats} />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <InternsStatsChart data={internsStats} />
-          </Grid>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={6}>
+          <MentorsStatsChart data={mentorsStats} />
         </Grid>
-      </Box>
+        <Grid item xs={12} md={6}>
+          <InternsStatsChart data={internsStats} />
+        </Grid>
+      </Grid>
     </Box>
   );
 };

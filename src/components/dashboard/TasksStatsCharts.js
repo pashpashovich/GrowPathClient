@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   Chip,
   Stack,
 } from '@mui/material';
@@ -93,7 +92,7 @@ const TasksStatsCharts = ({ data }) => {
   }
 
   return (
-    <Card sx={{ height: '100%' }}>
+    <Card sx={{ height: '100%', overflow: 'visible' }}>
       <CardContent>
         <Typography variant="h6" fontWeight="bold" gutterBottom>
           Статистика задач
@@ -110,67 +109,65 @@ const TasksStatsCharts = ({ data }) => {
           )}
         </Stack>
 
-        <Box sx={{ overflow: 'hidden' }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
-                По статусам
-              </Typography>
-              {statusDistribution.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={statusDistribution}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={40}
-                      outerRadius={60}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {statusDistribution.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend
-                      layout="horizontal"
-                      align="center"
-                      verticalAlign="bottom"
-                      iconType="circle"
-                      iconSize={8}
-                      wrapperStyle={{ fontSize: 12 }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <Typography variant="body2" color="text.secondary">Нет данных</Typography>
-              )}
-            </Grid>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 200 } }}>
+            <Typography variant="body2" fontWeight={600} gutterBottom>
+              По статусам
+            </Typography>
+            {statusDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart margin={{ top: 10 }}>
+                  <Pie
+                    data={statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={55}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {statusDistribution.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend
+                    layout="horizontal"
+                    align="center"
+                    verticalAlign="bottom"
+                    iconType="circle"
+                    iconSize={8}
+                    wrapperStyle={{ fontSize: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+            )}
+          </Box>
 
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
-                По приоритету
-              </Typography>
-              {priorityDistribution.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={priorityDistribution} layout="vertical" margin={{ left: 10, right: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
-                    <XAxis type="number" tick={{ fontSize: 12 }} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={80} />
-                    <Tooltip />
-                    <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                      {priorityDistribution.map((entry, i) => (
-                        <Cell key={i} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <Typography variant="body2" color="text.secondary">Нет данных</Typography>
-              )}
-            </Grid>
-          </Grid>
+          <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 200 } }}>
+            <Typography variant="body2" fontWeight={600} gutterBottom>
+              По приоритету
+            </Typography>
+            {priorityDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={priorityDistribution} layout="vertical" margin={{ left: 10, right: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
+                  <XAxis type="number" tick={{ fontSize: 12 }} />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={80} />
+                  <Tooltip />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                    {priorityDistribution.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+            )}
+          </Box>
         </Box>
 
         {completionTrend.length > 0 && (
