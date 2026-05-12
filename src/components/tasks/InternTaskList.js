@@ -132,10 +132,6 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Мои задания
-      </Typography>
-      
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
         {assignedTasks.map((task) => {
           const statusInfo = getStatusInfo(task.status);
@@ -251,17 +247,6 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
           );
         })}
       </Box>
-
-      <Alert severity="info" sx={{ mt: 2 }}>
-        <Typography variant="body2">
-          <strong>Статусы заданий:</strong><br/>
-          • <strong>Доступно</strong> - можно взять в работу<br/>
-          • <strong>В работе</strong> - выполняется<br/>
-          • <strong>На ревью</strong> - отправлено на проверку<br/>
-          • <strong>Завершено</strong> - принято ментором<br/>
-          • <strong>Требует доработки</strong> - нужно исправить
-        </Typography>
-      </Alert>
     </Box>
   );
 };
