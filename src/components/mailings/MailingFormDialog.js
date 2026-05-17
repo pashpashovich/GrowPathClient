@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -12,7 +14,7 @@ import {
   Select,
   TextField,
 } from '@mui/material';
-import { mailingAPI, parseMailingList } from '../../services/notificationApi';
+import { mailingAPI } from '../../services/notificationApi';
 import { WEEKDAY_LABELS } from '../../utils/mailingLabels';
 
 const emptyForm = {
@@ -37,21 +39,44 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
   const [form, setForm] = useState(emptyForm);
   const [templates, setTemplates] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [lookupsLoading, setLookupsLoading] = useState(false);
+  const [lookupError, setLookupError] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     const loadLookups = async () => {
+      setLookupsLoading(true);
+      setLookupError(null);
       try {
-        const [tRes, gRes] = await Promise.all([
-          mailingAPI.getEmailTemplates({ page: 1, limit: 200 }),
-          mailingAPI.getDistributionGroups({ page: 1, limit: 200 }),
+        const [templatesResult, groupsResult] = await Promise.allSettled([
+          mailingAPI.fetchAllEmailTemplates(),
+          mailingAPI.fetchAllDistributionGroups(),
         ]);
-        setTemplates(parseMailingList(tRes.data).data);
-        setGroups(parseMailingList(gRes.data).data);
+
+        const templateItems =
+          templatesResult.status === 'fulfilled' ? templatesResult.value : [];
+        const groupItems = groupsResult.status === 'fulfilled' ? groupsResult.value : [];
+
+        setTemplates(templateItems);
+        setGroups(groupItems);
+
+        const errors = [];
+        if (templatesResult.status === 'rejected') {
+          errors.push('шаблоны');
+        }
+        if (groupsResult.status === 'rejected') {
+          errors.push('группы');
+        }
+        if (errors.length) {
+          setLookupError(`Не удалось загрузить: ${errors.join(', ')}`);
+        }
       } catch {
         setTemplates([]);
         setGroups([]);
+        setLookupError('Не удалось загрузить шаблоны и группы');
+      } finally {
+        setLookupsLoading(false);
       }
     };
     loadLookups();
@@ -63,9 +88,9 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
       setForm({
         name: editing.name || '',
         type: editing.type || 'immediate',
-        emailTemplateId: editing.emailTemplateId || '',
+        emailTemplateId: editing.emailTemplateId ? String(editing.emailTemplateId) : '',
         executeAt: toLocalInput(editing.executeAt),
-        distributionGroupIds: editing.distributionGroupIds || [],
+        distributionGroupIds: (editing.distributionGroupIds || []).map(String),
         weekDay: editing.schedule?.weekDay || 'monday',
         executeTime: editing.schedule?.executeTime || '09:00',
       });
@@ -109,6 +134,12 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{editing ? 'Редактировать рассылку' : 'Новая рассылка'}</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        {lookupError && (
+          <Alert severity="warning" onClose={() => setLookupError(null)}>
+            {lookupError}
+          </Alert>
+        )}
+
         <TextField
           label="Название"
           required
@@ -127,46 +158,64 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
             <MenuItem value="recurring">Повторяющаяся</MenuItem>
           </Select>
         </FormControl>
-        <FormControl fullWidth required>
-          <InputLabel>Шаблон</InputLabel>
-          <Select
-            label="Шаблон"
-            value={form.emailTemplateId}
-            onChange={(e) => setForm((f) => ({ ...f, emailTemplateId: e.target.value }))}
-          >
-            {templates.map((t) => (
-              <MenuItem key={t.id} value={t.id}>
-                {t.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
-          <InputLabel>Группы получателей</InputLabel>
-          <Select
-            multiple
-            label="Группы получателей"
-            value={form.distributionGroupIds}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                distributionGroupIds: typeof e.target.value === 'string' ? [] : e.target.value,
-              }))
-            }
-            renderValue={(selected) =>
-              groups
-                .filter((g) => selected.includes(g.id))
-                .map((g) => g.name)
-                .join(', ')
-            }
-          >
-            {groups.map((g) => (
-              <MenuItem key={g.id} value={g.id}>
-                {g.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+
+        {lookupsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+            <CircularProgress size={28} />
+          </Box>
+        ) : (
+          <>
+            <FormControl fullWidth required>
+              <InputLabel>Шаблон</InputLabel>
+              <Select
+                label="Шаблон"
+                value={form.emailTemplateId}
+                onChange={(e) => setForm((f) => ({ ...f, emailTemplateId: e.target.value }))}
+                displayEmpty
+              >
+                <MenuItem value="" disabled>
+                  {templates.length ? 'Выберите шаблон' : 'Нет доступных шаблонов'}
+                </MenuItem>
+                {templates.map((t) => (
+                  <MenuItem key={t.id} value={String(t.id)}>
+                    {t.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Группы получателей</InputLabel>
+              <Select
+                multiple
+                label="Группы получателей"
+                value={form.distributionGroupIds}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    distributionGroupIds:
+                      typeof e.target.value === 'string'
+                        ? e.target.value.split(',')
+                        : e.target.value.map(String),
+                  }))
+                }
+                renderValue={(selected) => {
+                  const names = groups
+                    .filter((g) => selected.includes(String(g.id)))
+                    .map((g) => g.name);
+                  return names.length ? names.join(', ') : 'Выберите группы';
+                }}
+                displayEmpty
+              >
+                {groups.map((g) => (
+                  <MenuItem key={g.id} value={String(g.id)}>
+                    {g.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </>
+        )}
+
         {form.type === 'scheduled' && (
           <TextField
             label="Дата и время отправки"
@@ -205,7 +254,11 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Отмена</Button>
-        <Button variant="contained" onClick={handleSave} disabled={saving}>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={saving || lookupsLoading || !form.emailTemplateId}
+        >
           Сохранить
         </Button>
       </DialogActions>

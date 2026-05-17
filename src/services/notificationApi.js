@@ -5,15 +5,52 @@ const distributionGroupsPath = v1ResourcePath('/distribution-groups');
 const emailTemplatesPath = v1ResourcePath('/email-templates');
 const mailingsPath = v1ResourcePath('/mailings');
 
-export const parseMailingList = (body) => ({
-  data: Array.isArray(body?.data) ? body.data : [],
-  pagination: body?.pagination ?? {
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  },
-});
+const defaultPagination = { page: 1, limit: 10, total: 0, totalPages: 0 };
+
+export const parseMailingList = (body) => {
+  if (!body) {
+    return { data: [], pagination: defaultPagination };
+  }
+  if (Array.isArray(body)) {
+    return {
+      data: body,
+      pagination: {
+        page: 1,
+        limit: body.length,
+        total: body.length,
+        totalPages: 1,
+      },
+    };
+  }
+  const data = Array.isArray(body.data)
+    ? body.data
+    : Array.isArray(body.items)
+      ? body.items
+      : [];
+  const pagination = body.pagination ?? {
+    page: body.page ?? 1,
+    limit: body.limit ?? data.length,
+    total: body.total ?? data.length,
+    totalPages: body.totalPages ?? (data.length ? 1 : 0),
+  };
+  return { data, pagination };
+};
+
+const LOOKUP_PAGE_SIZE = 100;
+
+export const fetchAllMailingListItems = async (fetchPage) => {
+  let page = 1;
+  let totalPages = 1;
+  const all = [];
+  do {
+    const res = await fetchPage({ page, limit: LOOKUP_PAGE_SIZE });
+    const parsed = parseMailingList(res.data);
+    all.push(...parsed.data);
+    totalPages = parsed.pagination.totalPages || 1;
+    page += 1;
+  } while (page <= totalPages);
+  return all;
+};
 
 export const mailingAPI = {
   getRecipients: (params) => api.get(recipientsPath, { params }),
@@ -55,4 +92,10 @@ export const mailingAPI = {
   updateMailing: (id, data) => api.put(`${mailingsPath}/${id}`, data),
   deleteMailing: (id) => api.delete(`${mailingsPath}/${id}`),
   sendMailing: (id) => api.post(`${mailingsPath}/${id}/send`),
+
+  fetchAllEmailTemplates: () =>
+    fetchAllMailingListItems((params) => api.get(emailTemplatesPath, { params })),
+
+  fetchAllDistributionGroups: () =>
+    fetchAllMailingListItems((params) => api.get(distributionGroupsPath, { params })),
 };

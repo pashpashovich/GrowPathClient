@@ -72,9 +72,9 @@ const HistorySection = () => {
   useEffect(() => {
     const loadTemplates = async () => {
       try {
-        const res = await mailingAPI.getEmailTemplates({ page: 1, limit: 500 });
+        const items = await mailingAPI.fetchAllEmailTemplates();
         const map = {};
-        parseMailingList(res.data).data.forEach((t) => {
+        items.forEach((t) => {
           map[t.id] = t.name;
         });
         setTemplates(map);

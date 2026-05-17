@@ -58,16 +58,16 @@ const MailingsListSection = () => {
 
   const loadLookups = useCallback(async () => {
     try {
-      const [tRes, gRes] = await Promise.all([
-        mailingAPI.getEmailTemplates({ page: 1, limit: 500 }),
-        mailingAPI.getDistributionGroups({ page: 1, limit: 500 }),
+      const [templateItems, groupItems] = await Promise.all([
+        mailingAPI.fetchAllEmailTemplates(),
+        mailingAPI.fetchAllDistributionGroups(),
       ]);
       const tMap = {};
-      parseMailingList(tRes.data).data.forEach((t) => {
+      templateItems.forEach((t) => {
         tMap[t.id] = t.name;
       });
       const gMap = {};
-      parseMailingList(gRes.data).data.forEach((g) => {
+      groupItems.forEach((g) => {
         gMap[g.id] = g.name;
       });
       setTemplates(tMap);
