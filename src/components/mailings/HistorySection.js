@@ -12,7 +12,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -30,13 +29,17 @@ import {
   formatDateTime,
   MAILING_TYPE_LABELS,
 } from '../../utils/mailingLabels';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
+import ActionSnackbar from './ActionSnackbar';
 
 const HistorySection = () => {
   const [items, setItems] = useState([]);
   const [templates, setTemplates] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [snack, setSnack] = useState({ open: false, message: '' });
+  const [snack, setSnack] = useState({ open: false, message: '', severity: 'success' });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
@@ -109,19 +112,23 @@ const HistorySection = () => {
     else setSelected(filtered.map((r) => r.id));
   };
 
-  const handleDelete = async () => {
+  const handleConfirmDelete = async () => {
     if (!selected.length) return;
-    if (!window.confirm(`Удалить записи (${selected.length})?`)) return;
+    setDeleting(true);
     try {
       await Promise.all(selected.map((id) => mailingAPI.deleteMailing(id)));
       setSelected([]);
-      setSnack({ open: true, message: 'Удалено' });
+      setSnack({ open: true, message: 'Записи удалены', severity: 'success' });
       load();
     } catch (e) {
       setSnack({
         open: true,
         message: e.response?.data?.message || 'Ошибка удаления',
+        severity: 'error',
       });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -187,7 +194,7 @@ const HistorySection = () => {
             color="error"
             startIcon={<Delete />}
             disabled={selected.length === 0}
-            onClick={handleDelete}
+            onClick={() => setDeleteDialogOpen(true)}
           >
             Удалить
           </Button>
@@ -262,11 +269,19 @@ const HistorySection = () => {
         )}
       </CardContent>
 
-      <Snackbar
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        message={`Вы уверены, что хотите удалить выбранные записи (${selected.length})?`}
+        onClose={() => !deleting && setDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        confirming={deleting}
+      />
+
+      <ActionSnackbar
         open={snack.open}
-        autoHideDuration={4000}
-        onClose={() => setSnack({ open: false, message: '' })}
         message={snack.message}
+        severity={snack.severity}
+        onClose={() => setSnack({ open: false, message: '', severity: 'success' })}
       />
     </Card>
   );

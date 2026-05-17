@@ -19,7 +19,6 @@ import {
   ListItemText,
   MenuItem,
   Select,
-  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -33,6 +32,8 @@ import {
 } from '@mui/material';
 import { Add, Delete, Edit, GroupAdd, Search } from '@mui/icons-material';
 import { mailingAPI, parseMailingList } from '../../services/notificationApi';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
+import ActionSnackbar from './ActionSnackbar';
 
 const emptyForm = { name: '', description: '' };
 
@@ -54,6 +55,9 @@ const GroupsSection = () => {
   const [form, setForm] = useState(emptyForm);
   const [addRecipientId, setAddRecipientId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState({ id: null, label: '' });
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,11 +155,17 @@ const GroupsSection = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Удалить группу?')) return;
+  const openDeleteDialog = (id, label) => {
+    setDeleteTarget({ id, label });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget.id) return;
+    setDeleting(true);
     try {
-      await mailingAPI.deleteDistributionGroup(id);
-      setSnack({ open: true, message: 'Удалено', severity: 'success' });
+      await mailingAPI.deleteDistributionGroup(deleteTarget.id);
+      setSnack({ open: true, message: 'Группа удалена', severity: 'success' });
       load();
     } catch (e) {
       setSnack({
@@ -163,6 +173,10 @@ const GroupsSection = () => {
         message: e.response?.data?.message || 'Ошибка удаления',
         severity: 'error',
       });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setDeleteTarget({ id: null, label: '' });
     }
   };
 
@@ -290,7 +304,7 @@ const GroupsSection = () => {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleDelete(row.id)}
+                            onClick={() => openDeleteDialog(row.id, row.name)}
                           >
                             <Delete fontSize="small" />
                           </IconButton>
@@ -396,11 +410,19 @@ const GroupsSection = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        message={`Вы уверены, что хотите удалить группу «${deleteTarget.label}»?`}
+        onClose={() => !deleting && setDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        confirming={deleting}
+      />
+
+      <ActionSnackbar
         open={snack.open}
-        autoHideDuration={4000}
-        onClose={() => setSnack((s) => ({ ...s, open: false }))}
         message={snack.message}
+        severity={snack.severity}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
       />
     </Card>
   );

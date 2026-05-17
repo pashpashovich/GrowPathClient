@@ -14,7 +14,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -33,6 +32,8 @@ import {
   MAILING_TYPE_LABELS,
 } from '../../utils/mailingLabels';
 import MailingFormDialog from './MailingFormDialog';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
+import ActionSnackbar from './ActionSnackbar';
 
 const ACTIVE_STATUSES = ['draft', 'scheduled', 'cancelled'];
 
@@ -42,7 +43,10 @@ const MailingsListSection = () => {
   const [groups, setGroups] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [snack, setSnack] = useState({ open: false, message: '' });
+  const [snack, setSnack] = useState({ open: false, message: '', severity: 'success' });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState({ ids: [], label: '' });
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
@@ -124,31 +128,53 @@ const MailingsListSection = () => {
     else setSelected(filtered.map((r) => r.id));
   };
 
-  const handleDelete = async (ids) => {
+  const openDeleteDialog = (ids, label = '') => {
     if (!ids.length) return;
-    if (!window.confirm(`Удалить выбранные рассылки (${ids.length})?`)) return;
+    setDeleteTarget({ ids, label });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget.ids.length) return;
+    setDeleting(true);
     try {
-      await Promise.all(ids.map((id) => mailingAPI.deleteMailing(id)));
+      await Promise.all(deleteTarget.ids.map((id) => mailingAPI.deleteMailing(id)));
       setSelected([]);
-      setSnack({ open: true, message: 'Удалено' });
+      setSnack({
+        open: true,
+        message:
+          deleteTarget.ids.length > 1 ? 'Рассылки удалены' : 'Рассылка удалена',
+        severity: 'success',
+      });
       load();
     } catch (e) {
       setSnack({
         open: true,
         message: e.response?.data?.message || 'Ошибка удаления',
+        severity: 'error',
       });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setDeleteTarget({ ids: [], label: '' });
     }
   };
+
+  const deleteDialogMessage =
+    deleteTarget.ids.length === 1 && deleteTarget.label
+      ? `Вы уверены, что хотите удалить рассылку «${deleteTarget.label}»?`
+      : `Вы уверены, что хотите удалить выбранные рассылки (${deleteTarget.ids.length})?`;
 
   const handleSend = async (id) => {
     try {
       await mailingAPI.sendMailing(id);
-      setSnack({ open: true, message: 'Рассылка отправлена' });
+      setSnack({ open: true, message: 'Рассылка отправлена', severity: 'success' });
       load();
     } catch (e) {
       setSnack({
         open: true,
         message: e.response?.data?.message || 'Не удалось отправить',
+        severity: 'error',
       });
     }
   };
@@ -245,7 +271,7 @@ const MailingsListSection = () => {
             color="error"
             startIcon={<Delete />}
             disabled={selected.length === 0}
-            onClick={() => handleDelete(selected)}
+            onClick={() => openDeleteDialog(selected)}
           >
             Удалить
           </Button>
@@ -327,7 +353,7 @@ const MailingsListSection = () => {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleDelete([row.id])}
+                            onClick={() => openDeleteDialog([row.id], row.name)}
                           >
                             <Delete fontSize="small" />
                           </IconButton>
@@ -359,16 +385,24 @@ const MailingsListSection = () => {
         onClose={() => setDialogOpen(false)}
         editing={editing}
         onSaved={() => {
-          setSnack({ open: true, message: 'Сохранено' });
+          setSnack({ open: true, message: 'Сохранено', severity: 'success' });
           load();
         }}
       />
 
-      <Snackbar
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        message={deleteDialogMessage}
+        onClose={() => !deleting && setDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        confirming={deleting}
+      />
+
+      <ActionSnackbar
         open={snack.open}
-        autoHideDuration={4000}
-        onClose={() => setSnack({ open: false, message: '' })}
         message={snack.message}
+        severity={snack.severity}
+        onClose={() => setSnack({ open: false, message: '', severity: 'success' })}
       />
     </Card>
   );
