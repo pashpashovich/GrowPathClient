@@ -34,7 +34,7 @@ import { Add, Delete, Edit, Search } from '@mui/icons-material';
 import { mailingAPI, parseMailingList } from '../../services/notificationApi';
 import { userAPI } from '../../services/api';
 import { RECIPIENT_TYPE_LABELS } from '../../utils/mailingLabels';
-import { getUserDisplayName } from '../../utils/userDisplayName';
+import { getUserDisplayName, getUserOptionLabel } from '../../utils/userDisplayName';
 
 const emptyForm = { email: '', fullName: '', type: 'external' };
 const USER_PAGE_SIZE = 20;
@@ -514,7 +514,7 @@ const RecipientsSection = () => {
               }}
               options={userOptions}
               loading={usersLoading}
-              getOptionLabel={(option) => getUserDisplayName(option)}
+              getOptionLabel={(option) => getUserOptionLabel(option)}
               isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
               filterOptions={(options) => options}
               noOptionsText={
@@ -537,17 +537,46 @@ const RecipientsSection = () => {
                   }}
                 />
               )}
-              renderOption={(props, option) => (
-                <li {...props} key={option.id}>
-                  <Typography variant="body2">{getUserDisplayName(option)}</Typography>
-                  {option.email ? (
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {option.email}
+              renderOption={(props, option) => {
+                const { key, ...optionProps } = props;
+                const { children: _ignored, ...liProps } = optionProps;
+                const name = getUserDisplayName(option);
+                const email = option.email?.trim();
+                return (
+                  <Box
+                    component="li"
+                    key={key}
+                    {...liProps}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 0.25,
+                      py: 1.25,
+                      px: 2,
+                    }}
+                  >
+                    <Typography variant="body2" fontWeight={500} lineHeight={1.4}>
+                      {name}
                     </Typography>
-                  ) : null}
-                </li>
-              )}
-              ListboxProps={{ onScroll: handleUserListScroll }}
+                    {email && name.toLowerCase() !== email.toLowerCase() ? (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ textTransform: 'none', lineHeight: 1.3, wordBreak: 'break-all' }}
+                      >
+                        {email}
+                      </Typography>
+                    ) : null}
+                  </Box>
+                );
+              }}
+              slotProps={{
+                listbox: {
+                  onScroll: handleUserListScroll,
+                  sx: { maxHeight: 280 },
+                },
+              }}
             />
           ) : (
             <>
