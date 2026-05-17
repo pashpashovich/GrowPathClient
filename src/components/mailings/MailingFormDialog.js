@@ -18,6 +18,12 @@ import {
   TextField,
 } from '@mui/material';
 import { mailingAPI } from '../../services/notificationApi';
+import {
+  datetimeLocalToApiValue,
+  mailingToForm,
+  normalizeMailing,
+  timeToApiValue,
+} from '../../utils/mailingForm';
 import { WEEKDAY_LABELS } from '../../utils/mailingLabels';
 import ActionSnackbar from './ActionSnackbar';
 
@@ -31,19 +37,12 @@ const emptyForm = {
   executeTime: '09:00',
 };
 
-const toLocalInput = (iso) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
-
 const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
   const [form, setForm] = useState(emptyForm);
   const [templates, setTemplates] = useState([]);
   const [groups, setGroups] = useState([]);
   const [lookupsLoading, setLookupsLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [lookupError, setLookupError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -68,12 +67,8 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
         setGroups(groupItems);
 
         const errors = [];
-        if (templatesResult.status === 'rejected') {
-          errors.push('шаблоны');
-        }
-        if (groupsResult.status === 'rejected') {
-          errors.push('группы');
-        }
+        if (templatesResult.status === 'rejected') errors.push('шаблоны');
+        if (groupsResult.status === 'rejected') errors.push('группы');
         if (errors.length) {
           setLookupError(`Не удалось загрузить: ${errors.join(', ')}`);
         }
@@ -94,21 +89,35 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
       setSaveError(null);
       return;
     }
-    if (editing) {
-      setForm({
-        name: editing.name || '',
-        type: editing.type || 'immediate',
-        emailTemplateId: editing.emailTemplateId ? String(editing.emailTemplateId) : '',
-        executeAt: toLocalInput(editing.executeAt),
-        distributionGroupIds: (editing.distributionGroupIds || []).map(String),
-        weekDay: editing.schedule?.weekDay || 'monday',
-        executeTime: editing.schedule?.executeTime || '09:00',
-      });
-    } else {
+
+    if (!editing?.id) {
       setForm(emptyForm);
+      setSaveError(null);
+      return;
     }
-    setSaveError(null);
-  }, [open, editing]);
+
+    let cancelled = false;
+    const loadMailing = async () => {
+      setFormLoading(true);
+      setSaveError(null);
+      try {
+        const res = await mailingAPI.getMailingById(editing.id);
+        if (cancelled) return;
+        const normalized = normalizeMailing(res.data);
+        setForm(mailingToForm(normalized));
+      } catch {
+        if (cancelled) return;
+        setForm(mailingToForm(editing));
+      } finally {
+        if (!cancelled) setFormLoading(false);
+      }
+    };
+
+    loadMailing();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, editing?.id]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -122,6 +131,10 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
       setSaveError('Выберите шаблон письма');
       return;
     }
+    if (form.type === 'scheduled' && !form.executeAt) {
+      setSaveError('Укажите дату и время отправки');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -129,15 +142,15 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
         name: form.name.trim(),
         type: form.type,
         emailTemplateId: form.emailTemplateId,
-        distributionGroupIds: form.distributionGroupIds,
+        distributionGroupIds: form.distributionGroupIds.map(Number),
       };
       if (form.type === 'scheduled' && form.executeAt) {
-        payload.executeAt = new Date(form.executeAt).toISOString();
+        payload.executeAt = datetimeLocalToApiValue(form.executeAt);
       }
       if (form.type === 'recurring') {
         payload.schedule = {
           weekDay: form.weekDay,
-          executeTime: form.executeTime,
+          executeTime: timeToApiValue(form.executeTime),
         };
       }
       if (editing?.id) {
@@ -157,6 +170,8 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
     }
   };
 
+  const busy = lookupsLoading || formLoading || saving;
+
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -174,126 +189,136 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
               </Alert>
             )}
 
-            <TextField
-              label="Название"
-              required
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            />
-
-            <TextField
-              select
-              label="Тип"
-              value={form.type}
-              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-            >
-              <MenuItem value="immediate">Разовая</MenuItem>
-              <MenuItem value="scheduled">По расписанию</MenuItem>
-              <MenuItem value="recurring">Повторяющаяся</MenuItem>
-            </TextField>
-
-            {lookupsLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                <CircularProgress size={28} />
+            {formLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
               </Box>
             ) : (
               <>
                 <TextField
-                  select
-                  label="Шаблон"
+                  label="Название"
                   required
-                  value={form.emailTemplateId}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, emailTemplateId: String(e.target.value) }))
-                  }
-                  helperText={
-                    templates.length === 0 ? 'Сначала создайте шаблон во вкладке «Шаблоны»' : ''
-                  }
-                  SelectProps={{ displayEmpty: true }}
-                >
-                  <MenuItem value="" disabled>
-                    {templates.length ? 'Выберите шаблон' : 'Нет шаблонов'}
-                  </MenuItem>
-                  {templates.map((t) => (
-                    <MenuItem key={t.id} value={String(t.id)}>
-                      {t.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                />
 
-                <FormControl fullWidth>
-                  <InputLabel id="mailing-groups-label">Группы получателей</InputLabel>
-                  <Select
-                    labelId="mailing-groups-label"
-                    multiple
-                    value={form.distributionGroupIds}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setForm((f) => ({
-                        ...f,
-                        distributionGroupIds:
-                          typeof value === 'string' ? value.split(',') : value.map(String),
-                      }));
-                    }}
-                    input={<OutlinedInput label="Группы получателей" />}
-                    renderValue={(selected) => {
-                      const names = groups
-                        .filter((g) => selected.includes(String(g.id)))
-                        .map((g) => g.name);
-                      return names.length ? names.join(', ') : 'Не выбрано';
-                    }}
-                  >
-                    {groups.map((g) => (
-                      <MenuItem key={g.id} value={String(g.id)}>
-                        <Checkbox checked={form.distributionGroupIds.includes(String(g.id))} />
-                        <ListItemText primary={g.name} />
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </>
-            )}
-
-            {form.type === 'scheduled' && (
-              <TextField
-                label="Дата и время отправки"
-                type="datetime-local"
-                value={form.executeAt}
-                onChange={(e) => setForm((f) => ({ ...f, executeAt: e.target.value }))}
-                InputLabelProps={{ shrink: true }}
-              />
-            )}
-            {form.type === 'recurring' && (
-              <Box sx={{ display: 'flex', gap: 2 }}>
                 <TextField
                   select
-                  label="День недели"
-                  value={form.weekDay}
-                  onChange={(e) => setForm((f) => ({ ...f, weekDay: e.target.value }))}
-                  sx={{ flex: 1 }}
+                  label="Тип"
+                  value={form.type}
+                  onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
                 >
-                  {Object.entries(WEEKDAY_LABELS).map(([key, label]) => (
-                    <MenuItem key={key} value={key}>
-                      {label}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="immediate">Разовая</MenuItem>
+                  <MenuItem value="scheduled">По расписанию</MenuItem>
+                  <MenuItem value="recurring">Повторяющаяся</MenuItem>
                 </TextField>
-                <TextField
-                  label="Время"
-                  type="time"
-                  value={form.executeTime}
-                  onChange={(e) => setForm((f) => ({ ...f, executeTime: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ flex: 1 }}
-                />
-              </Box>
+
+                {lookupsLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                    <CircularProgress size={28} />
+                  </Box>
+                ) : (
+                  <>
+                    <TextField
+                      select
+                      label="Шаблон"
+                      required
+                      value={form.emailTemplateId}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, emailTemplateId: String(e.target.value) }))
+                      }
+                      helperText={
+                        templates.length === 0 ? 'Сначала создайте шаблон во вкладке «Шаблоны»' : ''
+                      }
+                      SelectProps={{ displayEmpty: true }}
+                    >
+                      <MenuItem value="" disabled>
+                        {templates.length ? 'Выберите шаблон' : 'Нет шаблонов'}
+                      </MenuItem>
+                      {templates.map((t) => (
+                        <MenuItem key={t.id} value={String(t.id)}>
+                          {t.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    <FormControl fullWidth>
+                      <InputLabel id="mailing-groups-label">Группы получателей</InputLabel>
+                      <Select
+                        labelId="mailing-groups-label"
+                        multiple
+                        value={form.distributionGroupIds}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setForm((f) => ({
+                            ...f,
+                            distributionGroupIds:
+                              typeof value === 'string' ? value.split(',') : value.map(String),
+                          }));
+                        }}
+                        input={<OutlinedInput label="Группы получателей" />}
+                        renderValue={(selected) => {
+                          const names = groups
+                            .filter((g) => selected.includes(String(g.id)))
+                            .map((g) => g.name);
+                          return names.length ? names.join(', ') : 'Не выбрано';
+                        }}
+                      >
+                        {groups.map((g) => (
+                          <MenuItem key={g.id} value={String(g.id)}>
+                            <Checkbox checked={form.distributionGroupIds.includes(String(g.id))} />
+                            <ListItemText primary={g.name} />
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </>
+                )}
+
+                {form.type === 'scheduled' && (
+                  <TextField
+                    label="Дата и время отправки"
+                    type="datetime-local"
+                    required
+                    value={form.executeAt}
+                    onChange={(e) => setForm((f) => ({ ...f, executeAt: e.target.value }))}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
+                {form.type === 'recurring' && (
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <TextField
+                      select
+                      label="День недели"
+                      value={form.weekDay}
+                      onChange={(e) => setForm((f) => ({ ...f, weekDay: e.target.value }))}
+                      sx={{ flex: 1 }}
+                    >
+                      {Object.entries(WEEKDAY_LABELS).map(([key, label]) => (
+                        <MenuItem key={key} value={key}>
+                          {label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="Время"
+                      type="time"
+                      required
+                      value={form.executeTime}
+                      onChange={(e) => setForm((f) => ({ ...f, executeTime: e.target.value }))}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{ flex: 1 }}
+                    />
+                  </Box>
+                )}
+              </>
             )}
           </DialogContent>
           <DialogActions>
             <Button type="button" onClick={onClose}>
               Отмена
             </Button>
-            <Button type="submit" variant="contained" disabled={saving || lookupsLoading}>
+            <Button type="submit" variant="contained" disabled={busy}>
               {saving ? 'Сохранение…' : 'Сохранить'}
             </Button>
           </DialogActions>

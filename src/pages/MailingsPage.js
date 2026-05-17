@@ -51,7 +51,7 @@ const MailingsPage = () => {
 
   return (
     <Box>
-      <Typography variant="h4" fontWeight="bold" sx={{ mb: 3 }}>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: 3, textAlign: 'left' }}>
         Электронная рассылка
       </Typography>
 

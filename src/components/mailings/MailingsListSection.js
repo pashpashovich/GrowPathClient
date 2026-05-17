@@ -35,8 +35,6 @@ import MailingFormDialog from './MailingFormDialog';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 import ActionSnackbar from './ActionSnackbar';
 
-const ACTIVE_STATUSES = ['draft', 'scheduled', 'cancelled'];
-
 const MailingsListSection = () => {
   const [items, setItems] = useState([]);
   const [templates, setTemplates] = useState({});
@@ -86,9 +84,8 @@ const MailingsListSection = () => {
       if (typeFilter) params.type = typeFilter;
       const res = await mailingAPI.getMailings(params);
       const parsed = parseMailingList(res.data);
-      const active = parsed.data.filter((m) => ACTIVE_STATUSES.includes(m.status));
-      setItems(active);
-      setTotal(parsed.pagination.total ?? active.length);
+      setItems(parsed.data);
+      setTotal(parsed.pagination.total ?? parsed.data.length);
     } catch (e) {
       setError(e.response?.data?.message || 'Не удалось загрузить рассылки');
       setItems([]);
@@ -193,7 +190,7 @@ const MailingsListSection = () => {
             Рассылки
           </Typography>
           <Typography variant="body2" color="text.secondary" align="center">
-            Активные и запланированные рассылки
+            Все рассылки
           </Typography>
         </Box>
 

@@ -4,6 +4,7 @@ const recipientsPath = v1ResourcePath('/recipients');
 const distributionGroupsPath = v1ResourcePath('/distribution-groups');
 const emailTemplatesPath = v1ResourcePath('/email-templates');
 const mailingsPath = v1ResourcePath('/mailings');
+const mailingHistoryPath = v1ResourcePath('/mailing-history');
 
 const defaultPagination = { page: 1, limit: 10, total: 0, totalPages: 0 };
 
@@ -87,6 +88,7 @@ export const mailingAPI = {
     ),
 
   getMailings: (params) => api.get(mailingsPath, { params }),
+  getMailingHistory: (params) => api.get(mailingHistoryPath, { params }),
   getMailingById: (id) => api.get(`${mailingsPath}/${id}`),
   createMailing: (data) => api.post(mailingsPath, data),
   updateMailing: (id, data) => api.put(`${mailingsPath}/${id}`, data),

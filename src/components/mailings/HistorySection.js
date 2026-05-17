@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   CardContent,
-  Checkbox,
   CircularProgress,
   FormControl,
   InputAdornment,
@@ -23,29 +22,23 @@ import {
   Typography,
   Paper,
 } from '@mui/material';
-import { Delete, Search } from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { mailingAPI, parseMailingList } from '../../services/notificationApi';
 import {
   formatDateTime,
   MAILING_TYPE_LABELS,
 } from '../../utils/mailingLabels';
-import ConfirmDeleteDialog from './ConfirmDeleteDialog';
-import ActionSnackbar from './ActionSnackbar';
 
 const HistorySection = () => {
   const [items, setItems] = useState([]);
   const [templates, setTemplates] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [snack, setSnack] = useState({ open: false, message: '', severity: 'success' });
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [selected, setSelected] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,10 +47,9 @@ const HistorySection = () => {
       const params = {
         page: page + 1,
         limit: rowsPerPage,
-        status: 'sent',
       };
       if (typeFilter) params.type = typeFilter;
-      const res = await mailingAPI.getMailings(params);
+      const res = await mailingAPI.getMailingHistory(params);
       const parsed = parseMailingList(res.data);
       setItems(parsed.data);
       setTotal(parsed.pagination.total ?? parsed.data.length);
@@ -72,9 +64,9 @@ const HistorySection = () => {
   useEffect(() => {
     const loadTemplates = async () => {
       try {
-        const items = await mailingAPI.fetchAllEmailTemplates();
+        const templateItems = await mailingAPI.fetchAllEmailTemplates();
         const map = {};
-        items.forEach((t) => {
+        templateItems.forEach((t) => {
           map[t.id] = t.name;
         });
         setTemplates(map);
@@ -101,36 +93,8 @@ const HistorySection = () => {
     setPage(0);
   };
 
-  const toggleSelect = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selected.length === filtered.length) setSelected([]);
-    else setSelected(filtered.map((r) => r.id));
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selected.length) return;
-    setDeleting(true);
-    try {
-      await Promise.all(selected.map((id) => mailingAPI.deleteMailing(id)));
-      setSelected([]);
-      setSnack({ open: true, message: 'Записи удалены', severity: 'success' });
-      load();
-    } catch (e) {
-      setSnack({
-        open: true,
-        message: e.response?.data?.message || 'Ошибка удаления',
-        severity: 'error',
-      });
-    } finally {
-      setDeleting(false);
-      setDeleteDialogOpen(false);
-    }
-  };
+  const sentAt = (row) =>
+    row.sentAt ?? row.executeAt ?? row.executedAt ?? row.updatedAt ?? row.createdAt;
 
   return (
     <Card>
@@ -188,18 +152,6 @@ const HistorySection = () => {
           </Button>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<Delete />}
-            disabled={selected.length === 0}
-            onClick={() => setDeleteDialogOpen(true)}
-          >
-            Удалить
-          </Button>
-        </Box>
-
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress />
@@ -210,15 +162,6 @@ const HistorySection = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ bgcolor: 'grey.50' }}>
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        indeterminate={
-                          selected.length > 0 && selected.length < filtered.length
-                        }
-                        checked={filtered.length > 0 && selected.length === filtered.length}
-                        onChange={toggleSelectAll}
-                      />
-                    </TableCell>
                     <TableCell>Название</TableCell>
                     <TableCell>Шаблон</TableCell>
                     <TableCell>Тип</TableCell>
@@ -228,25 +171,19 @@ const HistorySection = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                      <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
                         История пуста
                       </TableCell>
                     </TableRow>
                   ) : (
                     filtered.map((row) => (
                       <TableRow key={row.id} hover>
-                        <TableCell padding="checkbox">
-                          <Checkbox
-                            checked={selected.includes(row.id)}
-                            onChange={() => toggleSelect(row.id)}
-                          />
-                        </TableCell>
                         <TableCell>{row.name}</TableCell>
                         <TableCell>
                           {templates[row.emailTemplateId] || row.emailTemplateId || '—'}
                         </TableCell>
                         <TableCell>{MAILING_TYPE_LABELS[row.type] || row.type}</TableCell>
-                        <TableCell>{formatDateTime(row.executeAt || row.updatedAt)}</TableCell>
+                        <TableCell>{formatDateTime(sentAt(row))}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -268,21 +205,6 @@ const HistorySection = () => {
           </>
         )}
       </CardContent>
-
-      <ConfirmDeleteDialog
-        open={deleteDialogOpen}
-        message={`Вы уверены, что хотите удалить выбранные записи (${selected.length})?`}
-        onClose={() => !deleting && setDeleteDialogOpen(false)}
-        onConfirm={handleConfirmDelete}
-        confirming={deleting}
-      />
-
-      <ActionSnackbar
-        open={snack.open}
-        message={snack.message}
-        severity={snack.severity}
-        onClose={() => setSnack({ open: false, message: '', severity: 'success' })}
-      />
     </Card>
   );
 };
