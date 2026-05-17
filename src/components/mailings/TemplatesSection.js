@@ -30,6 +30,7 @@ import {
 } from '@mui/material';
 import { Add, AttachFile, Delete, Download, Edit, Search } from '@mui/icons-material';
 import { mailingAPI, parseMailingList } from '../../services/notificationApi';
+import { putFileToPresignedUrl } from '../../utils/presignedUpload';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 import ActionSnackbar from './ActionSnackbar';
 
@@ -119,11 +120,7 @@ const TemplatesSection = () => {
         fileName: file.name,
       });
       const { objectKey, uploadUrl } = presign.data;
-      await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type || 'application/octet-stream' },
-      });
+      await putFileToPresignedUrl(uploadUrl, file);
       uploaded.push({ name: file.name, token: objectKey });
     }
     return uploaded;
