@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,6 +17,7 @@ import {
   Divider,
   Card,
   CardContent,
+  CircularProgress,
 } from '@mui/material';
 import {
   CalendarToday,
@@ -28,10 +29,31 @@ import {
   Assignment,
   EmojiEvents,
   Timeline,
+  PictureAsPdf,
 } from '@mui/icons-material';
+import { hrAPI } from '../../services/api';
+import { getAxiosBlobErrorMessage, saveAxiosBlobResponse } from '../../utils/downloadBlob';
+import ActionSnackbar from '../mailings/ActionSnackbar';
 
 const InternshipProgramDetails = ({ open, onClose, program }) => {
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
   if (!program) return null;
+
+  const handleDownloadEfficiencyPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const response = await hrAPI.downloadInternshipEfficiencyReport(program.id);
+      await saveAxiosBlobResponse(response, `efficiency-report-${program.id}.pdf`);
+      setSnackbar({ open: true, message: 'PDF отчёт скачан', severity: 'success' });
+    } catch (error) {
+      const message = await getAxiosBlobErrorMessage(error, 'Не удалось сформировать PDF');
+      setSnackbar({ open: true, message, severity: 'error' });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const requirements = program.requirements || [];
   const goals = program.goals || [];
@@ -280,10 +302,25 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
       </DialogContent>
       
       <DialogActions>
+        <Button
+          variant="outlined"
+          startIcon={pdfLoading ? <CircularProgress size={16} /> : <PictureAsPdf />}
+          disabled={pdfLoading}
+          onClick={handleDownloadEfficiencyPdf}
+        >
+          Отчёт эффективности (PDF)
+        </Button>
         <Button onClick={onClose}>
           Закрыть
         </Button>
       </DialogActions>
+
+      <ActionSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+      />
     </Dialog>
   );
 };

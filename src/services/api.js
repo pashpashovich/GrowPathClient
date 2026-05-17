@@ -224,6 +224,11 @@ export const internAPI = {
   getInternProgress: (id) => api.get(`${internsPath}/${id}/progress`),
   getInternTasks: (id) => api.get(`${internsPath}/${id}/tasks`),
   getInternAssessments: (id) => api.get(`${internsPath}/${id}/assessments`),
+  downloadInternshipResultReport: (id) =>
+    api.get(`${internsPath}/${id}/internship-result-report`, {
+      responseType: 'blob',
+      timeout: 120000,
+    }),
 };
 
 export const mentorAPI = {
@@ -273,6 +278,11 @@ export const hrAPI = {
   createInternshipProgram: (data) => api.post(internshipProgramsPath, data),
   updateInternshipProgram: (id, data) => api.put(`${internshipProgramsPath}/${id}`, data),
   deleteInternshipProgram: (id) => api.delete(`${internshipProgramsPath}/${id}`),
+  downloadInternshipEfficiencyReport: (programId) =>
+    api.get(`${internshipProgramsPath}/${programId}/internship-efficiency-report`, {
+      responseType: 'blob',
+      timeout: 120000,
+    }),
   getReports: (params) => api.get(reportsPath, { params }),
   getDashboardData: (params) => api.get(dashboardPath, { params }),
 };

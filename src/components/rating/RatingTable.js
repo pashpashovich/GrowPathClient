@@ -31,7 +31,11 @@ import {
   Download,
   Refresh,
   Search,
+  PictureAsPdf,
 } from '@mui/icons-material';
+import { internAPI } from '../../services/api';
+import { getAxiosBlobErrorMessage, saveAxiosBlobResponse } from '../../utils/downloadBlob';
+import ActionSnackbar from '../mailings/ActionSnackbar';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   fetchRatingsAsync,
@@ -110,6 +114,8 @@ const RatingTable = () => {
   const [directionPage, setDirectionPage] = useState(0);
   const [mentorSearch, setMentorSearch] = useState('');
   const [mentorPage, setMentorPage] = useState(0);
+  const [pdfLoadingInternId, setPdfLoadingInternId] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     dispatch(fetchRatingsAsync(selectedInternshipId ? { internshipId: selectedInternshipId } : undefined));
@@ -288,6 +294,20 @@ const RatingTable = () => {
     setFilterRank('all');
     setSortBy('rank');
     dispatch(setSelectedInternship(null));
+  };
+
+  const handleDownloadInternPdf = async (internId, internName) => {
+    setPdfLoadingInternId(internId);
+    try {
+      const response = await internAPI.downloadInternshipResultReport(internId);
+      await saveAxiosBlobResponse(response, `intern-result-${internId}.pdf`);
+      setSnackbar({ open: true, message: `PDF «${internName || 'стажёр'}» скачан`, severity: 'success' });
+    } catch (error) {
+      const message = await getAxiosBlobErrorMessage(error, 'Не удалось сформировать PDF');
+      setSnackbar({ open: true, message, severity: 'error' });
+    } finally {
+      setPdfLoadingInternId(null);
+    }
   };
 
   const handlePageChange = (_, newPage) => {
@@ -496,6 +516,7 @@ const RatingTable = () => {
               <TableCell sx={{ py: 2, px: 3 }}>Ср. балл</TableCell>
               <TableCell sx={{ py: 2, px: 3, minWidth: 180 }}>Прогресс</TableCell>
               <TableCell sx={{ py: 2, px: 3 }}>Тренд</TableCell>
+              <TableCell sx={{ py: 2, px: 3 }} align="center">Отчёт</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -599,6 +620,27 @@ const RatingTable = () => {
                     </Box>
                   </TableCell>
                   <TableCell sx={{ px: 3, py: 2 }}>{getTrendIcon(rating.trend)}</TableCell>
+                  <TableCell sx={{ px: 3, py: 2 }} align="center">
+                    {rating.internId ? (
+                      <Tooltip title="Итоги стажировки (PDF, GP-RPT-1)">
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={pdfLoadingInternId === rating.internId}
+                            onClick={() => handleDownloadInternPdf(rating.internId, rating.internName)}
+                          >
+                            {pdfLoadingInternId === rating.internId ? (
+                              <CircularProgress size={18} />
+                            ) : (
+                              <PictureAsPdf fontSize="small" />
+                            )}
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      '—'
+                    )}
+                  </TableCell>
                 </TableRow>
               );
             })}
@@ -617,6 +659,13 @@ const RatingTable = () => {
           sx={{ borderTop: 1, borderColor: 'divider', bgcolor: 'grey.50' }}
         />
       </TableContainer>
+
+      <ActionSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+      />
     </Box>
   );
 };

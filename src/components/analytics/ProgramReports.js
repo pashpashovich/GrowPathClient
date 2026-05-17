@@ -38,10 +38,17 @@ import {
   Download,
   Visibility,
   Search,
+  PictureAsPdf,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProgramReportsAsync } from '../../store/slices/analyticsSlice';
-import { analyticsAPI } from '../../services/api';
+import { analyticsAPI, hrAPI, internAPI } from '../../services/api';
+import {
+  getAxiosBlobErrorMessage,
+  saveAxiosBlobResponse,
+  triggerBlobDownload,
+} from '../../utils/downloadBlob';
+import ActionSnackbar from '../mailings/ActionSnackbar';
 
 const PROGRAMS_PER_PAGE = 10;
 
@@ -54,6 +61,8 @@ const ProgramReports = () => {
   const [detailReport, setDetailReport] = useState(null);
   const [programSearch, setProgramSearch] = useState('');
   const [programPage, setProgramPage] = useState(0);
+  const [pdfLoadingKey, setPdfLoadingKey] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const getCompletionRateColor = (rate) => {
     if (rate >= 80) return 'success';
@@ -105,32 +114,61 @@ const ProgramReports = () => {
 
   const totalProgramPages = Math.ceil(filteredProgramOptions.length / PROGRAMS_PER_PAGE);
 
-  const downloadBlob = (blob, filename) => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
 
   const handleExport = async (report) => {
     try {
       const response = await analyticsAPI.getReportsExport({ programId: report.programId, period: selectedPeriod });
-      downloadBlob(response.data, `program-report-${report.programId}.csv`);
+      triggerBlobDownload(response.data, `program-report-${report.programId}.csv`);
     } catch (error) {
       console.error('Export report error', error);
+      showSnackbar('Не удалось экспортировать CSV', 'error');
     }
   };
 
   const handleExportAll = async () => {
     try {
       const response = await analyticsAPI.getReportsExport({ period: selectedPeriod });
-      downloadBlob(response.data, `program-reports-${selectedPeriod}.csv`);
+      triggerBlobDownload(response.data, `program-reports-${selectedPeriod}.csv`);
     } catch (error) {
       console.error('Export all reports error', error);
+      showSnackbar('Не удалось экспортировать отчёты', 'error');
+    }
+  };
+
+  const handleDownloadProgramPdf = async (programId, programTitle) => {
+    const key = `program-${programId}`;
+    setPdfLoadingKey(key);
+    try {
+      const response = await hrAPI.downloadInternshipEfficiencyReport(programId);
+      await saveAxiosBlobResponse(
+        response,
+        `efficiency-report-${programId}.pdf`
+      );
+      showSnackbar(`PDF «${programTitle || 'программа'}» скачан`);
+    } catch (error) {
+      showSnackbar(await getAxiosBlobErrorMessage(error, 'Не удалось сформировать PDF'), 'error');
+    } finally {
+      setPdfLoadingKey(null);
+    }
+  };
+
+  const handleDownloadInternPdf = async (internId, internName) => {
+    const key = `intern-${internId}`;
+    setPdfLoadingKey(key);
+    try {
+      const response = await internAPI.downloadInternshipResultReport(internId);
+      await saveAxiosBlobResponse(
+        response,
+        `intern-result-${internId}.pdf`
+      );
+      showSnackbar(`PDF «${internName || 'стажёр'}» скачан`);
+    } catch (error) {
+      showSnackbar(await getAxiosBlobErrorMessage(error, 'Не удалось сформировать PDF'), 'error');
+    } finally {
+      setPdfLoadingKey(null);
     }
   };
 
@@ -303,10 +341,25 @@ const ProgramReports = () => {
                         <Visibility />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Экспорт">
+                    <Tooltip title="Экспорт CSV">
                       <IconButton size="small" onClick={() => handleExport(report)}>
                         <Download />
                       </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Отчёт эффективности (PDF, GP-RPT-2)">
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={pdfLoadingKey === `program-${report.programId}`}
+                          onClick={() => handleDownloadProgramPdf(report.programId, report.programTitle)}
+                        >
+                          {pdfLoadingKey === `program-${report.programId}` ? (
+                            <CircularProgress size={18} />
+                          ) : (
+                            <PictureAsPdf />
+                          )}
+                        </IconButton>
+                      </span>
                     </Tooltip>
                   </TableCell>
                 </TableRow>
@@ -324,8 +377,23 @@ const ProgramReports = () => {
       >
         {detailReport && (
           <>
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">{detailReport.programTitle}</Typography>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ flex: 1 }}>{detailReport.programTitle}</Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={
+                  pdfLoadingKey === `program-${detailReport.programId}` ? (
+                    <CircularProgress size={16} />
+                  ) : (
+                    <PictureAsPdf />
+                  )
+                }
+                disabled={pdfLoadingKey === `program-${detailReport.programId}`}
+                onClick={() => handleDownloadProgramPdf(detailReport.programId, detailReport.programTitle)}
+              >
+                PDF (GP-RPT-2)
+              </Button>
               <IconButton onClick={() => setDetailReport(null)}>
                 &#x2715;
               </IconButton>
@@ -382,6 +450,7 @@ const ProgramReports = () => {
                       <TableCell align="center">Всего</TableCell>
                       <TableCell align="center">Процент</TableCell>
                       <TableCell align="center">Компетенции</TableCell>
+                      <TableCell align="center">Отчёт</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -404,6 +473,27 @@ const ProgramReports = () => {
                               <Chip label={`${achievedCount} освоено`} color="success" size="small" variant="outlined" />
                               <Chip label={`${currentCount} текущих`} color="primary" size="small" variant="outlined" />
                             </Box>
+                          </TableCell>
+                          <TableCell align="center">
+                            {intern.internId ? (
+                              <Tooltip title="Итоги стажировки (PDF, GP-RPT-1)">
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={pdfLoadingKey === `intern-${intern.internId}`}
+                                    onClick={() => handleDownloadInternPdf(intern.internId, intern.internName)}
+                                  >
+                                    {pdfLoadingKey === `intern-${intern.internId}` ? (
+                                      <CircularProgress size={18} />
+                                    ) : (
+                                      <PictureAsPdf fontSize="small" />
+                                    )}
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              '—'
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -483,6 +573,13 @@ const ProgramReports = () => {
           </>
         )}
       </Dialog>
+
+      <ActionSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+      />
     </Box>
   );
 };
