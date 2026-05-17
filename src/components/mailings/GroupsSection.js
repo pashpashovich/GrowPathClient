@@ -176,6 +176,7 @@ const GroupsSection = () => {
       if (editing?.id) {
         await mailingAPI.updateDistributionGroup(editing.id, payload);
         setSnack({ open: true, message: 'Группа сохранена', severity: 'success' });
+        closeDialog();
       } else {
         const res = await mailingAPI.createDistributionGroup(payload);
         const created = res.data;

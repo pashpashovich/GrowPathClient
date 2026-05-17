@@ -13,6 +13,7 @@ import {
   MenuItem,
   Select,
   TextField,
+  Typography,
 } from '@mui/material';
 import { mailingAPI } from '../../services/notificationApi';
 import { WEEKDAY_LABELS } from '../../utils/mailingLabels';
@@ -166,16 +167,27 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
         ) : (
           <>
             <FormControl fullWidth required>
-              <InputLabel>Шаблон</InputLabel>
+              <InputLabel id="mailing-template-label" shrink>
+                Шаблон
+              </InputLabel>
               <Select
+                labelId="mailing-template-label"
                 label="Шаблон"
                 value={form.emailTemplateId}
                 onChange={(e) => setForm((f) => ({ ...f, emailTemplateId: e.target.value }))}
                 displayEmpty
+                renderValue={(value) => {
+                  if (!value) {
+                    return (
+                      <Typography variant="body2" color="text.secondary" component="span">
+                        {templates.length ? 'Выберите шаблон' : 'Нет доступных шаблонов'}
+                      </Typography>
+                    );
+                  }
+                  const template = templates.find((t) => String(t.id) === value);
+                  return template?.name || value;
+                }}
               >
-                <MenuItem value="" disabled>
-                  {templates.length ? 'Выберите шаблон' : 'Нет доступных шаблонов'}
-                </MenuItem>
                 {templates.map((t) => (
                   <MenuItem key={t.id} value={String(t.id)}>
                     {t.name}
@@ -184,8 +196,11 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>Группы получателей</InputLabel>
+              <InputLabel id="mailing-groups-label" shrink>
+                Группы получателей
+              </InputLabel>
               <Select
+                labelId="mailing-groups-label"
                 multiple
                 label="Группы получателей"
                 value={form.distributionGroupIds}
@@ -198,13 +213,20 @@ const MailingFormDialog = ({ open, onClose, editing, onSaved }) => {
                         : e.target.value.map(String),
                   }))
                 }
+                displayEmpty
                 renderValue={(selected) => {
                   const names = groups
                     .filter((g) => selected.includes(String(g.id)))
                     .map((g) => g.name);
-                  return names.length ? names.join(', ') : 'Выберите группы';
+                  if (!names.length) {
+                    return (
+                      <Typography variant="body2" color="text.secondary" component="span">
+                        {groups.length ? 'Выберите группы' : 'Нет доступных групп'}
+                      </Typography>
+                    );
+                  }
+                  return names.join(', ');
                 }}
-                displayEmpty
               >
                 {groups.map((g) => (
                   <MenuItem key={g.id} value={String(g.id)}>
