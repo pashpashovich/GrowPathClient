@@ -9,6 +9,7 @@ import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
 import RoadmapPage from './RoadmapPage';
 import ProfilePage from './ProfilePage';
+import MailingsPage from './MailingsPage';
 import Sidebar from '../components/Sidebar';
 import { useDispatch } from 'react-redux';
 import { deleteTaskAsync } from '../store/slices/taskSlice';
@@ -90,6 +91,8 @@ const MentorDashboard = () => {
           </Typography>
         </Box>
       );
+    } else if (location.pathname === '/mentor/mailings') {
+      return <MailingsPage />;
     } else if (location.pathname === '/mentor/tasks') {
       return (
         <Box>

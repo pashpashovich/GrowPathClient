@@ -28,6 +28,7 @@ import {
   EmojiEvents,
   Groups,
   AccountCircle,
+  MailOutline,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -95,6 +96,12 @@ const Sidebar = ({ open, onClose }) => {
           path: '/mentor/stats',
           active: location.pathname === '/mentor/stats',
         },
+        {
+          text: 'Рассылки',
+          icon: <MailOutline />,
+          path: '/mentor/mailings',
+          active: location.pathname.startsWith('/mentor/mailings'),
+        },
       ];
 
   const hrMenuItems = [
@@ -127,6 +134,12 @@ const Sidebar = ({ open, onClose }) => {
       icon: <Groups />,
       path: '/hr/mentors',
       active: location.pathname.startsWith('/hr/mentors'),
+    },
+    {
+      text: 'Рассылки',
+      icon: <MailOutline />,
+      path: '/hr/mailings',
+      active: location.pathname.startsWith('/hr/mailings'),
     },
   ];
 

@@ -7,7 +7,7 @@ const authV1Suffix = (pathAfterV1Auth) => {
   return base.endsWith('/v1') ? pathAfterV1Auth : `/v1${pathAfterV1Auth}`;
 };
 
-const v1ResourcePath = (relativePath) => {
+export const v1ResourcePath = (relativePath) => {
   const base = API_BASE_URL.replace(/\/$/, '');
   const p = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
   return base.endsWith('/v1') ? p : `/v1${p}`;

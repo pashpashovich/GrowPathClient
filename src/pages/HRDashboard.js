@@ -15,6 +15,7 @@ import InternshipProgramForm from '../components/internshipPrograms/InternshipPr
 import InternshipProgramDetails from '../components/internshipPrograms/InternshipProgramDetails';
 import AnalyticsPage from './AnalyticsPage';
 import ProfilePage from './ProfilePage';
+import MailingsPage from './MailingsPage';
 
 const HRDashboard = () => {
   const dispatch = useDispatch();
@@ -83,6 +84,10 @@ const HRDashboard = () => {
 
     if (location.pathname.startsWith('/hr/analytics')) {
       return <AnalyticsPage />;
+    }
+
+    if (location.pathname.startsWith('/hr/mailings')) {
+      return <MailingsPage />;
     }
 
     if (location.pathname.startsWith('/hr/mentors')) {
