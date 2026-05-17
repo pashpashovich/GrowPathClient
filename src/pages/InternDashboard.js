@@ -12,7 +12,7 @@ import Sidebar from '../components/Sidebar';
 import { useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logoutAsync } from '../store/slices/authSlice';
-import { setCurrentTask, fetchMyTasksAsync } from '../store/slices/taskSlice';
+import { setCurrentTask, fetchTaskProfileAsync } from '../store/slices/taskSlice';
 
 const InternDashboard = () => {
   const dispatch = useDispatch();
@@ -25,7 +25,7 @@ const InternDashboard = () => {
   useEffect(() => {
     const path = location.pathname;
     if (path === '/intern' || path === '/intern/tasks') {
-      dispatch(fetchMyTasksAsync({ page: 1, limit: 100 }));
+      dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }));
     }
   }, [dispatch, location.pathname]);
 

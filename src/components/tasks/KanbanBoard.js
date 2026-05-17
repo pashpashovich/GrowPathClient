@@ -34,6 +34,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   setCurrentTask,
   setFilters,
+  fetchTaskProfileAsync,
   fetchTasksAsync,
   patchTaskStatusAsync,
 } from '../../store/slices/taskSlice';
@@ -49,6 +50,8 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const internships = useSelector((state) => state.roadmap?.internships || []);
   const programs = useSelector((state) => state.internshipProgram?.programs || []);
   const filters = useSelector((state) => state.task?.filters || {});
+  const userRole = useSelector((state) => state.auth.user?.role ?? state.auth.role);
+  const useTaskProfile = userRole === 'mentor' || userRole === 'intern';
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -74,8 +77,15 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
     if (filters.internshipId) {
       params.internshipId = String(filters.internshipId);
     }
-    dispatch(fetchTasksAsync(params));
-  }, [dispatch, filters.internshipId]);
+    if (filters.status) {
+      params.status = filters.status;
+    }
+    if (filters.priority) {
+      params.priority = filters.priority;
+    }
+    const fetchAction = useTaskProfile ? fetchTaskProfileAsync : fetchTasksAsync;
+    dispatch(fetchAction(params));
+  }, [dispatch, filters.internshipId, filters.status, filters.priority, useTaskProfile]);
 
   useEffect(() => {
     loadTasks();

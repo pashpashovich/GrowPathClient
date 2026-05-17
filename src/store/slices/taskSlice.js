@@ -1,6 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { taskAPI } from '../../services/api';
 
+function parseTaskListResponse(responseData) {
+  const body = responseData ?? {};
+  const tasks = Array.isArray(body.data) ? body.data : Array.isArray(body) ? body : [];
+  return { data: tasks, pagination: body.pagination ?? null };
+}
+
 function mergeTaskPatch(state, patch) {
   if (!patch?.id) return;
   const index = state.tasks.findIndex((t) => t.id === patch.id);
@@ -121,17 +127,25 @@ export const addCommentAsync = createAsyncThunk(
   }
 );
 
-export const fetchMyTasksAsync = createAsyncThunk(
-  'task/fetchMyTasks',
+export const fetchTaskProfileAsync = createAsyncThunk(
+  'task/fetchTaskProfile',
   async (params, { rejectWithValue }) => {
     try {
-      const response = await taskAPI.getMyTasks(params);
-      return response.data;
+      const response = await taskAPI.getTaskProfile(params);
+      return parseTaskListResponse(response.data);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке моих задач');
+      const data = error.response?.data;
+      const message =
+        (typeof data === 'string' && data) ||
+        data?.message ||
+        'Ошибка при загрузке задач';
+      return rejectWithValue(message);
     }
   }
 );
+
+/** @deprecated Use fetchTaskProfileAsync — same endpoint for interns */
+export const fetchMyTasksAsync = fetchTaskProfileAsync;
 
 export const patchTaskStatusAsync = createAsyncThunk(
   'task/patchTaskStatus',
@@ -462,18 +476,18 @@ const taskSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      .addCase(fetchMyTasksAsync.pending, (state) => {
+      .addCase(fetchTaskProfileAsync.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchMyTasksAsync.fulfilled, (state, action) => {
+      .addCase(fetchTaskProfileAsync.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.tasks = action.payload.data || action.payload;
+        state.tasks = action.payload.data || [];
         if (action.payload.pagination) {
           state.pagination = action.payload.pagination;
         }
       })
-      .addCase(fetchMyTasksAsync.rejected, (state, action) => {
+      .addCase(fetchTaskProfileAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })

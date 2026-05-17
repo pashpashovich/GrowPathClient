@@ -49,6 +49,7 @@ import {
   reviewTaskAsync,
   addCommentAsync,
   setCurrentTask,
+  fetchTaskProfileAsync,
   fetchTasksAsync,
 } from '../../store/slices/taskSlice';
 
@@ -56,6 +57,8 @@ const TaskReviewPanel = ({ onViewTask }) => {
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.task.tasks);
   const interns = useSelector((state) => state.intern.interns);
+  const userRole = useSelector((state) => state.auth.user?.role ?? state.auth.role);
+  const useTaskProfile = userRole === 'mentor' || userRole === 'intern';
 
   const [selectedTask, setSelectedTask] = useState(null);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -68,8 +71,13 @@ const TaskReviewPanel = ({ onViewTask }) => {
   const [internFilter, setInternFilter] = useState('all');
 
   useEffect(() => {
-    dispatch(fetchTasksAsync({ page: 1, limit: 100 }));
-  }, [dispatch]);
+    const params = { page: 1, limit: 100 };
+    if (useTaskProfile) {
+      dispatch(fetchTaskProfileAsync(params));
+    } else {
+      dispatch(fetchTasksAsync(params));
+    }
+  }, [dispatch, useTaskProfile]);
 
   const getStatusInfo = (status) => {
     switch (status) {

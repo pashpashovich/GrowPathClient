@@ -323,6 +323,7 @@ export const iprAPI = {
 
 export const taskAPI = {
   getTasks: (params) => api.get(tasksPath, { params }),
+  getTaskProfile: (params) => api.get(`${tasksPath}/profile`, { params }),
   getMyTasks: (params) => api.get(meTasksPath, { params }),
   getTaskById: (id) => api.get(`${tasksPath}/${id}`),
   createTask: (data) => api.post(tasksPath, data),
