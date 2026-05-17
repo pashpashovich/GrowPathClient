@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -10,15 +11,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
+  Divider,
   IconButton,
   InputAdornment,
-  InputLabel,
   List,
   ListItem,
   ListItemText,
-  MenuItem,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -30,7 +28,7 @@ import {
   Typography,
   Paper,
 } from '@mui/material';
-import { Add, Delete, Edit, GroupAdd, Search } from '@mui/icons-material';
+import { Add, Delete, Edit, Search } from '@mui/icons-material';
 import { mailingAPI, parseMailingList } from '../../services/notificationApi';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 import ActionSnackbar from './ActionSnackbar';
@@ -49,15 +47,18 @@ const GroupsSection = () => {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [membersOpen, setMembersOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [activeGroup, setActiveGroup] = useState(null);
   const [form, setForm] = useState(emptyForm);
-  const [addRecipientId, setAddRecipientId] = useState('');
+  const [selectedRecipient, setSelectedRecipient] = useState(null);
+  const [recipientSearch, setRecipientSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [addingMember, setAddingMember] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState({ id: null, label: '' });
   const [deleting, setDeleting] = useState(false);
+
+  const groupId = editing?.id;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,6 +88,22 @@ const GroupsSection = () => {
     }
   }, []);
 
+  const loadGroupMembers = useCallback(async (id) => {
+    if (!id) {
+      setGroupRecipients([]);
+      return;
+    }
+    setMembersLoading(true);
+    try {
+      const res = await mailingAPI.getDistributionGroupRecipients(id);
+      setGroupRecipients(parseMailingList(res.data).data);
+    } catch {
+      setGroupRecipients([]);
+    } finally {
+      setMembersLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     load();
   }, [load]);
@@ -101,28 +118,48 @@ const GroupsSection = () => {
     );
   }, [items, search]);
 
-  const openCreate = () => {
+  const memberIds = useMemo(
+    () => new Set(groupRecipients.map((r) => String(r.id))),
+    [groupRecipients]
+  );
+
+  const availableRecipients = useMemo(() => {
+    const q = recipientSearch.trim().toLowerCase();
+    return allRecipients.filter((r) => {
+      if (memberIds.has(String(r.id))) return false;
+      if (!q) return true;
+      const name = (r.fullName || '').toLowerCase();
+      const email = (r.email || '').toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
+  }, [allRecipients, memberIds, recipientSearch]);
+
+  const resetDialog = () => {
     setEditing(null);
     setForm(emptyForm);
+    setGroupRecipients([]);
+    setSelectedRecipient(null);
+    setRecipientSearch('');
+  };
+
+  const openCreate = () => {
+    resetDialog();
     setDialogOpen(true);
   };
 
-  const openEdit = (row) => {
+  const openEdit = async (row) => {
     setEditing(row);
     setForm({ name: row.name || '', description: row.description || '' });
+    setSelectedRecipient(null);
+    setRecipientSearch('');
     setDialogOpen(true);
+    await loadRecipientsCatalog();
+    await loadGroupMembers(row.id);
   };
 
-  const openMembers = async (group) => {
-    setActiveGroup(group);
-    setMembersOpen(true);
-    await loadRecipientsCatalog();
-    try {
-      const res = await mailingAPI.getDistributionGroupRecipients(group.id);
-      setGroupRecipients(parseMailingList(res.data).data);
-    } catch {
-      setGroupRecipients([]);
-    }
+  const closeDialog = () => {
+    setDialogOpen(false);
+    resetDialog();
   };
 
   const handleSave = async () => {
@@ -136,13 +173,21 @@ const GroupsSection = () => {
         name: form.name.trim(),
         description: form.description?.trim() || '',
       };
-      if (editing) {
+      if (editing?.id) {
         await mailingAPI.updateDistributionGroup(editing.id, payload);
+        setSnack({ open: true, message: 'Группа сохранена', severity: 'success' });
       } else {
-        await mailingAPI.createDistributionGroup(payload);
+        const res = await mailingAPI.createDistributionGroup(payload);
+        const created = res.data;
+        setEditing(created);
+        setSnack({
+          open: true,
+          message: 'Группа создана. Теперь можно добавить участников.',
+          severity: 'success',
+        });
+        await loadRecipientsCatalog();
+        setGroupRecipients([]);
       }
-      setDialogOpen(false);
-      setSnack({ open: true, message: 'Сохранено', severity: 'success' });
       load();
     } catch (e) {
       setSnack({
@@ -152,6 +197,45 @@ const GroupsSection = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddMember = async () => {
+    if (!groupId || !selectedRecipient?.id) return;
+    setAddingMember(true);
+    try {
+      await mailingAPI.addRecipientToGroup(groupId, {
+        recipientId: selectedRecipient.id,
+      });
+      setSelectedRecipient(null);
+      setRecipientSearch('');
+      await loadGroupMembers(groupId);
+      setSnack({ open: true, message: 'Участник добавлен', severity: 'success' });
+      load();
+    } catch (e) {
+      setSnack({
+        open: true,
+        message: e.response?.data?.message || 'Не удалось добавить',
+        severity: 'error',
+      });
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (recipientId) => {
+    if (!groupId) return;
+    try {
+      await mailingAPI.removeRecipientFromGroup(groupId, recipientId);
+      await loadGroupMembers(groupId);
+      setSnack({ open: true, message: 'Участник удалён', severity: 'success' });
+      load();
+    } catch (e) {
+      setSnack({
+        open: true,
+        message: e.response?.data?.message || 'Ошибка',
+        severity: 'error',
+      });
     }
   };
 
@@ -177,43 +261,6 @@ const GroupsSection = () => {
       setDeleting(false);
       setDeleteDialogOpen(false);
       setDeleteTarget({ id: null, label: '' });
-    }
-  };
-
-  const handleAddMember = async () => {
-    if (!activeGroup || !addRecipientId) return;
-    try {
-      await mailingAPI.addRecipientToGroup(activeGroup.id, {
-        recipientId: addRecipientId,
-      });
-      setAddRecipientId('');
-      const res = await mailingAPI.getDistributionGroupRecipients(activeGroup.id);
-      setGroupRecipients(parseMailingList(res.data).data);
-      setSnack({ open: true, message: 'Участник добавлен', severity: 'success' });
-      load();
-    } catch (e) {
-      setSnack({
-        open: true,
-        message: e.response?.data?.message || 'Не удалось добавить',
-        severity: 'error',
-      });
-    }
-  };
-
-  const handleRemoveMember = async (recipientId) => {
-    if (!activeGroup) return;
-    try {
-      await mailingAPI.removeRecipientFromGroup(activeGroup.id, recipientId);
-      const res = await mailingAPI.getDistributionGroupRecipients(activeGroup.id);
-      setGroupRecipients(parseMailingList(res.data).data);
-      setSnack({ open: true, message: 'Участник удалён', severity: 'success' });
-      load();
-    } catch (e) {
-      setSnack({
-        open: true,
-        message: e.response?.data?.message || 'Ошибка',
-        severity: 'error',
-      });
     }
   };
 
@@ -291,19 +338,13 @@ const GroupsSection = () => {
                         <TableCell>{row.description || '—'}</TableCell>
                         <TableCell>{row.recipientCount ?? 0}</TableCell>
                         <TableCell align="right">
-                          <IconButton
-                            size="small"
-                            title="Участники"
-                            onClick={() => openMembers(row)}
-                          >
-                            <GroupAdd fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" onClick={() => openEdit(row)}>
+                          <IconButton size="small" title="Редактировать" onClick={() => openEdit(row)}>
                             <Edit fontSize="small" />
                           </IconButton>
                           <IconButton
                             size="small"
                             color="error"
+                            title="Удалить"
                             onClick={() => openDeleteDialog(row.id, row.name)}
                           >
                             <Delete fontSize="small" />
@@ -331,8 +372,8 @@ const GroupsSection = () => {
         )}
       </CardContent>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editing ? 'Редактировать группу' : 'Новая группа'}</DialogTitle>
+      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{editing?.id ? 'Редактировать группу' : 'Новая группа'}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
           <TextField
             label="Название"
@@ -347,66 +388,145 @@ const GroupsSection = () => {
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
-            Сохранить
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      <Dialog
-        open={membersOpen}
-        onClose={() => setMembersOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Участники: {activeGroup?.name}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', gap: 1, mb: 2, mt: 1 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Добавить получателя</InputLabel>
-              <Select
-                label="Добавить получателя"
-                value={addRecipientId}
-                onChange={(e) => setAddRecipientId(e.target.value)}
-              >
-                <MenuItem value="">Выберите…</MenuItem>
-                {allRecipients.map((r) => (
-                  <MenuItem key={r.id} value={r.id}>
-                    {r.fullName} ({r.email})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button variant="contained" onClick={handleAddMember} disabled={!addRecipientId}>
-              Добавить
-            </Button>
-          </Box>
-          <List dense>
-            {groupRecipients.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                В группе пока никого нет
-              </Typography>
-            ) : (
-              groupRecipients.map((r) => (
-                <ListItem
-                  key={r.id}
-                  secondaryAction={
-                    <IconButton edge="end" onClick={() => handleRemoveMember(r.id)}>
-                      <Delete fontSize="small" />
-                    </IconButton>
+          <Divider />
+
+          <Typography variant="subtitle2" fontWeight={600}>
+            Участники группы
+          </Typography>
+
+          {!groupId ? (
+            <Alert severity="info" variant="outlined">
+              Сначала сохраните группу, затем добавьте получателей из списка.
+            </Alert>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                <Autocomplete
+                  sx={{ flex: 1 }}
+                  value={selectedRecipient}
+                  onChange={(_, recipient) => {
+                    setSelectedRecipient(recipient);
+                    if (recipient) {
+                      setRecipientSearch(
+                        recipient.email
+                          ? `${recipient.fullName || '—'} · ${recipient.email}`
+                          : recipient.fullName || ''
+                      );
+                    } else {
+                      setRecipientSearch('');
+                    }
+                  }}
+                  inputValue={recipientSearch}
+                  onInputChange={(_, value, reason) => {
+                    if (reason === 'reset') {
+                      setRecipientSearch(value);
+                      return;
+                    }
+                    if (reason === 'clear') {
+                      setRecipientSearch('');
+                      setSelectedRecipient(null);
+                      return;
+                    }
+                    if (reason === 'input') {
+                      setRecipientSearch(value);
+                      if (
+                        selectedRecipient &&
+                        value !==
+                          (selectedRecipient.email
+                            ? `${selectedRecipient.fullName || '—'} · ${selectedRecipient.email}`
+                            : selectedRecipient.fullName || '')
+                      ) {
+                        setSelectedRecipient(null);
+                      }
+                    }
+                  }}
+                  options={availableRecipients}
+                  loading={false}
+                  getOptionLabel={(r) =>
+                    r.email ? `${r.fullName || '—'} · ${r.email}` : r.fullName || ''
                   }
+                  isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
+                  filterOptions={(options) => options}
+                  noOptionsText="Нет получателей для добавления"
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      label="Добавить получателя"
+                      placeholder="Поиск по ФИО или email"
+                    />
+                  )}
+                  renderOption={(props, option) => {
+                    const { key, ...optionProps } = props;
+                    const { children: _c, ...liProps } = optionProps;
+                    return (
+                      <Box
+                        component="li"
+                        key={key}
+                        {...liProps}
+                        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', py: 1 }}
+                      >
+                        <Typography variant="body2">{option.fullName || '—'}</Typography>
+                        {option.email ? (
+                          <Typography variant="caption" color="text.secondary">
+                            {option.email}
+                          </Typography>
+                        ) : null}
+                      </Box>
+                    );
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleAddMember}
+                  disabled={!selectedRecipient || addingMember}
+                  sx={{ mt: 0.25, minWidth: 110 }}
                 >
-                  <ListItemText primary={r.fullName} secondary={r.email} />
-                </ListItem>
-              ))
-            )}
-          </List>
+                  {addingMember ? '…' : 'Добавить'}
+                </Button>
+              </Box>
+
+              {membersLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress size={28} />
+                </Box>
+              ) : groupRecipients.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  В группе пока никого нет
+                </Typography>
+              ) : (
+                <List dense disablePadding sx={{ bgcolor: 'grey.50', borderRadius: 1 }}>
+                  {groupRecipients.map((r) => (
+                    <ListItem
+                      key={r.id}
+                      secondaryAction={
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          aria-label="Удалить из группы"
+                          onClick={() => handleRemoveMember(r.id)}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      }
+                    >
+                      <ListItemText
+                        primary={r.fullName || '—'}
+                        secondary={r.email || undefined}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMembersOpen(false)}>Закрыть</Button>
+          <Button onClick={closeDialog}>{groupId ? 'Закрыть' : 'Отмена'}</Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving}>
+            {saving ? 'Сохранение…' : groupId ? 'Сохранить' : 'Создать группу'}
+          </Button>
         </DialogActions>
       </Dialog>
 
