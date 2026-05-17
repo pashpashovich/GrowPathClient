@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -31,9 +32,12 @@ import {
 } from '@mui/material';
 import { Add, Delete, Edit, Search } from '@mui/icons-material';
 import { mailingAPI, parseMailingList } from '../../services/notificationApi';
+import { userAPI } from '../../services/api';
 import { RECIPIENT_TYPE_LABELS } from '../../utils/mailingLabels';
+import { getUserDisplayName } from '../../utils/userDisplayName';
 
-const emptyForm = { email: '', fullName: '', userId: '', type: 'external' };
+const emptyForm = { email: '', fullName: '', type: 'external' };
+const USER_PAGE_SIZE = 20;
 
 const RecipientsSection = () => {
   const [items, setItems] = useState([]);
@@ -51,6 +55,17 @@ const RecipientsSection = () => {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userOptions, setUserOptions] = useState([]);
+  const [userSearchInput, setUserSearchInput] = useState('');
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userPage, setUserPage] = useState(1);
+  const [userHasMore, setUserHasMore] = useState(false);
+  const [excludedUserIds, setExcludedUserIds] = useState(() => new Set());
+  const userSearchDebounceRef = useRef(null);
+
+  const isRegisteredForm = form.type === 'user' || editing?.type === 'user';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,6 +102,82 @@ const RecipientsSection = () => {
     });
   }, [items, nameSearch, emailSearch]);
 
+  const resetUserPicker = () => {
+    setSelectedUser(null);
+    setUserOptions([]);
+    setUserSearchInput('');
+    setUserPage(1);
+    setUserHasMore(false);
+  };
+
+  const loadExcludedUserIds = useCallback(async (keepUserId) => {
+    try {
+      const res = await mailingAPI.getRecipients({ type: 'user', page: 1, limit: 500 });
+      const ids = parseMailingList(res.data).data
+        .map((r) => r.userId)
+        .filter(Boolean)
+        .map(String);
+      const next = new Set(ids);
+      if (keepUserId) next.delete(String(keepUserId));
+      setExcludedUserIds(next);
+    } catch {
+      setExcludedUserIds(new Set());
+    }
+  }, []);
+
+  const fetchUsers = useCallback(
+    async (search, pageNum, append) => {
+      setUsersLoading(true);
+      try {
+        const res = await userAPI.getUsers({
+          page: pageNum,
+          limit: USER_PAGE_SIZE,
+          ...(search?.trim() ? { search: search.trim() } : {}),
+        });
+        const data = res.data?.data ?? (Array.isArray(res.data) ? res.data : []);
+        const pagination = res.data?.pagination;
+        const filtered = data.filter((u) => !excludedUserIds.has(String(u.id)));
+
+        if (append) {
+          setUserOptions((prev) => {
+            const known = new Set(prev.map((u) => String(u.id)));
+            return [...prev, ...filtered.filter((u) => !known.has(String(u.id)))];
+          });
+        } else {
+          setUserOptions(filtered);
+        }
+
+        const totalPages = pagination?.totalPages ?? 1;
+        setUserHasMore(pageNum < totalPages);
+      } catch {
+        if (!append) setUserOptions([]);
+        setUserHasMore(false);
+      } finally {
+        setUsersLoading(false);
+      }
+    },
+    [excludedUserIds]
+  );
+
+  useEffect(() => {
+    if (!dialogOpen || !isRegisteredForm) return undefined;
+
+    if (userSearchDebounceRef.current) {
+      clearTimeout(userSearchDebounceRef.current);
+    }
+
+    userSearchDebounceRef.current = setTimeout(() => {
+      setUserPage(1);
+      fetchUsers(userSearchInput, 1, false);
+    }, 300);
+
+    return () => {
+      if (userSearchDebounceRef.current) {
+        clearTimeout(userSearchDebounceRef.current);
+      }
+    };
+  }, [dialogOpen, isRegisteredForm, userSearchInput, fetchUsers, excludedUserIds]);
+
   const resetFilters = () => {
     setNameSearch('');
     setEmailSearch('');
@@ -97,45 +188,89 @@ const RecipientsSection = () => {
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
+    resetUserPicker();
     setDialogOpen(true);
   };
 
-  const openEdit = (row) => {
+  const openEdit = async (row) => {
     setEditing(row);
+    resetUserPicker();
     setForm({
       email: row.email || '',
       fullName: row.fullName || '',
-      userId: row.userId || '',
       type: row.type || 'external',
     });
     setDialogOpen(true);
+
+    if (row.type === 'user' && row.userId) {
+      await loadExcludedUserIds(row.userId);
+      try {
+        const res = await userAPI.getUserById(row.userId);
+        const user = res.data?.data ?? res.data;
+        if (user) {
+          setSelectedUser(user);
+          setUserOptions([user]);
+        }
+      } catch {
+        setSelectedUser({
+          id: row.userId,
+          email: row.email,
+          name: row.fullName,
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+    if (isRegisteredForm) {
+      loadExcludedUserIds(editing?.userId);
+    }
+  }, [dialogOpen, isRegisteredForm, editing?.userId, loadExcludedUserIds]);
+
+  const handleTypeChange = (type) => {
+    setForm((f) => ({ ...f, type }));
+    resetUserPicker();
+    if (type === 'user') {
+      setUserPage(1);
+      fetchUsers('', 1, false);
+    }
   };
 
   const handleSave = async () => {
-    if (!form.email?.trim() || !form.fullName?.trim()) {
+    if (isRegisteredForm) {
+      if (!selectedUser?.id) {
+        setSnack({ open: true, message: 'Выберите пользователя', severity: 'warning' });
+        return;
+      }
+    } else if (!form.email?.trim() || !form.fullName?.trim()) {
       setSnack({ open: true, message: 'Заполните email и ФИО', severity: 'warning' });
       return;
     }
+
     setSaving(true);
     try {
-      const payload = {
-        email: form.email.trim(),
-        fullName: form.fullName.trim(),
-        type: editing ? undefined : form.type,
-        userId: form.userId?.trim() || undefined,
-      };
       if (editing) {
-        await mailingAPI.updateRecipient(editing.id, {
-          email: payload.email,
-          fullName: payload.fullName,
-          userId: payload.userId,
+        if (editing.type === 'user') {
+          await mailingAPI.updateRecipient(editing.id, {
+            userId: String(selectedUser.id),
+          });
+        } else {
+          await mailingAPI.updateRecipient(editing.id, {
+            email: form.email.trim(),
+            fullName: form.fullName.trim(),
+          });
+        }
+      } else if (form.type === 'user') {
+        await mailingAPI.createRecipient({
+          type: 'user',
+          userId: String(selectedUser.id),
         });
       } else {
         await mailingAPI.createRecipient({
-          email: payload.email,
-          fullName: payload.fullName,
-          type: form.type,
-          userId: payload.userId,
+          type: 'external',
+          email: form.email.trim(),
+          fullName: form.fullName.trim(),
         });
       }
       setDialogOpen(false);
@@ -177,6 +312,19 @@ const RecipientsSection = () => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  const handleUserListScroll = (event) => {
+    const node = event.currentTarget;
+    if (
+      node.scrollTop + node.clientHeight >= node.scrollHeight - 8 &&
+      userHasMore &&
+      !usersLoading
+    ) {
+      const nextPage = userPage + 1;
+      setUserPage(nextPage);
+      fetchUsers(userSearchInput, nextPage, true);
+    }
   };
 
   return (
@@ -321,7 +469,6 @@ const RecipientsSection = () => {
               </Table>
             </TableContainer>
             <TablePagination
-              component="div"
               count={total}
               page={page}
               onPageChange={(_, p) => setPage(p)}
@@ -337,40 +484,94 @@ const RecipientsSection = () => {
         )}
       </CardContent>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>{editing ? 'Редактировать получателя' : 'Новый получатель'}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-          <TextField
-            label="ФИО"
-            required
-            value={form.fullName}
-            onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-          />
-          <TextField
-            label="Email"
-            required
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-          />
           {!editing && (
             <FormControl fullWidth>
               <InputLabel>Тип</InputLabel>
-              <Select
-                label="Тип"
-                value={form.type}
-                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-              >
+              <Select label="Тип" value={form.type} onChange={(e) => handleTypeChange(e.target.value)}>
                 <MenuItem value="user">Зарегистрированный</MenuItem>
                 <MenuItem value="external">Внешний</MenuItem>
               </Select>
             </FormControl>
           )}
-          <TextField
-            label="ID пользователя (опционально)"
-            value={form.userId}
-            onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
-          />
+
+          {isRegisteredForm ? (
+            <Autocomplete
+              value={selectedUser}
+              onChange={(_, user) => setSelectedUser(user)}
+              inputValue={userSearchInput}
+              onInputChange={(_, value, reason) => {
+                if (reason === 'input' || reason === 'clear') {
+                  setUserSearchInput(value);
+                }
+              }}
+              options={userOptions}
+              loading={usersLoading}
+              getOptionLabel={(option) => getUserDisplayName(option)}
+              isOptionEqualToValue={(a, b) => String(a?.id) === String(b?.id)}
+              filterOptions={(options) => options}
+              noOptionsText={
+                usersLoading ? 'Загрузка…' : 'Нет доступных пользователей'
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Пользователь"
+                  placeholder="Поиск по ФИО"
+                  required
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {usersLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              renderOption={(props, option) => (
+                <li {...props} key={option.id}>
+                  <Typography variant="body2">{getUserDisplayName(option)}</Typography>
+                  {option.email ? (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {option.email}
+                    </Typography>
+                  ) : null}
+                </li>
+              )}
+              ListboxProps={{ onScroll: handleUserListScroll }}
+            />
+          ) : (
+            <>
+              <TextField
+                label="ФИО"
+                required
+                value={form.fullName}
+                onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+              />
+              <TextField
+                label="Email"
+                required
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </>
+          )}
+
+          {editing && editing.type === 'user' && (
+            <Typography variant="caption" color="text.secondary">
+              Email и ФИО подтягиваются из профиля пользователя на сервере.
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Отмена</Button>
