@@ -1,7 +1,17 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { roadmapAPI, iprAPI } from '../../services/api';
 
-const toArray = (body) => (Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : []);
+const toArray = (body) => {
+  if (!body) return [];
+  if (Array.isArray(body)) return body;
+  if (Array.isArray(body.data)) return body.data;
+  if (body.data && typeof body.data === 'object') return [body.data];
+  if (body.id != null) return [body];
+  return [];
+};
+
+const pickDefaultInternship = (list) =>
+  list.find((item) => item.status === 'active') || list[0] || null;
 
 const normalizeInternship = (x) => ({
   ...x,
@@ -41,10 +51,17 @@ export const fetchInternshipsAsync = createAsyncThunk(
 
 export const fetchInternshipsProfileAsync = createAsyncThunk(
   'roadmap/fetchInternshipsProfile',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
       const response = await iprAPI.getMyIprs();
-      return toArray(response.data).map(normalizeInternship);
+      const list = toArray(response.data).map(normalizeInternship);
+      const selected = pickDefaultInternship(list);
+      if (selected) {
+        await dispatch(
+          fetchStagesAsync({ internshipId: selected.id, useIpr: true })
+        );
+      }
+      return list;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки стажировок профиля');
     }
@@ -265,6 +282,10 @@ const roadmapSlice = createSlice({
       .addCase(fetchInternshipsProfileAsync.fulfilled, (state, action) => {
         state.isLoading = false;
         state.internships = action.payload;
+        const selected = pickDefaultInternship(action.payload);
+        if (selected) {
+          state.currentInternshipId = String(selected.id);
+        }
       })
       .addCase(fetchInternshipsByProgramAsync.fulfilled, (state, action) => {
         state.isLoading = false;

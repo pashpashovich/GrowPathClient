@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Modal } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import RoadmapView from '../components/roadmap/RoadmapView';
 import StageForm from '../components/roadmap/StageForm';
@@ -15,10 +16,13 @@ import {
 
 const RoadmapPage = ({ canEdit = true }) => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const currentUser = useSelector((state) => state.auth.user);
+  const authRole = useSelector((state) => state.auth.role);
+  const userRole = currentUser?.role ?? authRole;
   const currentInternshipId = useSelector((state) => state.roadmap.currentInternshipId);
-  const isIntern = currentUser?.role === 'intern';
-  const isMentor = currentUser?.role === 'mentor';
+  const isIntern = userRole === 'intern';
+  const isMentor = userRole === 'mentor';
   const [openForm, setOpenForm] = useState(false);
   const [stageToEdit, setStageToEdit] = useState(null);
   const [entityViewMode, setEntityViewMode] = useState('templates');
@@ -26,19 +30,19 @@ const RoadmapPage = ({ canEdit = true }) => {
   const [entityFormMode, setEntityFormMode] = useState('template');
   const [entityToEdit, setEntityToEdit] = useState(null);
   useEffect(() => {
-    if (currentUser?.role === 'intern') {
+    if (userRole === 'intern') {
       dispatch(fetchInternshipsProfileAsync());
-    } else if (currentUser?.role === 'mentor') {
+    } else if (userRole === 'mentor') {
       dispatch(setCurrentInternship(null));
       if (entityViewMode === 'iprs') {
         dispatch(fetchIprsAsync({ mentorId: currentUser?.id }));
       } else {
         dispatch(fetchInternshipsAsync({ mentorId: currentUser?.id }));
       }
-    } else {
+    } else if (userRole) {
       dispatch(fetchInternshipsAsync());
     }
-  }, [dispatch, currentUser?.role, currentUser?.id, entityViewMode]);
+  }, [dispatch, userRole, currentUser?.id, entityViewMode, location.pathname]);
 
   const useIprMode = isIntern || (isMentor && entityViewMode === 'iprs');
 

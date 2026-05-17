@@ -37,14 +37,13 @@ const InternshipSelector = ({
   const dispatch = useDispatch();
   const { internships, currentInternshipId } = useSelector((state) => state.roadmap);
   const currentUser = useSelector((state) => state.auth.user);
-  
-  const isIntern = currentUser?.role === 'intern';
-  const isMentor = currentUser?.role === 'mentor';
+  const authRole = useSelector((state) => state.auth.role);
+  const userRole = currentUser?.role ?? authRole;
+
+  const isIntern = userRole === 'intern';
+  const isMentor = userRole === 'mentor';
   const internInternship = isIntern
-    ? internships.find((internship) => internship.internIds?.includes(String(currentUser?.id))) ||
-      internships.find((internship) => Number(internship.internId) === Number(currentUser?.id)) ||
-      internships[0] ||
-      null
+    ? internships.find((internship) => internship.status === 'active') || internships[0] || null
     : null;
 
   const getStatusInfo = (status) => {
@@ -197,10 +196,12 @@ const InternshipSelector = ({
                     <Schedule sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
                     {formatDate(currentInternship.startDate)} - {formatDate(currentInternship.endDate)}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    <School sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
-                    {currentInternship.internIds?.length || 0} стажеров
-                  </Typography>
+                  {!isIntern && (
+                    <Typography variant="caption" color="text.secondary">
+                      <School sx={{ fontSize: 14, mr: 0.5, verticalAlign: 'middle' }} />
+                      {currentInternship.internIds?.length || 0} стажеров
+                    </Typography>
+                  )}
                 </Box>
               </Box>
               {canEdit && (
