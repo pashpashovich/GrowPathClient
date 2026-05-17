@@ -239,7 +239,7 @@ const TemplatesSection = () => {
           </Button>
         </Box>
 
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1, mb: 2, flexWrap: 'wrap' }}>
           <Button variant="contained" startIcon={<Add />} onClick={openCreate}>
             Добавить
           </Button>
