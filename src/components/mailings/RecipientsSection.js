@@ -210,13 +210,16 @@ const RecipientsSection = () => {
         if (user) {
           setSelectedUser(user);
           setUserOptions([user]);
+          setUserSearchInput(getUserOptionLabel(user));
         }
       } catch {
-        setSelectedUser({
+        const fallback = {
           id: row.userId,
           email: row.email,
           name: row.fullName,
-        });
+        };
+        setSelectedUser(fallback);
+        setUserSearchInput(getUserOptionLabel(fallback));
       }
     }
   };
@@ -505,11 +508,35 @@ const RecipientsSection = () => {
           {isRegisteredForm ? (
             <Autocomplete
               value={selectedUser}
-              onChange={(_, user) => setSelectedUser(user)}
+              onChange={(_, user) => {
+                setSelectedUser(user);
+                setUserSearchInput(user ? getUserOptionLabel(user) : '');
+                if (user) {
+                  setUserOptions((prev) => {
+                    if (prev.some((u) => String(u.id) === String(user.id))) return prev;
+                    return [user, ...prev];
+                  });
+                }
+              }}
               inputValue={userSearchInput}
               onInputChange={(_, value, reason) => {
-                if (reason === 'input' || reason === 'clear') {
+                if (reason === 'reset') {
                   setUserSearchInput(value);
+                  return;
+                }
+                if (reason === 'clear') {
+                  setUserSearchInput('');
+                  setSelectedUser(null);
+                  return;
+                }
+                if (reason === 'input') {
+                  setUserSearchInput(value);
+                  if (
+                    selectedUser &&
+                    value !== getUserOptionLabel(selectedUser)
+                  ) {
+                    setSelectedUser(null);
+                  }
                 }
               }}
               options={userOptions}
