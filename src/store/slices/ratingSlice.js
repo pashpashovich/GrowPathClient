@@ -25,11 +25,32 @@ export const fetchInternRatingAsync = createAsyncThunk(
   }
 );
 
+export const fetchRatingProfileAsync = createAsyncThunk(
+  'rating/fetchRatingProfile',
+  async (params, { rejectWithValue }) => {
+    try {
+      const response = await ratingAPI.getRatingProfile(params);
+      return response.data;
+    } catch (error) {
+      const data = error.response?.data;
+      const message =
+        (typeof data === 'string' && data) ||
+        data?.message ||
+        data?.error ||
+        'Ошибка при загрузке профиля рейтинга';
+      return rejectWithValue(message);
+    }
+  }
+);
+
 const initialState = {
   ratings: [],
+  ratingProfile: null,
   selectedInternshipId: null,
   isLoading: false,
+  isProfileLoading: false,
   error: null,
+  profileError: null,
 };
 
 const ratingSlice = createSlice({
@@ -44,6 +65,12 @@ const ratingSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null;
+    },
+    clearProfileError: (state) => {
+      state.profileError = null;
+    },
+    clearRatingProfile: (state) => {
+      state.ratingProfile = null;
     },
     setSelectedInternship: (state, action) => {
       state.selectedInternshipId = action.payload;
@@ -115,6 +142,19 @@ const ratingSlice = createSlice({
       .addCase(fetchInternRatingAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+      })
+      .addCase(fetchRatingProfileAsync.pending, (state) => {
+        state.isProfileLoading = true;
+        state.profileError = null;
+      })
+      .addCase(fetchRatingProfileAsync.fulfilled, (state, action) => {
+        state.isProfileLoading = false;
+        state.ratingProfile = action.payload;
+      })
+      .addCase(fetchRatingProfileAsync.rejected, (state, action) => {
+        state.isProfileLoading = false;
+        state.profileError = action.payload;
+        state.ratingProfile = null;
       });
   },
 });
@@ -123,6 +163,8 @@ export const {
   setLoading,
   setError,
   clearError,
+  clearProfileError,
+  clearRatingProfile,
   setSelectedInternship,
   updateRating,
   recalculateRanks,

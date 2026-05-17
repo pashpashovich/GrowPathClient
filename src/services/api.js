@@ -368,6 +368,7 @@ export const analyticsAPI = {
 export const ratingAPI = {
   getRatings: (params) => api.get(ratingsPath, { params }),
   getInternRating: (internId) => api.get(`${ratingsPath}/interns/${internId}`),
+  getRatingProfile: (params) => api.get(`${ratingsPath}/profile`, { params }),
 };
 
 export const dashboardAPI = {

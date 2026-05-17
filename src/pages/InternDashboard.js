@@ -23,8 +23,11 @@ const InternDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchMyTasksAsync({ page: 1, limit: 100 }));
-  }, [dispatch]);
+    const path = location.pathname;
+    if (path === '/intern' || path === '/intern/tasks') {
+      dispatch(fetchMyTasksAsync({ page: 1, limit: 100 }));
+    }
+  }, [dispatch, location.pathname]);
 
   const handleViewTask = (task) => {
     dispatch(setCurrentTask(task));
@@ -62,16 +65,7 @@ const InternDashboard = () => {
         </Box>
       );
     } else if (location.pathname === '/intern/rating') {
-      return (
-        <Box>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" fontWeight="bold">
-              Мой рейтинг
-            </Typography>
-          </Box>
-          <InternRatingPage />
-        </Box>
-      );
+      return <InternRatingPage />;
     } else if (location.pathname === '/intern/stats') {
       return (
         <Box>

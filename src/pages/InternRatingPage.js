@@ -1,19 +1,11 @@
 import React from 'react';
-import { Box } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 import InternRating from '../components/rating/InternRating';
 
 const InternRatingPage = () => {
-  return (
-    <Box sx={{ width: '100%' }}>
-      <InternRating />
-    </Box>
-  );
+  const location = useLocation();
+
+  return <InternRating refreshKey={location.pathname} />;
 };
 
 export default InternRatingPage;
-
-
-
-
-
-

@@ -2,549 +2,476 @@ import React, { useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
-  Card,
-  CardContent,
-  Grid,
-  Chip,
-  LinearProgress,
-  Avatar,
   Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
+  Grid,
+  LinearProgress,
+  CircularProgress,
+  Alert,
+  Chip,
   Divider,
+  Stack,
 } from '@mui/material';
 import {
   TrendingUp,
   TrendingDown,
   TrendingFlat,
   Star,
-  Assignment,
+  FormatQuote,
+  AssignmentTurnedIn,
   Schedule,
-  CheckCircle,
-  EmojiEvents,
 } from '@mui/icons-material';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+} from 'recharts';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchInternRatingAsync, fetchRatingsAsync } from '../../store/slices/ratingSlice';
+import { fetchRatingProfileAsync } from '../../store/slices/ratingSlice';
 
-const InternRating = () => {
+const CARD_SX = {
+  p: 3,
+  borderRadius: 3,
+  bgcolor: 'background.paper',
+  border: '1px solid',
+  borderColor: 'divider',
+  height: '100%',
+};
+
+const RATING_MAX = 10;
+
+function formatRating(value) {
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  return Number(value).toFixed(1);
+}
+
+function ratingPercent(value) {
+  const n = Number(value);
+  if (Number.isNaN(n)) return 0;
+  return Math.min(100, Math.max(0, (n / RATING_MAX) * 100));
+}
+
+function formatDate(value) {
+  if (!value) return '—';
+  return new Date(value).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function getTrendIcon(trend) {
+  switch (trend) {
+    case 'up':
+      return <TrendingUp sx={{ color: 'success.main' }} />;
+    case 'down':
+      return <TrendingDown sx={{ color: 'error.main' }} />;
+    default:
+      return <TrendingFlat sx={{ color: 'text.secondary' }} />;
+  }
+}
+
+function getTrendLabel(trend) {
+  switch (trend) {
+    case 'up':
+      return 'Растёт';
+    case 'down':
+      return 'Снижается';
+    default:
+      return 'Стабильно';
+  }
+}
+
+function formatCohortDelta(delta) {
+  const n = Number(delta);
+  if (Number.isNaN(n) || Math.abs(n) < 0.05) return 'На уровне среднего';
+  const abs = Math.abs(n).toFixed(1);
+  return n > 0 ? `Выше среднего на ${abs}` : `Ниже среднего на ${abs}`;
+}
+
+function RatingBar({ label, value, color = 'primary' }) {
+  return (
+    <Box sx={{ mb: 2.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="body2" fontWeight={600}>
+          {formatRating(value)} / {RATING_MAX}
+        </Typography>
+      </Box>
+      <LinearProgress
+        variant="determinate"
+        value={ratingPercent(value)}
+        color={color}
+        sx={{ height: 8, borderRadius: 4, bgcolor: 'action.hover' }}
+      />
+    </Box>
+  );
+}
+
+function KpiTile({ label, value, sub }) {
+  return (
+    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: 'background.default' }}>
+      <Typography variant="h5" fontWeight={700} color="primary.main">
+        {value}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        {label}
+      </Typography>
+      {sub ? (
+        <Typography variant="caption" color="text.secondary">
+          {sub}
+        </Typography>
+      ) : null}
+    </Paper>
+  );
+}
+
+const InternRating = ({ refreshKey }) => {
   const dispatch = useDispatch();
-  const { ratings = [] } = useSelector((state) => state.rating || {});
-  const currentUser = useSelector((state) => state.auth?.user);
-  const { internships = [] } = useSelector((state) => state.roadmap || {});
+  const { ratingProfile, isProfileLoading, profileError } = useSelector((state) => state.rating || {});
 
   useEffect(() => {
-    if (!currentUser?.id) return;
-    dispatch(fetchRatingsAsync());
-    dispatch(fetchInternRatingAsync(currentUser.id));
-  }, [dispatch, currentUser?.id]);
+    dispatch(
+      fetchRatingProfileAsync({
+        historyLimit: 12,
+        recentTasksLimit: 5,
+      })
+    );
+  }, [dispatch, refreshKey]);
 
-  const internRating = useMemo(() => {
-    return ratings.find(rating => rating.internId === currentUser?.id);
-  }, [ratings, currentUser?.id]);
+  const chartData = useMemo(() => {
+    const history = ratingProfile?.history ?? [];
+    return history.map((point, index) => ({
+      key: point.assessmentId ?? index,
+      label: formatDate(point.date),
+      rating: Number(point.overallRating) || 0,
+    }));
+  }, [ratingProfile?.history]);
 
-  const internInternship = useMemo(() => {
-    if (!internRating) return null;
-    return internships.find(internship => internship.id === internRating.internshipId);
-  }, [internRating, internships]);
-
-  const overallStats = useMemo(() => {
-    const totalInterns = ratings.length;
-    const betterThan = ratings.filter(r => r.overallRating < internRating?.overallRating).length;
-    const percentile = totalInterns > 0 ? Math.round((betterThan / totalInterns) * 100) : 0;
-    
-    return {
-      totalInterns,
-      betterThan,
-      percentile,
-      averageRating: totalInterns > 0 ? ratings.reduce((sum, r) => sum + r.overallRating, 0) / totalInterns : 0
-    };
-  }, [ratings, internRating]);
-
-  const getRatingColor = (rating) => {
-    if (rating >= 9.0) return 'success';
-    if (rating >= 7.0) return 'warning';
-    return 'error';
-  };
-
-  const getTrendIcon = (trend) => {
-    switch (trend) {
-      case 'up':
-        return <TrendingUp color="success" />;
-      case 'down':
-        return <TrendingDown color="error" />;
-      default:
-        return <TrendingFlat color="action" />;
+  const trendDelta = useMemo(() => {
+    const current = ratingProfile?.current;
+    if (current?.previousRating != null && current?.overallRating != null) {
+      const diff = Number(current.overallRating) - Number(current.previousRating);
+      if (!Number.isNaN(diff) && Math.abs(diff) >= 0.05) {
+        const sign = diff > 0 ? '+' : '';
+        return `${sign}${diff.toFixed(1)} к прошлой оценке`;
+      }
     }
-  };
+    return null;
+  }, [ratingProfile?.current]);
 
-  const getTrendText = (trend) => {
-    switch (trend) {
-      case 'up':
-        return 'Растет';
-      case 'down':
-        return 'Снижается';
-      default:
-        return 'Стабильный';
-    }
-  };
-
-  if (!internRating) {
+  if (isProfileLoading && !ratingProfile) {
     return (
-      <Box sx={{ textAlign: 'center', py: 4 }}>
-        <Typography variant="h6" color="text.secondary">
-          Рейтинг не найден. Обратитесь к ментору.
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (profileError) {
+    return (
+      <Alert severity="error" sx={{ borderRadius: 2 }}>
+        {profileError}
+      </Alert>
+    );
+  }
+
+  if (!ratingProfile) {
+    return null;
+  }
+
+  const { hasAssessment, current, cohort, tasks, recentRatedTasks = [], programName, internName } =
+    ratingProfile;
+
+  if (!hasAssessment) {
+    return (
+      <Box>
+        <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
+          Мой рейтинг
         </Typography>
+        {programName && (
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            {programName}
+          </Typography>
+        )}
+        <Paper sx={{ ...CARD_SX, textAlign: 'center', py: 8 }}>
+          <Star sx={{ fontSize: 48, color: 'action.disabled', mb: 2 }} />
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            Оценка ещё не выставлена
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto' }}>
+            Когда ментор проведёт оценку по итогам стажировки, здесь появятся ваш рейтинг,
+            динамика и статистика по задачам.
+          </Typography>
+        </Paper>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Typography variant="h4" fontWeight="bold" sx={{ mb: 4 }}>
-        Мой рейтинг
-      </Typography>
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700}>
+          Мой рейтинг
+        </Typography>
+          {programName && (
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            {programName}
+          </Typography>
+        )}
+      </Box>
 
-      <Grid container spacing={3} sx={{ maxWidth: 'none' }}>
-        <Grid item xs={12} lg={4}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
-                <Avatar sx={{ width: 64, height: 64, fontSize: '1.5rem' }}>
-                  {internRating.internName.split(' ').map(n => n[0]).join('')}
-                </Avatar>
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="h5" component="h2">
-                    {internRating.internName}
-                  </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    {internRating.position}
-                  </Typography>
-                  {internInternship && (
-                    <Typography variant="body2" color="text.secondary">
-                      Стажировка: {internInternship.title}
-                    </Typography>
-                  )}
-                </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" color="primary" fontWeight="bold">
-                    #{internRating.rank}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    место из {overallStats.totalInterns}
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <Typography variant="h4" component="span">
-                  {internRating.overallRating.toFixed(1)}
+      <Grid container spacing={3}>
+        {/* Hero + dimensions */}
+        <Grid size={{ xs: 12, lg: 5 }}>
+          <Paper sx={CARD_SX}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+              <Box>
+                <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1 }}>
+                  Общий рейтинг
                 </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mt: 0.5 }}>
+                  <Typography
+                    variant="h2"
+                    fontWeight={800}
+                    sx={{ fontSize: { xs: '2.75rem', md: '3.5rem' }, lineHeight: 1 }}
+                  >
+                    {formatRating(current?.overallRating)}
+                  </Typography>
+                  <Typography variant="h6" color="text.secondary" fontWeight={500}>
+                    / {RATING_MAX}
+                  </Typography>
+                </Box>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
+                  {getTrendIcon(current?.trend)}
+                  <Typography variant="body2" color="text.secondary">
+                    {getTrendLabel(current?.trend)}
+                    {trendDelta ? ` · ${trendDelta}` : ''}
+                  </Typography>
+                </Stack>
+              </Box>
+              {cohort?.rank != null && cohort?.cohortSize != null && (
                 <Chip
-                  label={`${overallStats.percentile}% лучше других`}
-                  color={getRatingColor(internRating.overallRating)}
                   icon={<Star />}
+                  label={`${cohort.rank} из ${cohort.cohortSize}`}
+                  color="primary"
+                  variant="outlined"
+                  sx={{ fontWeight: 600 }}
                 />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {getTrendIcon(internRating.trend)}
-                  <Typography variant="body2" color="text.secondary">
-                    {getTrendText(internRating.trend)}
-                  </Typography>
-                </Box>
-              </Box>
+              )}
+            </Box>
 
-              <Grid container spacing={2}>
-                <Grid item xs={6} md={3}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h6" color="success.main">
-                      {internRating.qualityRating.toFixed(1)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Качество
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={6} md={3}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h6" color="warning.main">
-                      {internRating.speedRating.toFixed(1)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Скорость
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={6} md={3}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h6" color="info.main">
-                      {internRating.tasksCompleted}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Задач выполнено
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid item xs={6} md={3}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h6" color="primary.main">
-                      {internRating.experience} мес
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Опыт
-                    </Typography>
-                  </Paper>
-                </Grid>
+            {cohort && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                {formatCohortDelta(cohort.deltaFromAverage)}
+                {cohort.averageOverallRating != null && (
+                  <> · среднее по группе {formatRating(cohort.averageOverallRating)}</>
+                )}
+              </Typography>
+            )}
+
+            <Divider sx={{ my: 3 }} />
+
+            <RatingBar label="Качество" value={current?.qualityRating} color="success" />
+            <RatingBar label="Скорость" value={current?.speedRating} color="warning" />
+            <RatingBar label="Коммуникация" value={current?.communicationRating} color="info" />
+
+            {current?.lastUpdated && (
+              <Typography variant="caption" color="text.secondary">
+                Обновлено {formatDate(current.lastUpdated)}
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Mentor comment */}
+        <Grid size={{ xs: 12, lg: 7 }}>
+          <Paper sx={CARD_SX}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <FormatQuote color="primary" />
+              <Typography variant="h6" fontWeight={700}>
+                Комментарий ментора
+              </Typography>
+            </Box>
+            {current?.mentorName && (
+              <Typography variant="subtitle2" color="primary" sx={{ mb: 1.5 }}>
+                {current.mentorName}
+              </Typography>
+            )}
+            <Typography
+              variant="body1"
+              color={current?.comment ? 'text.primary' : 'text.secondary'}
+              sx={{ fontStyle: current?.comment ? 'normal' : 'italic', lineHeight: 1.7 }}
+            >
+              {current?.comment?.trim() || 'Ментор пока не оставил комментарий к оценке.'}
+            </Typography>
+          </Paper>
+        </Grid>
+
+        {/* Chart */}
+        <Grid size={{ xs: 12, lg: 7 }}>
+          <Paper sx={CARD_SX}>
+            <Typography variant="h6" fontWeight={700} gutterBottom>
+              Динамика рейтинга
+            </Typography>
+            {chartData.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+                Недостаточно данных для графика
+              </Typography>
+            ) : (
+              <Box sx={{ width: '100%', height: 260, mt: 1 }}>
+                <ResponsiveContainer>
+                  <LineChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e7e8ea" />
+                    <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, RATING_MAX]} tick={{ fontSize: 12 }} width={32} />
+                    <RechartsTooltip
+                      formatter={(value) => [formatRating(value), 'Рейтинг']}
+                      labelFormatter={(label) => label}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="rating"
+                      stroke="#0052cc"
+                      strokeWidth={2.5}
+                      dot={{ r: 4, fill: '#0052cc' }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Task KPIs */}
+        <Grid size={{ xs: 12, lg: 5 }}>
+          <Paper sx={CARD_SX}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+              <AssignmentTurnedIn color="primary" />
+              <Typography variant="h6" fontWeight={700}>
+                Задачи
+              </Typography>
+            </Box>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 6 }}>
+                <KpiTile label="Выполнено" value={tasks?.completed ?? 0} />
               </Grid>
-            </CardContent>
-          </Card>
-
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Статистика выполнения задач
-              </Typography>
-              
-              <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">Выполнено вовремя</Typography>
-                  <Typography variant="body2">
-                    {internRating.tasksOnTime} из {internRating.tasksCompleted}
+              <Grid size={{ xs: 6 }}>
+                <KpiTile
+                  label="Вовремя"
+                  value={tasks?.onTime ?? 0}
+                  sub={
+                    tasks?.onTimePercent != null
+                      ? `${Number(tasks.onTimePercent).toFixed(0)}%`
+                      : undefined
+                  }
+                />
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <KpiTile
+                  label="Среднее время"
+                  value={
+                    tasks?.averageTaskTimeHours != null
+                      ? `${Number(tasks.averageTaskTimeHours).toFixed(1)} ч`
+                      : '—'
+                  }
+                  sub="на задачу"
+                />
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <KpiTile
+                  label="Средняя оценка"
+                  value={formatRating(tasks?.averageTaskRating)}
+                  sub={
+                    tasks?.ratedTasksCount != null
+                      ? `${tasks.ratedTasksCount} оценённых`
+                      : undefined
+                  }
+                />
+              </Grid>
+            </Grid>
+            {tasks?.onTimePercent != null && tasks?.completed > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Выполнение в срок
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {Number(tasks.onTimePercent).toFixed(0)}%
                   </Typography>
                 </Box>
                 <LinearProgress
                   variant="determinate"
-                  value={(internRating.tasksOnTime / internRating.tasksCompleted) * 100}
+                  value={Math.min(100, Number(tasks.onTimePercent))}
+                  color="secondary"
                   sx={{ height: 8, borderRadius: 4 }}
                 />
               </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">Среднее время выполнения</Typography>
-                  <Typography variant="body2">
-                    {internRating.averageTaskTime} дней
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={Math.min((internRating.averageTaskTime / 7) * 100, 100)}
-                  color="warning"
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-              </Box>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Рекомендации
-              </Typography>
-              
-              <List dense>
-                {internRating.overallRating < 8.0 && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <TrendingUp color="warning" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Улучшить качество"
-                      secondary="Сосредоточьтесь на деталях и тестировании"
-                    />
-                  </ListItem>
-                )}
-                {internRating.averageTaskTime > 5 && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <Schedule color="warning" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Ускорить выполнение"
-                      secondary="Планируйте время более эффективно"
-                    />
-                  </ListItem>
-                )}
-                {internRating.tasksOnTime / internRating.tasksCompleted < 0.8 && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <CheckCircle color="warning" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Повысить пунктуальность"
-                      secondary="Ставьте более реалистичные сроки"
-                    />
-                  </ListItem>
-                )}
-                {internRating.overallRating >= 8.0 && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <Star color="success" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Отличная работа!"
-                      secondary="Продолжайте в том же духе"
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </CardContent>
-          </Card>
+            )}
+          </Paper>
         </Grid>
 
-        <Grid item xs={12} lg={4}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Сравнение с другими
+        {/* Recent rated tasks */}
+        <Grid size={{ xs: 12 }}>
+          <Paper sx={CARD_SX}>
+            <Typography variant="h6" fontWeight={700} gutterBottom>
+              Последние оценённые задачи
+            </Typography>
+            {recentRatedTasks.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                Пока нет оценённых задач
               </Typography>
-              
-              <List dense>
-                <ListItem>
-                  <ListItemIcon>
-                    <EmojiEvents color="primary" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Место в рейтинге"
-                    secondary={`${internRating.rank} из ${overallStats.totalInterns}`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <Star color="warning" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Ваш рейтинг"
-                    secondary={`${internRating.overallRating.toFixed(1)} / 10`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <TrendingUp color="success" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Средний рейтинг"
-                    secondary={`${overallStats.averageRating.toFixed(1)} / 10`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircle color="info" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Лучше чем"
-                    secondary={`${overallStats.percentile}% стажеров`}
-                  />
-                </ListItem>
-              </List>
-            </CardContent>
-          </Card>
-
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Достижения
-              </Typography>
-              
-              <List dense>
-                {internRating.overallRating >= 9.0 && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <Star color="success" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Отличный результат"
-                      secondary="Рейтинг выше 9.0"
+            ) : (
+              <Stack divider={<Divider flexItem />} spacing={0}>
+                {recentRatedTasks.map((task) => (
+                  <Box
+                    key={task.taskId}
+                    sx={{
+                      py: 2,
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 2,
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 200 }}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {task.title}
+                      </Typography>
+                      {task.feedback && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+                          {task.feedback}
+                        </Typography>
+                      )}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Schedule fontSize="small" color="action" />
+                          <Typography variant="caption" color="text.secondary">
+                            {formatDate(task.completedAt)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    <Chip
+                      icon={<Star />}
+                      label={task.rating != null ? `${task.rating} / ${RATING_MAX}` : '—'}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ fontWeight: 600 }}
                     />
-                  </ListItem>
-                )}
-                {internRating.tasksOnTime / internRating.tasksCompleted >= 0.9 && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <Schedule color="success" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Пунктуальность"
-                      secondary="90%+ задач вовремя"
-                    />
-                  </ListItem>
-                )}
-                {internRating.tasksCompleted >= 10 && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <Assignment color="success" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Активность"
-                      secondary="10+ выполненных задач"
-                    />
-                  </ListItem>
-                )}
-                {internRating.rank <= 3 && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <EmojiEvents color="warning" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Топ-3"
-                      secondary="Входите в тройку лучших"
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Дополнительная статистика
-              </Typography>
-              
-              <List dense>
-                <ListItem>
-                  <ListItemIcon>
-                    <TrendingUp color="info" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Изменение рейтинга"
-                    secondary={`${internRating.trend === 'up' ? '+' : ''}${(internRating.overallRating - internRating.previousRating).toFixed(1)}`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <Schedule color="info" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Последнее обновление"
-                    secondary={new Date(internRating.lastUpdated).toLocaleDateString('ru-RU')}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <Assignment color="info" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Процент вовремя"
-                    secondary={`${Math.round((internRating.tasksOnTime / internRating.tasksCompleted) * 100)}%`}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <EmojiEvents color="info" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Средний рейтинг команды"
-                    secondary={`${overallStats.averageRating.toFixed(1)}/10`}
-                  />
-                </ListItem>
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} lg={4}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Детальная статистика
-              </Typography>
-              
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Качество работы
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={(internRating.qualityRating || 0) * 10}
-                  color="success"
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  {(internRating.qualityRating || 0).toFixed(1)}/10
-                </Typography>
-              </Box>
-
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Скорость выполнения
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={(internRating.speedRating || 0) * 10}
-                  color="warning"
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  {(internRating.speedRating || 0).toFixed(1)}/10
-                </Typography>
-              </Box>
-
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Коммуникация
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={(internRating.communicationRating || 0) * 10}
-                  color="info"
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  {(internRating.communicationRating || 0).toFixed(1)}/10
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Прогресс по компетенциям
-              </Typography>
-              
-              <List dense>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircle color="success" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="React.js"
-                    secondary="Освоено"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckCircle color="success" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="JavaScript"
-                    secondary="Освоено"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <Schedule color="warning" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="TypeScript"
-                    secondary="В процессе"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <Schedule color="warning" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="CSS/SASS"
-                    secondary="В процессе"
-                  />
-                </ListItem>
-              </List>
-            </CardContent>
-          </Card>
+                  </Box>
+                ))}
+              </Stack>
+            )}
+          </Paper>
         </Grid>
       </Grid>
     </Box>
