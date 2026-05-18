@@ -45,7 +45,8 @@ const TREND_LABELS = {
   stable: 'Стабильно',
 };
 
-const TrendsChart = ({ dateFrom, dateTo }) => {
+const TrendsChart = ({ dateFrom, dateTo, compact = false, chartsOnly = false }) => {
+  const chartHeight = chartsOnly ? 140 : compact ? 220 : 300;
   const dispatch = useDispatch();
   const trends = useSelector((state) => state.dashboard.trends);
   const [metric, setMetric] = useState('completed_tasks');
@@ -68,14 +69,23 @@ const TrendsChart = ({ dateFrom, dateTo }) => {
   const summary = trends?.summary;
 
   return (
-    <Card>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-          <Typography variant="h6" fontWeight="bold">
+    <Card variant={chartsOnly ? 'outlined' : 'elevation'} elevation={chartsOnly ? 0 : 1}>
+      <CardContent sx={{ py: chartsOnly ? 1 : compact ? 1.5 : 2, '&:last-child': { pb: chartsOnly ? 1 : compact ? 1.5 : 2 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            mb: chartsOnly ? 0.75 : compact ? 1.5 : 2,
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
+          <Typography variant={chartsOnly ? 'body2' : compact ? 'subtitle1' : 'h6'} fontWeight="bold">
             Динамика показателей
           </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <FormControl size="small" sx={{ minWidth: 180 }}>
+          <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+            <FormControl size="small" sx={{ minWidth: chartsOnly ? 130 : compact ? 140 : 180 }}>
               <InputLabel>Метрика</InputLabel>
               <Select value={metric} label="Метрика" onChange={(e) => setMetric(e.target.value)}>
                 {METRICS.map((m) => (
@@ -90,7 +100,7 @@ const TrendsChart = ({ dateFrom, dateTo }) => {
               onChange={(_, val) => val && setGroupBy(val)}
             >
               {GROUP_OPTIONS.map((g) => (
-                <ToggleButton key={g.value} value={g.value} sx={{ px: 1.5, py: 0.3, fontSize: '0.75rem' }}>
+                <ToggleButton key={g.value} value={g.value} sx={{ px: 1, py: 0.2, fontSize: chartsOnly ? '0.7rem' : '0.75rem' }}>
                   {g.label}
                 </ToggleButton>
               ))}
@@ -99,11 +109,11 @@ const TrendsChart = ({ dateFrom, dateTo }) => {
         </Box>
 
         {dataPoints.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <LineChart data={dataPoints} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+              <XAxis dataKey="label" tick={{ fontSize: chartsOnly ? 10 : 12 }} />
+              <YAxis tick={{ fontSize: chartsOnly ? 10 : 12 }} width={chartsOnly ? 28 : undefined} />
               <Tooltip
                 contentStyle={{ borderRadius: 8, border: '1px solid #e1e2e4' }}
                 formatter={(value) => [typeof value === 'number' ? value.toFixed(1) : value, '']}
@@ -119,12 +129,12 @@ const TrendsChart = ({ dateFrom, dateTo }) => {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300, color: 'text.secondary' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: chartHeight, color: 'text.secondary' }}>
             Нет данных для отображения
           </Box>
         )}
 
-        {summary && (
+        {summary && !chartsOnly && (
           <Stack direction="row" spacing={1} sx={{ mt: 2 }} flexWrap="wrap" useFlexGap>
             <Chip label={`Всего: ${summary.total?.toFixed(0) ?? '—'}`} size="small" variant="outlined" />
             <Chip label={`Среднее: ${summary.average?.toFixed(1) ?? '—'}`} size="small" variant="outlined" />

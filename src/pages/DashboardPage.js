@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Box, Grid, CircularProgress, Alert, Typography } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -22,7 +22,10 @@ import InternsStatsChart from '../components/dashboard/InternsStatsChart';
 
 const DEFAULT_PERIOD_DAYS = 30;
 
-const DashboardPage = () => {
+const programsHasCharts = (data) =>
+  (data?.mostPopularPrograms?.length ?? 0) > 0 || (data?.bestPerformingPrograms?.length ?? 0) > 0;
+
+const DashboardPage = ({ compact = false }) => {
   const dispatch = useDispatch();
   const {
     data,
@@ -124,13 +127,87 @@ const DashboardPage = () => {
   };
 
   const dateFromISO = filters.dateFrom ? new Date(filters.dateFrom).toISOString() : undefined;
-  const dateToISO = filters.dateTo ? new Date(new Date(filters.dateTo).setHours(23, 59, 59, 999)).toISOString() : undefined;
+  const dateToISO = filters.dateTo
+    ? new Date(new Date(filters.dateTo).setHours(23, 59, 59, 999)).toISOString()
+    : undefined;
+
+  const showProgramsChart = useMemo(
+    () => !compact || programsHasCharts(programsStats),
+    [compact, programsStats]
+  );
+
+  const chartPanels = compact
+    ? [
+        { key: 'tasks', node: <TasksStatsCharts data={tasksStats} compact chartsOnly /> },
+        showProgramsChart
+          ? { key: 'programs', node: <ProgramsStatsChart data={programsStats} compact chartsOnly /> }
+          : null,
+        { key: 'mentors', node: <MentorsStatsChart data={mentorsStats} compact chartsOnly /> },
+        { key: 'interns', node: <InternsStatsChart data={internsStats} compact chartsOnly /> },
+      ].filter(Boolean)
+    : null;
+
+  const sectionSpacing = compact ? 1.5 : 3;
+
+  if (compact) {
+    return (
+      <Box
+        sx={{
+          width: '100%',
+          minWidth: 0,
+          maxWidth: '100%',
+        }}
+      >
+        <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
+          Дашборд
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 1, py: 0 }}>
+            {error}
+          </Alert>
+        )}
+
+        <DashboardFilters
+          filters={filters}
+          programs={programs}
+          mentors={mentors}
+          onApply={handleApply}
+          onReset={handleReset}
+          compact
+        />
+
+        {isLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+            <CircularProgress size={28} />
+          </Box>
+        )}
+
+        <Box sx={{ mb: sectionSpacing }}>
+          <TrendsChart dateFrom={dateFromISO} dateTo={dateToISO} compact chartsOnly />
+        </Box>
+
+        <Grid container spacing={sectionSpacing} sx={{ mb: sectionSpacing }}>
+          {chartPanels.map((panel) => (
+            <Grid key={panel.key} size={{ xs: 12, md: 6 }}>
+              {panel.node}
+            </Grid>
+          ))}
+        </Grid>
+
+        <KpiCards data={data} compact />
+      </Box>
+    );
+  }
 
   return (
-    <Box>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="bold">
+    <Box sx={{ width: '100%', minWidth: 0 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold" sx={{ textAlign: 'left' }}>
           Дашборд
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Сводка по стажировкам, задачам и команде за выбранный период
         </Typography>
       </Box>
 
@@ -149,31 +226,30 @@ const DashboardPage = () => {
       />
 
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+          <CircularProgress size={40} />
         </Box>
       )}
 
       <KpiCards data={data} />
 
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: sectionSpacing }}>
         <TrendsChart dateFrom={dateFromISO} dateTo={dateToISO} />
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={sectionSpacing} sx={{ mb: sectionSpacing }}>
+        <Grid size={{ xs: 12, xl: 6 }}>
           <TasksStatsCharts data={tasksStats} />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, xl: 6 }}>
           <ProgramsStatsChart data={programsStats} />
         </Grid>
       </Grid>
-
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={sectionSpacing}>
+        <Grid size={{ xs: 12, xl: 6 }}>
           <MentorsStatsChart data={mentorsStats} />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, xl: 6 }}>
           <InternsStatsChart data={internsStats} />
         </Grid>
       </Grid>

@@ -55,7 +55,10 @@ const PRIORITY_LABELS = {
   critical: 'Критический',
 };
 
-const TasksStatsCharts = ({ data }) => {
+const TasksStatsCharts = ({ data, compact = false, chartsOnly = false }) => {
+  const pieHeight = chartsOnly ? 100 : compact ? 160 : 200;
+  const areaHeight = compact ? 120 : 150;
+  const minHeight = chartsOnly ? 120 : compact ? 200 : 300;
   const statusDistribution = useMemo(() => {
     const dist = data?.distributionByStatus || {};
     return Object.entries(dist).map(([key, value]) => ({
@@ -85,44 +88,44 @@ const TasksStatsCharts = ({ data }) => {
 
   if (!data) {
     return (
-      <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+      <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight }}>
         <Typography color="text.secondary">Нет данных</Typography>
       </Card>
     );
   }
 
   return (
-    <Card sx={{ height: '100%', overflow: 'visible' }}>
-      <CardContent>
-        <Typography variant="h6" fontWeight="bold" gutterBottom>
+    <Card variant={chartsOnly ? 'outlined' : 'elevation'} elevation={chartsOnly ? 0 : 1} sx={{ height: '100%', overflow: 'visible' }}>
+      <CardContent sx={{ py: chartsOnly ? 1 : compact ? 1.5 : 2, '&:last-child': { pb: chartsOnly ? 1 : compact ? 1.5 : 2 } }}>
+        <Typography variant={chartsOnly ? 'body2' : compact ? 'subtitle1' : 'h6'} fontWeight="bold" sx={{ mb: chartsOnly ? 0.5 : 1 }}>
           Статистика задач
         </Typography>
 
-        <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
-          <Chip label={`Всего: ${data.totalTasks ?? 0}`} size="small" variant="outlined" />
-          <Chip label={`Просрочено: ${data.overdueTasks ?? 0}`} size="small" color="error" variant="outlined" />
-          {data.averageCompletionTime != null && (
+        <Stack direction="row" spacing={0.5} sx={{ mb: chartsOnly ? 0.75 : 2 }} flexWrap="wrap" useFlexGap>
+          <Chip label={`Всего: ${data.totalTasks ?? 0}`} size="small" variant="outlined" sx={chartsOnly ? { height: 22, fontSize: '0.65rem' } : undefined} />
+          <Chip label={`Просрочено: ${data.overdueTasks ?? 0}`} size="small" color="error" variant="outlined" sx={chartsOnly ? { height: 22, fontSize: '0.65rem' } : undefined} />
+          {!chartsOnly && data.averageCompletionTime != null && (
             <Chip label={`Ср. время: ${data.averageCompletionTime.toFixed(1)} дн.`} size="small" variant="outlined" />
           )}
-          {data.onTimeCompletionRate != null && (
+          {!chartsOnly && data.onTimeCompletionRate != null && (
             <Chip label={`В срок: ${data.onTimeCompletionRate.toFixed(0)}%`} size="small" color="success" variant="outlined" />
           )}
         </Stack>
 
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 200 } }}>
-            <Typography variant="body2" fontWeight={600} gutterBottom>
+        <Box sx={{ display: 'flex', gap: chartsOnly ? 1 : 2, flexWrap: 'wrap' }}>
+          <Box sx={{ flex: 1, minWidth: chartsOnly ? 120 : { xs: '100%', md: 200 } }}>
+            <Typography variant="caption" fontWeight={600} display="block" sx={{ mb: 0.25 }}>
               По статусам
             </Typography>
             {statusDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={pieHeight}>
                 <PieChart margin={{ top: 10 }}>
                   <Pie
                     data={statusDistribution}
                     cx="50%"
                     cy="50%"
-                    innerRadius={40}
-                    outerRadius={55}
+                    innerRadius={chartsOnly ? 22 : 40}
+                    outerRadius={chartsOnly ? 38 : 55}
                     paddingAngle={2}
                     dataKey="value"
                   >
@@ -137,7 +140,7 @@ const TasksStatsCharts = ({ data }) => {
                     verticalAlign="bottom"
                     iconType="circle"
                     iconSize={8}
-                    wrapperStyle={{ fontSize: 12 }}
+                    wrapperStyle={{ fontSize: chartsOnly ? 9 : 12 }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -146,16 +149,16 @@ const TasksStatsCharts = ({ data }) => {
             )}
           </Box>
 
-          <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 200 } }}>
-            <Typography variant="body2" fontWeight={600} gutterBottom>
+          <Box sx={{ flex: 1, minWidth: chartsOnly ? 120 : { xs: '100%', md: 200 } }}>
+            <Typography variant="caption" fontWeight={600} display="block" sx={{ mb: 0.25 }}>
               По приоритету
             </Typography>
             {priorityDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={pieHeight}>
                 <BarChart data={priorityDistribution} layout="vertical" margin={{ left: 10, right: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
                   <XAxis type="number" tick={{ fontSize: 12 }} />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={80} />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: chartsOnly ? 10 : 12 }} width={chartsOnly ? 56 : 80} />
                   <Tooltip />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                     {priorityDistribution.map((entry, i) => (
@@ -170,12 +173,12 @@ const TasksStatsCharts = ({ data }) => {
           </Box>
         </Box>
 
-        {completionTrend.length > 0 && (
+        {!chartsOnly && completionTrend.length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" fontWeight={600} gutterBottom>
               Тренд выполнения
             </Typography>
-            <ResponsiveContainer width="100%" height={150}>
+            <ResponsiveContainer width="100%" height={areaHeight}>
               <AreaChart data={completionTrend} margin={{ top: 5, right: 20, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} />

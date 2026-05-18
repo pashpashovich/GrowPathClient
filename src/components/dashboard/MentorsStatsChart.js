@@ -22,7 +22,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-import { Star, Person, Groups } from '@mui/icons-material';
+import { Star } from '@mui/icons-material';
 
 const WORKLOAD_COLORS = {
   low: '#00B8D9',
@@ -38,7 +38,10 @@ const WORKLOAD_LABELS = {
   overloaded: 'Перегрузка',
 };
 
-const MentorsStatsChart = ({ data }) => {
+const MentorsStatsChart = ({ data, compact = false, chartsOnly = false }) => {
+  const barHeight = chartsOnly ? 100 : compact ? 160 : 200;
+  const minHeight = chartsOnly ? 120 : compact ? 200 : 300;
+  const topMentorsLimit = chartsOnly ? 0 : compact ? 3 : undefined;
   const workloadData = useMemo(
     () => (data?.workloadDistribution || []).map((m) => ({
       name: m.mentorName?.split(' ').slice(0, 2).join(' ') || '—',
@@ -51,40 +54,42 @@ const MentorsStatsChart = ({ data }) => {
 
   if (!data) {
     return (
-      <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+      <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight }}>
         <Typography color="text.secondary">Нет данных</Typography>
       </Card>
     );
   }
 
   return (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Typography variant="h6" fontWeight="bold" gutterBottom>
+    <Card variant={chartsOnly ? 'outlined' : 'elevation'} elevation={chartsOnly ? 0 : 1} sx={{ height: '100%' }}>
+      <CardContent sx={{ py: chartsOnly ? 1 : compact ? 1.5 : 2, '&:last-child': { pb: chartsOnly ? 1 : compact ? 1.5 : 2 } }}>
+        <Typography variant={chartsOnly ? 'body2' : compact ? 'subtitle1' : 'h6'} fontWeight="bold" sx={{ mb: chartsOnly ? 0.5 : 1 }}>
           Статистика менторов
         </Typography>
 
-        <Stack direction="row" spacing={1} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
-          <Chip icon={<Groups />} label={`Всего: ${data.totalMentors ?? 0}`} size="small" variant="outlined" />
-          <Chip icon={<Person />} label={`Активных: ${data.activeMentors ?? 0}`} size="small" color="primary" variant="outlined" />
-          {data.averageInternsPerMentor != null && (
+        <Stack direction="row" spacing={0.5} sx={{ mb: chartsOnly ? 0.75 : 2 }} flexWrap="wrap" useFlexGap>
+          <Chip label={`Всего: ${data.totalMentors ?? 0}`} size="small" variant="outlined" sx={chartsOnly ? { height: 22, fontSize: '0.65rem' } : undefined} />
+          <Chip label={`Активных: ${data.activeMentors ?? 0}`} size="small" color="primary" variant="outlined" sx={chartsOnly ? { height: 22, fontSize: '0.65rem' } : undefined} />
+          {!chartsOnly && data.averageInternsPerMentor != null && (
             <Chip label={`Ср. стажеров: ${data.averageInternsPerMentor.toFixed(1)}`} size="small" variant="outlined" />
           )}
-          {data.averageReviewTime != null && (
+          {!chartsOnly && data.averageReviewTime != null && (
             <Chip label={`Ср. время проверки: ${data.averageReviewTime.toFixed(1)} ч`} size="small" variant="outlined" />
           )}
         </Stack>
 
         {workloadData.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" fontWeight={600} gutterBottom>
-              Нагрузка менторов
-            </Typography>
-            <ResponsiveContainer width="100%" height={200}>
+          <Box sx={{ mb: chartsOnly ? 0 : 2 }}>
+            {!chartsOnly && (
+              <Typography variant="body2" fontWeight={600} gutterBottom>
+                Нагрузка менторов
+              </Typography>
+            )}
+            <ResponsiveContainer width="100%" height={barHeight}>
               <BarChart data={workloadData} margin={{ left: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+                <XAxis dataKey="name" tick={{ fontSize: chartsOnly ? 9 : 11 }} interval={0} angle={chartsOnly ? -20 : 0} textAnchor={chartsOnly ? 'end' : 'middle'} height={chartsOnly ? 48 : 30} />
+                <YAxis tick={{ fontSize: chartsOnly ? 10 : 12 }} width={chartsOnly ? 24 : undefined} />
                 <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e1e2e4' }} />
                 <Bar dataKey="Стажеры" radius={[4, 4, 0, 0]}>
                   {workloadData.map((entry, i) => (
@@ -96,13 +101,13 @@ const MentorsStatsChart = ({ data }) => {
           </Box>
         )}
 
-        {data.topMentors && data.topMentors.length > 0 && (
+        {!chartsOnly && topMentorsLimit !== 0 && data.topMentors && data.topMentors.length > 0 && (
           <Box>
             <Typography variant="body2" fontWeight={600} gutterBottom>
               Топ менторов
             </Typography>
             <List dense disablePadding>
-              {data.topMentors.map((mentor) => (
+              {(topMentorsLimit ? data.topMentors.slice(0, topMentorsLimit) : data.topMentors).map((mentor) => (
                 <ListItem key={mentor.mentorId} disableGutters sx={{ px: 0 }}>
                   <ListItemAvatar sx={{ minWidth: 40 }}>
                     <Avatar sx={{ width: 32, height: 32, bgcolor: '#0052cc', fontSize: 14 }}>

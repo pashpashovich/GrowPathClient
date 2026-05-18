@@ -3,7 +3,6 @@ import { Box, Card, CardContent, Grid, Typography } from '@mui/material';
 import {
   People,
   School,
-  Assignment,
   CheckCircle,
   Warning,
   Star,
@@ -18,7 +17,7 @@ const TREND_COLORS = {
   neutral: '#737685',
 };
 
-const TrendBadge = ({ value }) => {
+const TrendBadge = ({ value, compact }) => {
   if (!value) return null;
   const str = String(value);
   const isPositive = str.startsWith('+');
@@ -30,48 +29,70 @@ const TrendBadge = ({ value }) => {
       sx={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 0.3,
-        px: 0.8,
-        py: 0.1,
-        borderRadius: 2,
+        gap: 0.2,
+        px: 0.5,
+        py: 0,
+        borderRadius: 1,
         bgcolor: `${color}14`,
         color,
-        fontSize: '0.75rem',
+        fontSize: compact ? '0.65rem' : '0.7rem',
         fontWeight: 700,
       }}
     >
-      {isPositive ? <TrendingUp sx={{ fontSize: 14 }} /> : isNegative ? <TrendingDown sx={{ fontSize: 14 }} /> : null}
+      {isPositive ? <TrendingUp sx={{ fontSize: 11 }} /> : isNegative ? <TrendingDown sx={{ fontSize: 11 }} /> : null}
       {str}
     </Box>
   );
 };
 
-const KpiCard = ({ icon, value, label, trend, color }) => (
-  <Card sx={{ height: '100%' }}>
-    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2, '&:last-child': { pb: 2 } }}>
+const KpiCard = ({ icon, value, label, trend, color, compact }) => (
+  <Card variant="outlined" sx={{ height: '100%' }}>
+    <CardContent
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: compact ? 1 : 1.5,
+        py: compact ? 0.75 : 2,
+        px: compact ? 1 : 2,
+        '&:last-child': { pb: compact ? 0.75 : 2 },
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: 48,
-          height: 48,
-          borderRadius: 2,
+          width: compact ? 32 : 48,
+          height: compact ? 32 : 48,
+          borderRadius: 1.5,
           bgcolor: `${color}14`,
           color,
           flexShrink: 0,
+          '& .MuiSvgIcon-root': { fontSize: compact ? 18 : 24 },
         }}
       >
         {icon}
       </Box>
-      <Box sx={{ minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-          <Typography variant="h4" fontWeight="bold" sx={{ color, lineHeight: 1.2 }}>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, flexWrap: 'wrap' }}>
+          <Typography
+            variant={compact ? 'h6' : 'h4'}
+            fontWeight="bold"
+            sx={{ color, lineHeight: 1.1 }}
+          >
             {value}
           </Typography>
-          {trend && <TrendBadge value={trend} />}
+          {trend && <TrendBadge value={trend} compact={compact} />}
         </Box>
-        <Typography variant="body2" color="text.secondary" noWrap>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{
+            display: 'block',
+            lineHeight: 1.2,
+            fontSize: compact ? '0.65rem' : undefined,
+          }}
+        >
           {label}
         </Typography>
       </Box>
@@ -79,7 +100,7 @@ const KpiCard = ({ icon, value, label, trend, color }) => (
   </Card>
 );
 
-const KpiCards = ({ data }) => {
+const KpiCards = ({ data, compact = false }) => {
   const stats = data?.stats || {};
   const trends = data?.trends || {};
 
@@ -125,11 +146,15 @@ const KpiCards = ({ data }) => {
     },
   ];
 
+  const gridSize = compact
+    ? { xs: 6, sm: 4, md: 2 }
+    : { xs: 12, sm: 6, md: 4, lg: 2 };
+
   return (
-    <Grid container spacing={2} sx={{ mb: 3 }}>
+    <Grid container spacing={compact ? 1 : 2}>
       {cards.map((card) => (
-        <Grid item xs={12} sm={6} md={4} lg={2} key={card.label}>
-          <KpiCard {...card} />
+        <Grid size={gridSize} key={card.label}>
+          <KpiCard {...card} compact={compact} />
         </Grid>
       ))}
     </Grid>

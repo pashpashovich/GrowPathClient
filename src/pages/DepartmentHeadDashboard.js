@@ -187,7 +187,7 @@ const DepartmentHeadDashboard = () => {
     }
 
     if (location.pathname === '/department-head/dashboard') {
-      return <DashboardPage />;
+      return <DashboardPage compact />;
     }
 
     if (location.pathname === '/department-head/stats') {
@@ -210,6 +210,8 @@ const DepartmentHeadDashboard = () => {
 
   const showTaskButton =
     location.pathname === '/department-head/tasks';
+
+  const isDashboardPage = location.pathname === '/department-head/dashboard';
 
   const getPageTitle = () => {
     if (location.pathname === '/department-head/roadmap') return 'Дорожная карта';
@@ -238,10 +240,11 @@ const DepartmentHeadDashboard = () => {
             ml: sidebarOpen ? '280px' : '80px',
             transition: 'margin-left 0.3s ease',
             minHeight: `calc(100vh - ${DASHBOARD_APP_BAR_HEIGHT}px)`,
-            maxHeight: `calc(100vh - ${DASHBOARD_APP_BAR_HEIGHT}px)`,
             backgroundColor: 'background.default',
-            display: 'flex',
-            flexDirection: 'column',
+            py: isDashboardPage ? 1 : 3,
+            px: isDashboardPage ? 2 : 3,
+            overflowX: 'auto',
+            minWidth: 0,
             width: '100%',
           }}
         >
@@ -255,9 +258,8 @@ const DepartmentHeadDashboard = () => {
               justifyContent: 'space-between',
               alignItems: 'center',
               mb: 2,
-              mt: 2,
-              mx: 3,
-              flexShrink: 0,
+              flexWrap: 'wrap',
+              gap: 2,
             }}>
               <Typography variant="h6" component="div">
                 {getPageTitle()}
@@ -272,17 +274,7 @@ const DepartmentHeadDashboard = () => {
             </Box>
           )}
 
-          <Box
-            sx={{
-              flex: 1,
-              py: showTaskButton ? 0 : 3,
-              px: 3,
-              overflowY: 'auto',
-              minWidth: 0,
-            }}
-          >
-            <Box sx={{ maxWidth: 1280, mx: 'auto', width: '100%' }}>{getCurrentPage()}</Box>
-          </Box>
+          <Box sx={{ width: '100%', minWidth: 0 }}>{getCurrentPage()}</Box>
         </Box>
       </Box>
 
