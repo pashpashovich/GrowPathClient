@@ -446,7 +446,7 @@ const TaskReviewPanel = ({ onViewTask }) => {
                   </Typography>
                   <List dense>
                     {selectedTask.submissionLinks.map((link, index) => (
-                      <ListItem key={index}>
+                      <ListItem key={index} component="a" href={link} target="_blank" rel="noopener noreferrer">
                         <LinkIcon sx={{ mr: 1 }} />
                         <ListItemText primary={link} />
                       </ListItem>

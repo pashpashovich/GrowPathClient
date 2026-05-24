@@ -97,9 +97,9 @@ export const submitTaskAsync = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await taskAPI.submitTask(id, data);
-      return response.data;
+      return response.data?.data ?? response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка при отправке задачи');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка при отправке задачи'));
     }
   }
 );

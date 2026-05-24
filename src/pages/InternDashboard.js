@@ -46,6 +46,10 @@ const InternDashboard = () => {
     setSubmissionTask(null);
   };
 
+  const handleSubmissionComplete = () => {
+    dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }));
+  };
+
   const handleLogout = async () => {
     await dispatch(logoutAsync());
     navigate('/login');
@@ -179,6 +183,7 @@ const InternDashboard = () => {
             <TaskSubmissionForm
               task={submissionTask}
               onClose={handleCloseSubmissionForm}
+              onSubmitted={handleSubmissionComplete}
             />
           )}
         </Box>

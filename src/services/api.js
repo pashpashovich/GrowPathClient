@@ -360,6 +360,14 @@ export const taskAPI = {
   completeTask: (id) => api.patch(`${tasksPath}/${id}/complete`),
   takeTask: (id) => api.post(`${tasksPath}/${id}/take`),
   submitTask: (id, data) => api.post(`${tasksPath}/${id}/submit`, data),
+  uploadTaskFile: (id, formData) =>
+    api.post(`${tasksPath}/${id}/files`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  presignTaskArtifactUpload: (id, data) =>
+    api.post(`${tasksPath}/${id}/artifacts/presign-upload`, data),
+  confirmTaskArtifactUpload: (id, data) =>
+    api.post(`${tasksPath}/${id}/artifacts/confirm`, data),
   reviewTask: (id, data) => api.post(`${tasksPath}/${id}/review`, data),
   addComment: (id, data) => api.post(`${tasksPath}/${id}/comments`, data),
   getComments: (id) => api.get(`${tasksPath}/${id}/comments`),
