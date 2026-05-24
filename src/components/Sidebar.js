@@ -118,6 +118,18 @@ const Sidebar = ({ open, onClose }) => {
       active: location.pathname === '/hr/programs',
     },
     {
+      text: 'Менторы',
+      icon: <Groups />,
+      path: '/hr/mentors',
+      active: location.pathname.startsWith('/hr/mentors'),
+    },
+    {
+      text: 'Стажёры',
+      icon: <Person />,
+      path: '/hr/interns',
+      active: location.pathname.startsWith('/hr/interns'),
+    },
+    {
       text: 'Аналитика и отчеты',
       icon: <BarChart />,
       path: '/hr/analytics',
@@ -128,12 +140,6 @@ const Sidebar = ({ open, onClose }) => {
       icon: <EmojiEvents />,
       path: '/hr/rating',
       active: location.pathname.startsWith('/hr/rating'),
-    },
-    {
-      text: 'Менторы',
-      icon: <Groups />,
-      path: '/hr/mentors',
-      active: location.pathname.startsWith('/hr/mentors'),
     },
     {
       text: 'Рассылки',
@@ -178,6 +184,18 @@ const Sidebar = ({ open, onClose }) => {
       active: location.pathname === '/department-head/programs',
     },
     {
+      text: 'Менторы',
+      icon: <Groups />,
+      path: '/department-head/mentors',
+      active: location.pathname.startsWith('/department-head/mentors'),
+    },
+    {
+      text: 'Стажёры',
+      icon: <Person />,
+      path: '/department-head/interns',
+      active: location.pathname.startsWith('/department-head/interns'),
+    },
+    {
       text: 'Аналитика и отчеты',
       icon: <BarChart />,
       path: '/department-head/analytics',
@@ -188,12 +206,6 @@ const Sidebar = ({ open, onClose }) => {
       icon: <EmojiEvents />,
       path: '/department-head/rating',
       active: location.pathname.startsWith('/department-head/rating'),
-    },
-    {
-      text: 'Менторы',
-      icon: <Groups />,
-      path: '/department-head/mentors',
-      active: location.pathname.startsWith('/department-head/mentors'),
     },
     {
       text: 'Доска задач',

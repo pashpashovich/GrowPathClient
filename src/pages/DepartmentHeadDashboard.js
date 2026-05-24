@@ -23,6 +23,8 @@ import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
 import RoadmapPage from './RoadmapPage';
 import DashboardPage from './DashboardPage';
+import HRMentorsPage from './HRMentorsPage';
+import HRInternsPage from './HRInternsPage';
 
 const DepartmentHeadDashboard = () => {
   const dispatch = useDispatch();
@@ -44,7 +46,9 @@ const DepartmentHeadDashboard = () => {
   const shouldLoadProgramList =
     isProgramsTab ||
     location.pathname.startsWith('/department-head/rating') ||
-    location.pathname.startsWith('/department-head/analytics');
+    location.pathname.startsWith('/department-head/analytics') ||
+    location.pathname.startsWith('/department-head/mentors') ||
+    location.pathname.startsWith('/department-head/interns');
 
   useEffect(() => {
     if (shouldLoadProgramList) {
@@ -122,16 +126,11 @@ const DepartmentHeadDashboard = () => {
     }
 
     if (location.pathname.startsWith('/department-head/mentors')) {
-      return (
-        <Box sx={{ maxWidth: 720, mx: 'auto', py: 2 }}>
-          <Typography variant="h2" component="h1" gutterBottom>
-            Менторы
-          </Typography>
-          <Typography color="text.secondary" variant="body1">
-            Раздел в разработке. Здесь появится работа с менторами и назначениями.
-          </Typography>
-        </Box>
-      );
+      return <HRMentorsPage />;
+    }
+
+    if (location.pathname.startsWith('/department-head/interns')) {
+      return <HRInternsPage />;
     }
 
     if (location.pathname === '/department-head/programs') {
@@ -223,6 +222,7 @@ const DepartmentHeadDashboard = () => {
     if (location.pathname.startsWith('/department-head/rating')) return 'Рейтинг стажеров';
     if (location.pathname.startsWith('/department-head/analytics')) return 'Аналитика и отчеты';
     if (location.pathname.startsWith('/department-head/mentors')) return 'Менторы';
+    if (location.pathname.startsWith('/department-head/interns')) return 'Стажёры';
     return 'Профиль';
   };
 

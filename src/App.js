@@ -154,6 +154,12 @@ function App() {
                     </ProtectedRoute>
                   } />
 
+                  <Route path="/hr/interns" element={
+                    <ProtectedRoute requiredRole="hr">
+                      <HRDashboard />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/hr/mailings" element={
                     <ProtectedRoute requiredRole="hr">
                       <HRDashboard />
@@ -191,6 +197,12 @@ function App() {
                   } />
 
                   <Route path="/department-head/mentors" element={
+                    <ProtectedRoute requiredRole="department_head">
+                      <DepartmentHeadDashboard />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/department-head/interns" element={
                     <ProtectedRoute requiredRole="department_head">
                       <DepartmentHeadDashboard />
                     </ProtectedRoute>

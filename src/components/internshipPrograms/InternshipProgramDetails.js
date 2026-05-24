@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -18,7 +18,11 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Tabs,
+  Tab,
 } from '@mui/material';
+import ProgramMentorsSection from './ProgramMentorsSection';
+import ProgramInternsSection from './ProgramInternsSection';
 import {
   CalendarToday,
   School,
@@ -38,6 +42,11 @@ import ActionSnackbar from '../mailings/ActionSnackbar';
 const InternshipProgramDetails = ({ open, onClose, program }) => {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [detailTab, setDetailTab] = useState(0);
+
+  useEffect(() => {
+    if (open) setDetailTab(0);
+  }, [open, program?.id]);
 
   if (!program) return null;
 
@@ -103,7 +112,7 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth={detailTab === 0 ? 'md' : 'lg'} fullWidth>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Typography variant="h5" component="h2">
@@ -119,6 +128,30 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
       
       <DialogContent>
         <Box sx={{ pt: 1 }}>
+          <Tabs
+            value={detailTab}
+            onChange={(_, v) => setDetailTab(v)}
+            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab label="Обзор" />
+            <Tab label="Менторы" />
+            <Tab label="Стажёры" />
+          </Tabs>
+
+          {detailTab === 1 && (
+            <ProgramMentorsSection programId={String(program.id)} compact />
+          )}
+
+          {detailTab === 2 && (
+            <ProgramInternsSection
+              programId={String(program.id)}
+              program={program}
+              compact
+            />
+          )}
+
+          {detailTab === 0 && (
+          <>
           <Paper sx={{ p: 2, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
               Описание программы
@@ -298,6 +331,8 @@ const InternshipProgramDetails = ({ open, onClose, program }) => {
               </Grid>
             </Grid>
           </Paper>
+          </>
+          )}
         </Box>
       </DialogContent>
       

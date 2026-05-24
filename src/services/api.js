@@ -283,6 +283,21 @@ export const hrAPI = {
       responseType: 'blob',
       timeout: 120000,
     }),
+
+  getProgramMentors: (programId) =>
+    api.get(`${internshipProgramsPath}/${programId}/mentors`),
+  assignProgramMentor: (programId, data) =>
+    api.post(`${internshipProgramsPath}/${programId}/mentors`, data),
+  unassignProgramMentor: (programId, userId) =>
+    api.delete(`${internshipProgramsPath}/${programId}/mentors/${userId}`),
+
+  getProgramInterns: (programId) =>
+    api.get(`${internshipProgramsPath}/${programId}/interns`),
+  assignProgramIntern: (programId, data) =>
+    api.post(`${internshipProgramsPath}/${programId}/interns`, data),
+  unassignProgramIntern: (programId, userId) =>
+    api.delete(`${internshipProgramsPath}/${programId}/interns/${userId}`),
+
   getReports: (params) => api.get(reportsPath, { params }),
   getDashboardData: (params) => api.get(dashboardPath, { params }),
 };

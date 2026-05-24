@@ -16,6 +16,8 @@ import InternshipProgramDetails from '../components/internshipPrograms/Internshi
 import AnalyticsPage from './AnalyticsPage';
 import ProfilePage from './ProfilePage';
 import MailingsPage from './MailingsPage';
+import HRMentorsPage from './HRMentorsPage';
+import HRInternsPage from './HRInternsPage';
 
 const HRDashboard = () => {
   const dispatch = useDispatch();
@@ -33,7 +35,9 @@ const HRDashboard = () => {
     isProgramsTab ||
     location.pathname.startsWith('/hr/programs') ||
     location.pathname.startsWith('/hr/rating') ||
-    location.pathname.startsWith('/hr/analytics');
+    location.pathname.startsWith('/hr/analytics') ||
+    location.pathname.startsWith('/hr/mentors') ||
+    location.pathname.startsWith('/hr/interns');
 
   useEffect(() => {
     if (shouldLoadProgramList) {
@@ -91,16 +95,11 @@ const HRDashboard = () => {
     }
 
     if (location.pathname.startsWith('/hr/mentors')) {
-      return (
-        <Box sx={{ maxWidth: 720, mx: 'auto', py: 2 }}>
-          <Typography variant="h2" component="h1" gutterBottom>
-            Менторы
-          </Typography>
-          <Typography color="text.secondary" variant="body1">
-            Раздел в разработке. Здесь появится работа с менторами и назначениями.
-          </Typography>
-        </Box>
-      );
+      return <HRMentorsPage />;
+    }
+
+    if (location.pathname.startsWith('/hr/interns')) {
+      return <HRInternsPage />;
     }
 
     if (location.pathname === '/hr/programs') {
