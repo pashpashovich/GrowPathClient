@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -37,12 +37,16 @@ import {
   fetchTaskProfileAsync,
   fetchTasksAsync,
   patchTaskStatusAsync,
+  deleteTaskAsync,
 } from '../../store/slices/taskSlice';
 import { useTheme } from '@mui/material/styles';
 import TaskForm from './TaskForm';
 import TaskDetails from './TaskDetails';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import ActionSnackbar from '../mailings/ActionSnackbar';
+import { getApiErrorMessage } from '../../utils/apiResponse';
 
-const KanbanBoard = ({ onEdit, onDelete, onView }) => {
+const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
   const dispatch = useDispatch();
   const theme = useTheme();
   const tasks = useSelector((state) => state.task?.tasks || []);
@@ -60,7 +64,9 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const [editingTask, setEditingTask] = useState(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState('');
-  const buttonRef = useRef(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'error' });
 
   const columns = [
     { id: 'pending', title: 'Доступно', color: theme.palette.grey[500] },
@@ -90,6 +96,18 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
+
+  useEffect(() => {
+    if (!formRequest) return;
+    if (formRequest.mode === 'create') {
+      setEditingTask(null);
+      setIsTaskFormOpen(true);
+    } else if (formRequest.mode === 'edit' && formRequest.task) {
+      setEditingTask(formRequest.task);
+      setIsTaskFormOpen(true);
+    }
+    onFormRequestHandled?.();
+  }, [formRequest, onFormRequestHandled]);
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -130,37 +148,57 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
   const handleMenuOpen = (event, task) => {
     event.preventDefault();
     event.stopPropagation();
-    buttonRef.current = event.currentTarget;
-    if (document.contains(event.currentTarget)) {
-      setAnchorEl(event.currentTarget);
-      setSelectedTask(task);
-    }
+    setAnchorEl(event.currentTarget);
+    setSelectedTask(task);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setSelectedTask(null);
   };
 
   const handleViewTask = () => {
+    if (!selectedTask) return;
     dispatch(setCurrentTask(selectedTask));
     setIsTaskDetailsOpen(true);
+    handleMenuClose();
   };
 
   const handleEditTask = () => {
+    if (!selectedTask) return;
     setEditingTask(selectedTask);
     setIsTaskFormOpen(true);
+    handleMenuClose();
   };
 
   const handleDeleteTask = () => {
-    if (window.confirm('Вы уверены, что хотите удалить это задание?')) {
-      onDelete(selectedTask.id);
+    if (!selectedTask) return;
+    setDeleteTarget(selectedTask);
+    handleMenuClose();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await dispatch(deleteTaskAsync(deleteTarget.id)).unwrap();
+      setDeleteTarget(null);
+      loadTasks();
+    } catch (e) {
+      setSnackbar({
+        open: true,
+        message: getApiErrorMessage(e, 'Не удалось удалить задание'),
+        severity: 'error',
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
   const handleChangeStatus = () => {
+    if (!selectedTask) return;
     setNewStatus(selectedTask.status);
     setIsStatusDialogOpen(true);
+    handleMenuClose();
   };
 
   const handleStatusUpdate = async () => {
@@ -175,7 +213,11 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
       ).unwrap();
       loadTasks();
     } catch (err) {
-      alert(typeof err === 'string' ? err : 'Переход недоступен. Проверьте статус и роль.');
+      setSnackbar({
+        open: true,
+        message: getApiErrorMessage(err, 'Переход недоступен. Проверьте статус и роль.'),
+        severity: 'error',
+      });
     }
     setIsStatusDialogOpen(false);
     setNewStatus('');
@@ -223,7 +265,11 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
       await dispatch(patchTaskStatusAsync({ id, body: { to: columnId } })).unwrap();
       loadTasks();
     } catch (err) {
-      alert(typeof err === 'string' ? err : 'Перемещение в эту колонку сейчас недоступно');
+      setSnackbar({
+        open: true,
+        message: getApiErrorMessage(err, 'Перемещение в эту колонку сейчас недоступно'),
+        severity: 'error',
+      });
     }
   };
 
@@ -546,28 +592,10 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{
-          paper: {
-            sx: {
-              minWidth: 180,
-              zIndex: 1300,
-              mt: 0.5,
-            }
-          }
-        }}
-        disableScrollLock={true}
-        disablePortal={true}
-        keepMounted={false}
-        MenuListProps={{
-          'aria-labelledby': 'task-menu-button',
+          paper: { sx: { minWidth: 200, mt: 0.5 } },
         }}
       >
         <MenuItem onClick={(e) => {
@@ -660,9 +688,30 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
         onClose={() => setIsTaskDetailsOpen(false)}
         onEdit={() => {
           setIsTaskDetailsOpen(false);
-          setEditingTask(selectedTask);
-          setIsTaskFormOpen(true);
+          const task = selectedTask;
+          if (task) {
+            setEditingTask(task);
+            setIsTaskFormOpen(true);
+          }
         }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Удаление задания"
+        message={deleteTarget ? `Удалить задание «${deleteTarget.title}»?` : ''}
+        confirmLabel="Удалить"
+        confirmColor="error"
+        confirming={deleting}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
+
+      <ActionSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
       />
     </Box>
   );

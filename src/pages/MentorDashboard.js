@@ -3,7 +3,6 @@ import { Box, Typography, Button, Modal } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
 import DashboardAppBar, { DASHBOARD_APP_BAR_HEIGHT } from '../components/DashboardAppBar';
-import TaskForm from '../components/tasks/TaskForm';
 import TaskDetails from '../components/tasks/TaskDetails';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
@@ -12,7 +11,6 @@ import ProfilePage from './ProfilePage';
 import MailingsPage from './MailingsPage';
 import Sidebar from '../components/Sidebar';
 import { useDispatch } from 'react-redux';
-import { deleteTaskAsync, fetchTaskProfileAsync } from '../store/slices/taskSlice';
 import { logoutAsync } from '../store/slices/authSlice';
 import { useLocation } from 'react-router-dom';
 
@@ -20,19 +18,16 @@ const MentorDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const [openForm, setOpenForm] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState(null);
+  const [taskFormRequest, setTaskFormRequest] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleOpenForm = (task = null) => {
-    setTaskToEdit(task);
-    setOpenForm(true);
+  const handleOpenCreateTask = () => {
+    setTaskFormRequest({ mode: 'create' });
   };
 
-  const handleCloseForm = () => {
-    setOpenForm(false);
-    setTaskToEdit(null);
+  const handleOpenEditTask = (task) => {
+    setTaskFormRequest({ mode: 'edit', task });
   };
 
   const handleViewTask = (task) => {
@@ -41,16 +36,6 @@ const MentorDashboard = () => {
 
   const handleCloseTaskDetails = () => {
     setSelectedTask(null);
-  };
-
-  const handleDeleteTask = (taskId) => {
-    if (window.confirm('Вы уверены, что хотите удалить это задание?')) {
-      dispatch(deleteTaskAsync(taskId));
-    }
-  };
-
-  const handleTaskCreated = () => {
-    dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }));
   };
 
   const handleLogout = async () => {
@@ -104,14 +89,13 @@ const MentorDashboard = () => {
             <Typography variant="h4" fontWeight="bold">
               Доска задач
             </Typography>
-            <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenForm()}>
+            <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreateTask}>
               Создать задание
             </Button>
           </Box>
           <KanbanBoard
-            onEdit={handleOpenForm}
-            onDelete={handleDeleteTask}
-            onView={handleViewTask}
+            formRequest={taskFormRequest}
+            onFormRequestHandled={() => setTaskFormRequest(null)}
           />
         </Box>
       );
@@ -185,7 +169,7 @@ const MentorDashboard = () => {
                   onClose={handleCloseTaskDetails}
                   onEdit={() => {
                     handleCloseTaskDetails();
-                    handleOpenForm(selectedTask);
+                    handleOpenEditTask(selectedTask);
                   }}
                   canEdit={true} 
                 />
@@ -193,35 +177,6 @@ const MentorDashboard = () => {
         </Box>
       </Modal>
 
-      <Modal
-        open={openForm}
-        onClose={handleCloseForm}
-        aria-labelledby="task-form-modal-title"
-        aria-describedby="task-form-modal-description"
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', md: 800 },
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            borderRadius: 2,
-          }}
-        >
-          <TaskForm
-            open={openForm}
-            taskToEdit={taskToEdit}
-            onClose={handleCloseForm}
-            onCreated={handleTaskCreated}
-          />
-        </Box>
-      </Modal>
       </Box>
     </Box>
   );

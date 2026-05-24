@@ -8,7 +8,6 @@ import {
   fetchInternshipProgramsAsync,
   fetchInternshipProgramByIdAsync,
 } from '../store/slices/internshipProgramSlice';
-import { deleteTaskAsync, fetchTaskProfileAsync } from '../store/slices/taskSlice';
 import DashboardAppBar, { DASHBOARD_APP_BAR_HEIGHT } from '../components/DashboardAppBar';
 import Sidebar from '../components/Sidebar';
 import ProfilePage from './ProfilePage';
@@ -17,7 +16,6 @@ import InternshipProgramsList from '../components/internshipPrograms/InternshipP
 import InternshipProgramForm from '../components/internshipPrograms/InternshipProgramForm';
 import InternshipProgramDetails from '../components/internshipPrograms/InternshipProgramDetails';
 import AnalyticsPage from './AnalyticsPage';
-import TaskForm from '../components/tasks/TaskForm';
 import TaskDetails from '../components/tasks/TaskDetails';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
@@ -37,8 +35,7 @@ const DepartmentHeadDashboard = () => {
   const [editingProgram, setEditingProgram] = useState(null);
   const [viewingProgram, setViewingProgram] = useState(null);
 
-  const [openTaskForm, setOpenTaskForm] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState(null);
+  const [taskFormRequest, setTaskFormRequest] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
 
   const normalizedPath = location.pathname.replace(/\/$/, '') || '/';
@@ -92,14 +89,12 @@ const DepartmentHeadDashboard = () => {
     setIsProgramDetailsOpen(true);
   };
 
-  const handleOpenTaskForm = (task = null) => {
-    setTaskToEdit(task);
-    setOpenTaskForm(true);
+  const handleOpenCreateTask = () => {
+    setTaskFormRequest({ mode: 'create' });
   };
 
-  const handleCloseTaskForm = () => {
-    setOpenTaskForm(false);
-    setTaskToEdit(null);
+  const handleOpenEditTask = (task) => {
+    setTaskFormRequest({ mode: 'edit', task });
   };
 
   const handleViewTask = (task) => {
@@ -108,12 +103,6 @@ const DepartmentHeadDashboard = () => {
 
   const handleCloseTaskDetails = () => {
     setSelectedTask(null);
-  };
-
-  const handleDeleteTask = (taskId) => {
-    if (window.confirm('Вы уверены, что хотите удалить это задание?')) {
-      dispatch(deleteTaskAsync(taskId));
-    }
   };
 
   const getCurrentPage = () => {
@@ -152,9 +141,8 @@ const DepartmentHeadDashboard = () => {
     if (location.pathname === '/department-head/tasks') {
       return (
         <KanbanBoard
-          onEdit={handleOpenTaskForm}
-          onDelete={handleDeleteTask}
-          onView={handleViewTask}
+          formRequest={taskFormRequest}
+          onFormRequestHandled={() => setTaskFormRequest(null)}
         />
       );
     }
@@ -267,7 +255,7 @@ const DepartmentHeadDashboard = () => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => handleOpenTaskForm()}
+                onClick={handleOpenCreateTask}
               >
                 Создать задание
               </Button>
@@ -317,7 +305,7 @@ const DepartmentHeadDashboard = () => {
               onClose={handleCloseTaskDetails}
               onEdit={() => {
                 handleCloseTaskDetails();
-                handleOpenTaskForm(selectedTask);
+                handleOpenEditTask(selectedTask);
               }}
               canEdit={true}
             />
@@ -325,35 +313,6 @@ const DepartmentHeadDashboard = () => {
         </Box>
       </Modal>
 
-      <Modal
-        open={openTaskForm}
-        onClose={handleCloseTaskForm}
-        aria-labelledby="task-form-modal-title"
-        aria-describedby="task-form-modal-description"
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', md: 800 },
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            borderRadius: 2,
-          }}
-        >
-          <TaskForm
-            open={openTaskForm}
-            taskToEdit={taskToEdit}
-            onClose={handleCloseTaskForm}
-            onCreated={() => dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }))}
-          />
-        </Box>
-      </Modal>
     </Box>
   );
 };
