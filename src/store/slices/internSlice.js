@@ -1,5 +1,19 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { internAPI } from '../../services/api';
+import { internAPI, mentorAPI } from '../../services/api';
+import { getApiErrorMessage, unwrapList } from '../../utils/apiResponse';
+
+const mapToInternOption = (p) => {
+  const id = p.userId ?? p.id;
+  const name =
+    p.name ||
+    [p.firstName, p.lastName].filter(Boolean).join(' ').trim() ||
+    `ID ${id}`;
+  return {
+    id: Number(id),
+    name,
+    department: p.departmentName || p.department || '',
+  };
+};
 
 // Async Thunks
 export const fetchInternsAsync = createAsyncThunk(
@@ -9,7 +23,19 @@ export const fetchInternsAsync = createAsyncThunk(
       const response = await internAPI.getInterns(params);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке стажеров');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка при загрузке стажеров'));
+    }
+  }
+);
+
+export const fetchMentorInternsAsync = createAsyncThunk(
+  'intern/fetchMentorInterns',
+  async (mentorId, { rejectWithValue }) => {
+    try {
+      const response = await mentorAPI.getMentorInterns(mentorId);
+      return unwrapList(response).map(mapToInternOption);
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка при загрузке стажёров ментора'));
     }
   }
 );
@@ -179,6 +205,18 @@ const internSlice = createSlice({
         }
       })
       .addCase(fetchInternsAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchMentorInternsAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchMentorInternsAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.interns = action.payload;
+      })
+      .addCase(fetchMentorInternsAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })

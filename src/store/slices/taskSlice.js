@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { taskAPI } from '../../services/api';
+import { getApiErrorMessage } from '../../utils/apiResponse';
 
 function parseTaskListResponse(responseData) {
   const body = responseData ?? {};
@@ -48,9 +49,9 @@ export const createTaskAsync = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const response = await taskAPI.createTask(data);
-      return response.data;
+      return response.data?.data ?? response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка при создании задачи');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка при создании задачи'));
     }
   }
 );

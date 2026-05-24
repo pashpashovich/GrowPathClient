@@ -312,6 +312,7 @@ const TaskList = () => {
           setEditingTask(null);
         }}
         task={editingTask}
+        onCreated={() => dispatch(fetchTasksAsync({ page: 1, limit: 100 }))}
       />
 
       {/* Детали задачи */}

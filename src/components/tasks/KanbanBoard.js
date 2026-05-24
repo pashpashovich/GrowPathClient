@@ -651,6 +651,7 @@ const KanbanBoard = ({ onEdit, onDelete, onView }) => {
           setEditingTask(null);
         }}
         task={editingTask}
+        onCreated={loadTasks}
       />
 
       {/* Детали задачи */}

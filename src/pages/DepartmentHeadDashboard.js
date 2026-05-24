@@ -8,7 +8,7 @@ import {
   fetchInternshipProgramsAsync,
   fetchInternshipProgramByIdAsync,
 } from '../store/slices/internshipProgramSlice';
-import { deleteTaskAsync } from '../store/slices/taskSlice';
+import { deleteTaskAsync, fetchTaskProfileAsync } from '../store/slices/taskSlice';
 import DashboardAppBar, { DASHBOARD_APP_BAR_HEIGHT } from '../components/DashboardAppBar';
 import Sidebar from '../components/Sidebar';
 import ProfilePage from './ProfilePage';
@@ -346,7 +346,12 @@ const DepartmentHeadDashboard = () => {
             borderRadius: 2,
           }}
         >
-          <TaskForm open={openTaskForm} taskToEdit={taskToEdit} onClose={handleCloseTaskForm} />
+          <TaskForm
+            open={openTaskForm}
+            taskToEdit={taskToEdit}
+            onClose={handleCloseTaskForm}
+            onCreated={() => dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }))}
+          />
         </Box>
       </Modal>
     </Box>

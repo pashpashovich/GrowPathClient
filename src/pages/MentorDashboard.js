@@ -12,7 +12,7 @@ import ProfilePage from './ProfilePage';
 import MailingsPage from './MailingsPage';
 import Sidebar from '../components/Sidebar';
 import { useDispatch } from 'react-redux';
-import { deleteTaskAsync } from '../store/slices/taskSlice';
+import { deleteTaskAsync, fetchTaskProfileAsync } from '../store/slices/taskSlice';
 import { logoutAsync } from '../store/slices/authSlice';
 import { useLocation } from 'react-router-dom';
 
@@ -47,6 +47,10 @@ const MentorDashboard = () => {
     if (window.confirm('Вы уверены, что хотите удалить это задание?')) {
       dispatch(deleteTaskAsync(taskId));
     }
+  };
+
+  const handleTaskCreated = () => {
+    dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }));
   };
 
   const handleLogout = async () => {
@@ -210,7 +214,12 @@ const MentorDashboard = () => {
             borderRadius: 2,
           }}
         >
-          <TaskForm open={openForm} taskToEdit={taskToEdit} onClose={handleCloseForm} />
+          <TaskForm
+            open={openForm}
+            taskToEdit={taskToEdit}
+            onClose={handleCloseForm}
+            onCreated={handleTaskCreated}
+          />
         </Box>
       </Modal>
       </Box>
