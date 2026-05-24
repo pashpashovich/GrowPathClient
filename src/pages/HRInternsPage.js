@@ -23,9 +23,6 @@ const HRInternsPage = () => {
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 3 }}>
         Стажёры программ
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Привязывайте стажёров к программе и закрепляйте за ментором из числа участников программы.
-      </Typography>
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <ProgramSelector

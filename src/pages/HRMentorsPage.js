@@ -18,9 +18,6 @@ const HRMentorsPage = () => {
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 3 }}>
         Менторы программ
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Назначайте менторов на программы стажировок. После этого ментор сможет создать дорожную карту и ИПР для своих стажёров.
-      </Typography>
 
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <ProgramSelector
