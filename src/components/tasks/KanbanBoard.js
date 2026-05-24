@@ -57,7 +57,7 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
   const userRole = useSelector((state) => state.auth.user?.role ?? state.auth.role);
   const useTaskProfile = userRole === 'mentor' || userRole === 'intern';
 
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [taskMenu, setTaskMenu] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
@@ -148,12 +148,12 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
   const handleMenuOpen = (event, task) => {
     event.preventDefault();
     event.stopPropagation();
-    setAnchorEl(event.currentTarget);
+    setTaskMenu({ anchorEl: event.currentTarget, task });
     setSelectedTask(task);
   };
 
   const handleMenuClose = () => {
-    setAnchorEl(null);
+    setTaskMenu(null);
   };
 
   const handleViewTask = () => {
@@ -304,8 +304,7 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
         cursor: 'grab',
         '&:hover': {
           boxShadow: 3,
-          transform: 'translateY(-2px)',
-          transition: 'all 0.2s ease-in-out',
+          transition: 'box-shadow 0.2s ease-in-out',
         },
         '&:active': { cursor: 'grabbing' },
       }}
@@ -589,13 +588,14 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
       </Box>
 
       <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
+        anchorEl={taskMenu?.anchorEl ?? null}
+        open={Boolean(taskMenu?.anchorEl)}
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        disableScrollLock
         slotProps={{
-          paper: { sx: { minWidth: 200, mt: 0.5 } },
+          paper: { sx: { minWidth: 200 } },
         }}
       >
         <MenuItem onClick={(e) => {

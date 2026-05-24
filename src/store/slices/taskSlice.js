@@ -37,7 +37,7 @@ export const fetchTaskByIdAsync = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await taskAPI.getTaskById(id);
-      return response.data;
+      return response.data?.data ?? response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка при загрузке задачи');
     }
@@ -61,7 +61,7 @@ export const updateTaskAsync = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await taskAPI.updateTask(id, data);
-      return response.data;
+      return response.data?.data ?? response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Ошибка при обновлении задачи');
     }

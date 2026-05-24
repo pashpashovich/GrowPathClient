@@ -19,7 +19,13 @@ import {
 } from '@mui/material';
 import { Add, Delete, AttachFile, Link } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateTask, createTaskAsync } from '../../store/slices/taskSlice';
+import { createTaskAsync, fetchTaskByIdAsync, updateTaskAsync } from '../../store/slices/taskSlice';
+import {
+  mapTaskToFormFields,
+  matchProgramParticipant,
+  participantSelectValue,
+  findIprForParticipant,
+} from '../../utils/mapTaskToForm';
 import { fetchInternshipProgramsAsync } from '../../store/slices/internshipProgramSlice';
 import { getCurrentUserAsync } from '../../store/slices/authSlice';
 import { hrAPI, iprAPI } from '../../services/api';
@@ -70,6 +76,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   const [stagesByIprId, setStagesByIprId] = useState({});
   const [programDataLoading, setProgramDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingTask, setLoadingTask] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
 
@@ -104,42 +111,91 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
       if (scopeToMentor) {
         interns = interns.filter((p) => Number(p.mentorId) === Number(mentorUserId));
       }
+      const iprs = unwrapList(iprsRes);
       setProgramInterns(interns);
-      setProgramIprs(unwrapList(iprsRes));
+      setProgramIprs(iprs);
       setStagesByIprId({});
+      return { interns, iprs };
     } catch (e) {
       setSubmitError(getApiErrorMessage(e, 'Не удалось загрузить данные программы'));
       setProgramInterns([]);
       setProgramIprs([]);
+      return { interns: [], iprs: [] };
     } finally {
       setProgramDataLoading(false);
     }
   }, [scopeToMentor, mentorUserId]);
 
+  const applyTaskToForm = useCallback(
+    async (task) => {
+      const mapped = mapTaskToFormFields(task);
+      setFormData({
+        title: mapped.title,
+        description: mapped.description,
+        priority: mapped.priority,
+        dueDate: mapped.dueDate,
+        goalId: mapped.goalId,
+        checklist: mapped.checklist,
+        attachments: mapped.attachments,
+        links: mapped.links,
+      });
+
+      if (!mapped.internshipId) {
+        setInternshipId('');
+        setAssignmentRows([newAssignmentRow()]);
+        return;
+      }
+
+      setInternshipId(mapped.internshipId);
+      const { interns, iprs } = await loadProgramData(mapped.internshipId);
+
+      if (mapped.assigneeId) {
+        const participant = matchProgramParticipant(interns, mapped.assigneeId);
+        const selectInternId = participant
+          ? participantSelectValue(participant)
+          : String(mapped.assigneeId);
+        const ipr = findIprForParticipant(iprs, mapped.assigneeId, interns);
+        if (ipr) {
+          const response = await iprAPI.getIprStages(ipr.id);
+          const stages = unwrapList(response);
+          setStagesByIprId({ [String(ipr.id)]: stages });
+        }
+        setAssignmentRows([
+          {
+            key: `edit-${selectInternId}`,
+            internId: selectInternId,
+            stageId: mapped.stageId ? String(mapped.stageId) : '',
+          },
+        ]);
+      } else {
+        setAssignmentRows([newAssignmentRow()]);
+      }
+    },
+    [loadProgramData]
+  );
+
   useEffect(() => {
     if (!open) return;
-    if (editingTask) {
-      setFormData({
-        title: editingTask.title || '',
-        description: editingTask.description || '',
-        priority: editingTask.priority || 'medium',
-        dueDate: editingTask.dueDate
-          ? new Date(editingTask.dueDate).toISOString().split('T')[0]
-          : '',
-        goalId: editingTask.goalId || '',
-        checklist: editingTask.checklist
-          ? editingTask.checklist.map((item, index) => ({
-              id: index + 1,
-              text: typeof item === 'string' ? item : item.text || '',
-              completed: typeof item === 'object' ? item.completed || false : false,
-            }))
-          : [{ id: 1, text: '', completed: false }],
-        attachments: editingTask.attachments || [],
-        links: editingTask.links || [],
-      });
-      setInternshipId(editingTask.internshipId ? String(editingTask.internshipId) : '');
-      setAssignmentRows([newAssignmentRow()]);
-    } else {
+
+    let cancelled = false;
+
+    const initForm = async () => {
+      setErrors({});
+      setSubmitError('');
+
+      if (editingTask?.id) {
+        setLoadingTask(true);
+        try {
+          const full = await dispatch(fetchTaskByIdAsync(editingTask.id)).unwrap();
+          if (!cancelled) await applyTaskToForm(full);
+        } catch {
+          if (!cancelled) await applyTaskToForm(editingTask);
+        } finally {
+          if (!cancelled) setLoadingTask(false);
+        }
+        return;
+      }
+
       setFormData({
         title: '',
         description: '',
@@ -150,26 +206,27 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         attachments: [],
         links: [],
       });
-      const defaultProgram =
-        taskFilters.internshipId ||
-        programs[0]?.id ||
-        '';
+      const defaultProgram = taskFilters.internshipId || programs[0]?.id || '';
       setInternshipId(defaultProgram ? String(defaultProgram) : '');
       setAssignmentRows([newAssignmentRow()]);
-    }
-    setErrors({});
-    setSubmitError('');
-  }, [editingTask, open, taskFilters.internshipId, programs]);
+    };
+
+    initForm();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, editingTask?.id, dispatch, applyTaskToForm, taskFilters.internshipId, programs]);
 
   useEffect(() => {
-    if (!open || editingTask) return;
+    if (!open || editingTask?.id) return;
     if (internshipId) {
       loadProgramData(internshipId);
     }
-  }, [open, editingTask, internshipId, loadProgramData]);
+  }, [open, editingTask?.id, internshipId, loadProgramData]);
 
   const findIprForIntern = (internId) =>
-    programIprs.find((ipr) => Number(ipr.internId) === Number(internId));
+    findIprForParticipant(programIprs, internId, programInterns);
 
   const loadStagesForIntern = async (internId) => {
     const ipr = findIprForIntern(internId);
@@ -258,8 +315,13 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Заголовок обязателен';
     if (!formData.description.trim()) newErrors.description = 'Описание обязательно';
-    if (!editingTask && !internshipId) newErrors.internshipId = 'Выберите программу стажировки';
-    if (!editingTask) {
+    if (!internshipId) newErrors.internshipId = 'Выберите программу стажировки';
+    if (editingTask) {
+      const row = assignmentRows[0];
+      if (row?.internId && !row?.stageId) {
+        newErrors.assignments = 'Укажите этап ИПР для стажёра';
+      }
+    } else {
       Object.assign(newErrors, validateTaskAssignments(assignmentRows));
     }
     setErrors(newErrors);
@@ -270,16 +332,35 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     if (!validateForm()) return;
 
     if (editingTask) {
-      dispatch(
-        updateTask({
-          ...editingTask,
-          title: formData.title,
-          description: formData.description,
+      setIsSubmitting(true);
+      setSubmitError('');
+      try {
+        const row = assignmentRows[0];
+        const payload = {
+          title: formData.title.trim(),
+          description: formData.description.trim(),
           priority: formData.priority,
-          dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : editingTask.dueDate,
-        })
-      );
-      onClose();
+          internshipId: Number(internshipId),
+        };
+        if (formData.dueDate) {
+          payload.dueDate = formData.dueDate.includes('T')
+            ? formData.dueDate
+            : `${formData.dueDate}T18:00:00`;
+        }
+        if (row?.internId) {
+          payload.internId = Number(row.internId);
+        }
+        if (row?.stageId) {
+          payload.iprStageId = Number(row.stageId);
+        }
+        await dispatch(updateTaskAsync({ id: editingTask.id, data: payload })).unwrap();
+        onCreated?.();
+        onClose();
+      } catch (e) {
+        setSubmitError(getApiErrorMessage(e, 'Не удалось сохранить задание'));
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -324,6 +405,12 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
 
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
+          {loadingTask && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 2 }}>
+              <CircularProgress size={24} />
+              <Typography variant="body2">Загрузка задания…</Typography>
+            </Box>
+          )}
           {submitError && <Alert severity="error">{submitError}</Alert>}
 
           <TextField
@@ -332,6 +419,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
             onChange={(e) => handleInputChange('title', e.target.value)}
             fullWidth
             required
+            disabled={loadingTask}
             error={!!errors.title}
             helperText={errors.title}
           />
@@ -371,7 +459,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
             />
           </Box>
 
-          {!editingTask && (
+          {!loadingTask && (
             <FormControl fullWidth required error={!!errors.internshipId}>
               <InputLabel>Программа стажировки</InputLabel>
               <Select
@@ -413,13 +501,15 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
             </FormControl>
           )}
 
-          {!editingTask && (
+          {!loadingTask && (
             <Box>
               <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                Назначения (стажёр + этап ИПР)
+                {editingTask ? 'Стажёр и этап ИПР' : 'Назначения (стажёр + этап ИПР)'}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Для каждого стажёра создаётся отдельная задача на выбранный этап.
+                {editingTask
+                  ? 'Привязка задания к стажёру и этапу индивидуального плана.'
+                  : 'Для каждого стажёра создаётся отдельная задача на выбранный этап.'}
               </Typography>
               {programDataLoading ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 2 }}>
@@ -488,26 +578,30 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
                           ))}
                         </Select>
                       </FormControl>
-                      <IconButton
-                        size="small"
-                        onClick={() => removeAssignmentRow(row.key)}
-                        aria-label="Удалить назначение"
-                        sx={{ mt: 0.5 }}
-                      >
-                        <Delete />
-                      </IconButton>
+                      {(!editingTask || assignmentRows.length > 1) && (
+                        <IconButton
+                          size="small"
+                          onClick={() => removeAssignmentRow(row.key)}
+                          aria-label="Удалить назначение"
+                          sx={{ mt: 0.5 }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      )}
                     </Box>
                   );
                 })
               )}
-              <Button
-                startIcon={<Add />}
-                size="small"
-                onClick={addAssignmentRow}
-                disabled={!internshipId || programDataLoading}
-              >
-                Добавить стажёра
-              </Button>
+              {!editingTask && (
+                <Button
+                  startIcon={<Add />}
+                  size="small"
+                  onClick={addAssignmentRow}
+                  disabled={!internshipId || programDataLoading}
+                >
+                  Добавить стажёра
+                </Button>
+              )}
               {errors.assignments && (
                 <Typography variant="caption" color="error" display="block" sx={{ mt: 1 }}>
                   {errors.assignments}
@@ -573,8 +667,8 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         <Button onClick={onClose} disabled={isSubmitting}>
           Отмена
         </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={isSubmitting}>
-          {isSubmitting ? 'Создание…' : editingTask ? 'Сохранить' : 'Создать задание'}
+        <Button onClick={handleSubmit} variant="contained" disabled={isSubmitting || loadingTask}>
+          {isSubmitting ? 'Сохранение…' : editingTask ? 'Сохранить' : 'Создать задание'}
         </Button>
       </DialogActions>
     </Dialog>
