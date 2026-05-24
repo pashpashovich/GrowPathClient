@@ -30,7 +30,7 @@ export const fetchRatingProfileAsync = createAsyncThunk(
   async (params, { rejectWithValue }) => {
     try {
       const response = await ratingAPI.getRatingProfile(params);
-      return response.data;
+      return response.data?.data ?? response.data;
     } catch (error) {
       const data = error.response?.data;
       const message =

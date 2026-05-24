@@ -92,6 +92,18 @@ function formatCohortDelta(delta) {
   return n > 0 ? `Выше среднего на ${abs}` : `Ниже среднего на ${abs}`;
 }
 
+/** Есть оценки по задачам, даже если итоговая оценка стажировки ещё не выставлена */
+function hasTaskRatingData(profile) {
+  if (!profile) return false;
+  const { tasks, recentRatedTasks = [] } = profile;
+  if (recentRatedTasks.length > 0) return true;
+  if (tasks?.ratedTasksCount > 0) return true;
+  if (tasks?.averageTaskRating != null && !Number.isNaN(Number(tasks.averageTaskRating))) {
+    return true;
+  }
+  return (tasks?.completed ?? 0) > 0 && tasks?.averageTaskRating != null;
+}
+
 function RatingBar({ label, value, color = 'primary' }) {
   return (
     <Box sx={{ mb: 2.5 }}>
@@ -185,10 +197,12 @@ const InternRating = ({ refreshKey }) => {
     return null;
   }
 
-  const { hasAssessment, current, cohort, tasks, recentRatedTasks = [], programName, internName } =
+  const { hasAssessment, current, cohort, tasks, recentRatedTasks = [], programName } =
     ratingProfile;
 
-  if (!hasAssessment) {
+  const showTaskRatings = hasTaskRatingData(ratingProfile);
+
+  if (!hasAssessment && !showTaskRatings) {
     return (
       <Box>
         <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
@@ -205,8 +219,8 @@ const InternRating = ({ refreshKey }) => {
             Оценка ещё не выставлена
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto' }}>
-            Когда ментор проведёт оценку по итогам стажировки, здесь появятся ваш рейтинг,
-            динамика и статистика по задачам.
+            Когда ментор проведёт оценку по итогам стажировки или оценит выполненные задачи,
+            здесь появятся рейтинг и статистика.
           </Typography>
         </Paper>
       </Box>
@@ -219,14 +233,49 @@ const InternRating = ({ refreshKey }) => {
         <Typography variant="h4" fontWeight={700}>
           Мой рейтинг
         </Typography>
-          {programName && (
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        {programName && (
+          <Typography variant="body1" color="text.secondary">
             {programName}
           </Typography>
         )}
       </Box>
 
+      {!hasAssessment && showTaskRatings && (
+        <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+          Итоговая оценка по стажировке ещё не выставлена. Ниже — оценки по выполненным задачам.
+        </Alert>
+      )}
+
       <Grid container spacing={3}>
+        {!hasAssessment && showTaskRatings && (
+          <Grid size={{ xs: 12, lg: 5 }}>
+            <Paper sx={CARD_SX}>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1 }}>
+                Средняя оценка по задачам
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mt: 0.5 }}>
+                <Typography
+                  variant="h2"
+                  fontWeight={800}
+                  sx={{ fontSize: { xs: '2.75rem', md: '3.5rem' }, lineHeight: 1 }}
+                >
+                  {formatRating(tasks?.averageTaskRating)}
+                </Typography>
+                <Typography variant="h6" color="text.secondary" fontWeight={500}>
+                  / {RATING_MAX}
+                </Typography>
+              </Box>
+              {tasks?.ratedTasksCount != null && (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                  На основе {tasks.ratedTasksCount} оценённых задач
+                </Typography>
+              )}
+            </Paper>
+          </Grid>
+        )}
+
+        {hasAssessment && (
+        <>
         {/* Hero + dimensions */}
         <Grid size={{ xs: 12, lg: 5 }}>
           <Paper sx={CARD_SX}>
@@ -348,9 +397,12 @@ const InternRating = ({ refreshKey }) => {
             )}
           </Paper>
         </Grid>
+        </>
+        )}
 
         {/* Task KPIs */}
-        <Grid size={{ xs: 12, lg: 5 }}>
+        {(hasAssessment || showTaskRatings) && (
+        <Grid size={{ xs: 12, lg: hasAssessment ? 5 : 7 }}>
           <Paper sx={CARD_SX}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
               <AssignmentTurnedIn color="primary" />
@@ -416,8 +468,10 @@ const InternRating = ({ refreshKey }) => {
             )}
           </Paper>
         </Grid>
+        )}
 
         {/* Recent rated tasks */}
+        {(hasAssessment || showTaskRatings) && (
         <Grid size={{ xs: 12 }}>
           <Paper sx={CARD_SX}>
             <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -473,6 +527,7 @@ const InternRating = ({ refreshKey }) => {
             )}
           </Paper>
         </Grid>
+        )}
       </Grid>
     </Box>
   );
