@@ -87,7 +87,6 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     goalId: '',
     checklist: [{ id: 1, text: '', completed: false }],
     attachments: [],
-    links: [],
   });
   const [internshipId, setInternshipId] = useState('');
   const [assignmentRows, setAssignmentRows] = useState([newAssignmentRow()]);
@@ -159,7 +158,6 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         goalId: mapped.goalId,
         checklist: mapped.checklist,
         attachments: mapped.attachments,
-        links: mapped.links,
       });
 
       if (!mapped.internshipId) {
@@ -228,7 +226,6 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         goalId: '',
         checklist: [{ id: 1, text: '', completed: false }],
         attachments: [],
-        links: [],
       });
       const defaultProgram = taskFilters.internshipId || programs[0]?.id || '';
       setInternshipId(defaultProgram ? String(defaultProgram) : '');
@@ -785,18 +782,6 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
                 ))}
               </List>
             )}
-          </Box>
-
-          <Divider />
-
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Ссылки на репозиторий
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Ссылки к результату добавляет стажёр при сдаче задания (в запросе submit), а не при
-              создании карточки ментором.
-            </Typography>
           </Box>
         </Box>
       </DialogContent>
