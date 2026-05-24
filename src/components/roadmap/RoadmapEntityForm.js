@@ -14,6 +14,11 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { hrAPI, internAPI, roadmapAPI } from '../../services/api';
 import { createInternshipAsync, updateInternshipAsync } from '../../store/slices/roadmapSlice';
+import {
+  getRoadmapEntityStatusLabel,
+  IPR_STATUSES,
+  TEMPLATE_STATUSES,
+} from '../../utils/roadmapEntityStatus';
 
 const toArray = (body) => (Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : []);
 
@@ -280,12 +285,9 @@ const RoadmapEntityForm = ({ mode, entityToEdit, onClose }) => {
         <FormControl fullWidth>
           <InputLabel>Статус</InputLabel>
           <Select label="Статус" value={formData.status} onChange={handleChange('status')}>
-            {(isTemplateMode
-              ? ['draft', 'active', 'paused', 'archived']
-              : ['draft', 'active', 'paused', 'completed']
-            ).map((status) => (
+            {(isTemplateMode ? TEMPLATE_STATUSES : IPR_STATUSES).map((status) => (
               <MenuItem key={status} value={status}>
-                {status}
+                {getRoadmapEntityStatusLabel(status)}
               </MenuItem>
             ))}
           </Select>

@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { setCurrentInternship } from '../../store/slices/roadmapSlice';
+import { getRoadmapEntityStatusLabel } from '../../utils/roadmapEntityStatus';
 
 const InternshipSelector = ({
   onEditInternship,
@@ -49,34 +50,40 @@ const InternshipSelector = ({
   const getStatusInfo = (status) => {
     switch (status) {
       case 'active':
-        return { 
-          label: 'Активная', 
-          color: 'success', 
-          icon: <CheckCircle /> 
+        return {
+          label: getRoadmapEntityStatusLabel(status),
+          color: 'success',
+          icon: <CheckCircle />,
         };
       case 'completed':
-        return { 
-          label: 'Завершена', 
-          color: 'default', 
-          icon: <CheckCircle /> 
+        return {
+          label: getRoadmapEntityStatusLabel(status),
+          color: 'default',
+          icon: <CheckCircle />,
         };
       case 'paused':
-        return { 
-          label: 'Приостановлена', 
-          color: 'warning', 
-          icon: <Pause /> 
+        return {
+          label: getRoadmapEntityStatusLabel(status),
+          color: 'warning',
+          icon: <Pause />,
         };
       case 'draft':
-        return { 
-          label: 'Черновик', 
-          color: 'info', 
-          icon: <Note /> 
+        return {
+          label: getRoadmapEntityStatusLabel(status),
+          color: 'info',
+          icon: <Note />,
+        };
+      case 'archived':
+        return {
+          label: getRoadmapEntityStatusLabel(status),
+          color: 'default',
+          icon: <Schedule />,
         };
       default:
-        return { 
-          label: status, 
-          color: 'default', 
-          icon: <Schedule /> 
+        return {
+          label: getRoadmapEntityStatusLabel(status),
+          color: 'default',
+          icon: <Schedule />,
         };
     }
   };
