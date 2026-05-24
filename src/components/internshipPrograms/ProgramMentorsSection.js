@@ -29,6 +29,7 @@ import {
   resolveDepartmentName,
 } from '../../utils/apiResponse';
 import ActionSnackbar from '../mailings/ActionSnackbar';
+import ConfirmDialog from '../ui/ConfirmDialog';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -65,6 +66,8 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
   const [candidatesLoading, setCandidatesLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [unassignTarget, setUnassignTarget] = useState(null);
+  const [unassigning, setUnassigning] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
@@ -192,11 +195,20 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
     }
   };
 
-  const handleUnassign = async (userId) => {
-    if (!window.confirm('Снять ментора с программы?')) return;
+  const handleUnassignClick = (mentor) => {
+    setUnassignTarget({
+      userId: mentor.userId,
+      name: participantLabel(mentor),
+    });
+  };
+
+  const handleUnassignConfirm = async () => {
+    if (!unassignTarget) return;
+    setUnassigning(true);
     try {
-      await hrAPI.unassignProgramMentor(programId, userId);
+      await hrAPI.unassignProgramMentor(programId, unassignTarget.userId);
       setSnackbar({ open: true, message: 'Ментор снят с программы', severity: 'success' });
+      setUnassignTarget(null);
       loadMentors();
     } catch (error) {
       setSnackbar({
@@ -204,6 +216,8 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
         message: getApiErrorMessage(error, 'Не удалось снять ментора'),
         severity: 'error',
       });
+    } finally {
+      setUnassigning(false);
     }
   };
 
@@ -276,7 +290,7 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleUnassign(m.userId)}
+                            onClick={() => handleUnassignClick(m)}
                             aria-label="Снять ментора"
                           >
                             <Delete fontSize="small" />
@@ -341,6 +355,22 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(unassignTarget)}
+        title="Снять ментора с программы"
+        message={
+          unassignTarget
+            ? `Снять ${unassignTarget.name} с программы стажировки?`
+            : ''
+        }
+        detail="Если у ментора есть закреплённые стажёры, операция может быть недоступна."
+        confirmLabel="Снять"
+        confirmColor="error"
+        confirming={unassigning}
+        onClose={() => !unassigning && setUnassignTarget(null)}
+        onConfirm={handleUnassignConfirm}
+      />
 
       <ActionSnackbar
         open={snackbar.open}

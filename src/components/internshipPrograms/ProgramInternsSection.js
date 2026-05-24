@@ -29,6 +29,7 @@ import { Add, Delete } from '@mui/icons-material';
 import { hrAPI, userAPI } from '../../services/api';
 import { unwrapList, getApiErrorMessage } from '../../utils/apiResponse';
 import ActionSnackbar from '../mailings/ActionSnackbar';
+import ConfirmDialog from '../ui/ConfirmDialog';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -55,6 +56,8 @@ const ProgramInternsSection = ({ programId, program, readOnly = false, compact =
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedMentorId, setSelectedMentorId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [unassignTarget, setUnassignTarget] = useState(null);
+  const [unassigning, setUnassigning] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const maxPlaces = program?.maxPlaces;
@@ -157,11 +160,20 @@ const ProgramInternsSection = ({ programId, program, readOnly = false, compact =
     }
   };
 
-  const handleUnassign = async (userId) => {
-    if (!window.confirm('Снять стажёра с программы?')) return;
+  const handleUnassignClick = (intern) => {
+    setUnassignTarget({
+      userId: intern.userId,
+      name: participantLabel(intern),
+    });
+  };
+
+  const handleUnassignConfirm = async () => {
+    if (!unassignTarget) return;
+    setUnassigning(true);
     try {
-      await hrAPI.unassignProgramIntern(programId, userId);
+      await hrAPI.unassignProgramIntern(programId, unassignTarget.userId);
       setSnackbar({ open: true, message: 'Стажёр снят с программы', severity: 'success' });
+      setUnassignTarget(null);
       loadData();
     } catch (error) {
       setSnackbar({
@@ -169,6 +181,8 @@ const ProgramInternsSection = ({ programId, program, readOnly = false, compact =
         message: getApiErrorMessage(error, 'Не удалось снять стажёра'),
         severity: 'error',
       });
+    } finally {
+      setUnassigning(false);
     }
   };
 
@@ -264,7 +278,7 @@ const ProgramInternsSection = ({ programId, program, readOnly = false, compact =
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleUnassign(intern.userId)}
+                            onClick={() => handleUnassignClick(intern)}
                             aria-label="Снять стажёра"
                           >
                             <Delete fontSize="small" />
@@ -325,6 +339,22 @@ const ProgramInternsSection = ({ programId, program, readOnly = false, compact =
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(unassignTarget)}
+        title="Снять стажёра с программы"
+        message={
+          unassignTarget
+            ? `Снять ${unassignTarget.name} с программы стажировки?`
+            : ''
+        }
+        detail="Если у стажёра есть ИПР по этой программе, операция может быть недоступна."
+        confirmLabel="Снять"
+        confirmColor="error"
+        confirming={unassigning}
+        onClose={() => !unassigning && setUnassignTarget(null)}
+        onConfirm={handleUnassignConfirm}
+      />
 
       <ActionSnackbar
         open={snackbar.open}
