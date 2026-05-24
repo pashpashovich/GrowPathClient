@@ -29,6 +29,7 @@ import {
   InputAdornment,
   CircularProgress,
   Pagination,
+  Alert,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -39,10 +40,17 @@ import {
   Visibility,
   Search,
   PictureAsPdf,
+  Gavel,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProgramReportsAsync } from '../../store/slices/analyticsSlice';
+import { fetchInternshipProgramsAsync } from '../../store/slices/internshipProgramSlice';
 import { analyticsAPI, hrAPI, internAPI } from '../../services/api';
+import InternHiringDecisionDialog from '../hiring/InternHiringDecisionDialog';
+import {
+  canRecordHiringDecision,
+  isProgramEligibleForHiring,
+} from '../../utils/hiringDecision';
 import {
   getAxiosBlobErrorMessage,
   saveAxiosBlobResponse,
@@ -56,6 +64,9 @@ const ProgramReports = () => {
   const dispatch = useDispatch();
   const programReports = useSelector((state) => state.analytics?.programReports || []);
   const isLoading = useSelector((state) => state.analytics?.isLoading);
+  const programs = useSelector((state) => state.internshipProgram?.programs || []);
+  const userRole = useSelector((state) => state.auth?.user?.role);
+  const mayApproveHiring = canRecordHiringDecision(userRole);
   const [selectedProgram, setSelectedProgram] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
   const [detailReport, setDetailReport] = useState(null);
@@ -63,6 +74,18 @@ const ProgramReports = () => {
   const [programPage, setProgramPage] = useState(0);
   const [pdfLoadingKey, setPdfLoadingKey] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [hiringTarget, setHiringTarget] = useState(null);
+  const [detailProgramMeta, setDetailProgramMeta] = useState(null);
+
+  const programById = useMemo(() => {
+    const map = new Map();
+    programs.forEach((p) => map.set(Number(p.id), p));
+    return map;
+  }, [programs]);
+
+  const detailProgram =
+    detailProgramMeta || (detailReport ? programById.get(Number(detailReport.programId)) : null);
+  const detailProgramCompleted = isProgramEligibleForHiring(detailProgram);
 
   const getCompletionRateColor = (rate) => {
     if (rate >= 80) return 'success';
@@ -91,6 +114,36 @@ const ProgramReports = () => {
   useEffect(() => {
     dispatch(fetchProgramReportsAsync({ period: selectedPeriod }));
   }, [dispatch, selectedPeriod]);
+
+  useEffect(() => {
+    if (programs.length === 0) {
+      dispatch(fetchInternshipProgramsAsync({ includeArchived: true, limit: 100 }));
+    }
+  }, [dispatch, programs.length]);
+
+  useEffect(() => {
+    if (!detailReport?.programId) {
+      setDetailProgramMeta(null);
+      return;
+    }
+    const cached = programById.get(Number(detailReport.programId));
+    if (cached) {
+      setDetailProgramMeta(cached);
+      return;
+    }
+    let cancelled = false;
+    hrAPI
+      .getInternshipProgramById(detailReport.programId)
+      .then((res) => {
+        if (!cancelled) setDetailProgramMeta(res.data?.data ?? res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setDetailProgramMeta(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [detailReport, programById]);
 
   const filteredReports = useMemo(
     () =>
@@ -399,6 +452,12 @@ const ProgramReports = () => {
               </IconButton>
             </DialogTitle>
             <DialogContent dividers>
+              {mayApproveHiring && detailProgramCompleted && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Программа завершена — для каждого стажёра доступны итоговый отчёт (PDF) и утверждение
+                  решения о найме (UC-14).
+                </Alert>
+              )}
               <Grid container spacing={3} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={3}>
                   <Box sx={{ textAlign: 'center' }}>
@@ -495,6 +554,30 @@ const ProgramReports = () => {
                               '—'
                             )}
                           </TableCell>
+                          {mayApproveHiring && detailProgramCompleted && (
+                            <TableCell align="center">
+                              {intern.internId ? (
+                                <Tooltip title="Принять решение о найме">
+                                  <IconButton
+                                    size="small"
+                                    color="primary"
+                                    onClick={() =>
+                                      setHiringTarget({
+                                        internId: intern.internId,
+                                        programId: detailReport.programId,
+                                        internName: intern.internName,
+                                        programTitle: detailReport.programTitle,
+                                      })
+                                    }
+                                  >
+                                    <Gavel fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              ) : (
+                                '—'
+                              )}
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     })}
@@ -573,6 +656,15 @@ const ProgramReports = () => {
           </>
         )}
       </Dialog>
+
+      <InternHiringDecisionDialog
+        open={Boolean(hiringTarget)}
+        onClose={() => setHiringTarget(null)}
+        internId={hiringTarget?.internId}
+        programId={hiringTarget?.programId}
+        internName={hiringTarget?.internName}
+        programTitle={hiringTarget?.programTitle}
+      />
 
       <ActionSnackbar
         open={snackbar.open}

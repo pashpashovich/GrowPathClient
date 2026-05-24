@@ -31,6 +31,7 @@ import {
 } from 'recharts';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchRatingProfileAsync } from '../../store/slices/ratingSlice';
+import { unwrapRatingProfile } from '../../utils/apiResponse';
 
 const CARD_SX = {
   p: 3,
@@ -95,13 +96,22 @@ function formatCohortDelta(delta) {
 /** Есть оценки по задачам, даже если итоговая оценка стажировки ещё не выставлена */
 function hasTaskRatingData(profile) {
   if (!profile) return false;
-  const { tasks, recentRatedTasks = [] } = profile;
+  const tasks = profile.tasks ?? profile.taskStats ?? {};
+  const recentRatedTasks =
+    profile.recentRatedTasks ?? profile.recent_rated_tasks ?? [];
   if (recentRatedTasks.length > 0) return true;
-  if (tasks?.ratedTasksCount > 0) return true;
-  if (tasks?.averageTaskRating != null && !Number.isNaN(Number(tasks.averageTaskRating))) {
+  if (Number(tasks.ratedTasksCount) > 0) return true;
+  if (tasks.averageTaskRating != null && !Number.isNaN(Number(tasks.averageTaskRating))) {
     return true;
   }
-  return (tasks?.completed ?? 0) > 0 && tasks?.averageTaskRating != null;
+  return Number(tasks.completed) > 0;
+}
+
+function hasFormalAssessment(profile) {
+  if (!profile) return false;
+  if (profile.hasAssessment === true) return true;
+  const current = profile.current;
+  return current != null && current.overallRating != null;
 }
 
 function RatingBar({ label, value, color = 'primary' }) {
@@ -156,17 +166,22 @@ const InternRating = ({ refreshKey }) => {
     );
   }, [dispatch, refreshKey]);
 
+  const profile = useMemo(
+    () => unwrapRatingProfile(ratingProfile),
+    [ratingProfile]
+  );
+
   const chartData = useMemo(() => {
-    const history = ratingProfile?.history ?? [];
+    const history = profile?.history ?? [];
     return history.map((point, index) => ({
       key: point.assessmentId ?? index,
       label: formatDate(point.date),
       rating: Number(point.overallRating) || 0,
     }));
-  }, [ratingProfile?.history]);
+  }, [profile?.history]);
 
   const trendDelta = useMemo(() => {
-    const current = ratingProfile?.current;
+    const current = profile?.current;
     if (current?.previousRating != null && current?.overallRating != null) {
       const diff = Number(current.overallRating) - Number(current.previousRating);
       if (!Number.isNaN(diff) && Math.abs(diff) >= 0.05) {
@@ -175,9 +190,9 @@ const InternRating = ({ refreshKey }) => {
       }
     }
     return null;
-  }, [ratingProfile?.current]);
+  }, [profile?.current]);
 
-  if (isProfileLoading && !ratingProfile) {
+  if (isProfileLoading && !profile) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
         <CircularProgress />
@@ -193,16 +208,28 @@ const InternRating = ({ refreshKey }) => {
     );
   }
 
-  if (!ratingProfile) {
-    return null;
+  if (!profile) {
+    return (
+      <Alert severity="warning" sx={{ borderRadius: 2 }}>
+        Не удалось загрузить профиль рейтинга. Обновите страницу.
+      </Alert>
+    );
   }
 
-  const { hasAssessment, current, cohort, tasks, recentRatedTasks = [], programName } =
-    ratingProfile;
+  const {
+    current,
+    cohort,
+    tasks: tasksRaw,
+    programName,
+  } = profile;
+  const tasks = tasksRaw ?? profile.taskStats ?? {};
+  const recentRatedTasks =
+    profile.recentRatedTasks ?? profile.recent_rated_tasks ?? [];
 
-  const showTaskRatings = hasTaskRatingData(ratingProfile);
+  const showTaskRatings = hasTaskRatingData(profile);
+  const showFormalAssessment = hasFormalAssessment(profile);
 
-  if (!hasAssessment && !showTaskRatings) {
+  if (!showFormalAssessment && !showTaskRatings) {
     return (
       <Box>
         <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
@@ -240,14 +267,14 @@ const InternRating = ({ refreshKey }) => {
         )}
       </Box>
 
-      {!hasAssessment && showTaskRatings && (
+      {!showFormalAssessment && showTaskRatings && (
         <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
           Итоговая оценка по стажировке ещё не выставлена. Ниже — оценки по выполненным задачам.
         </Alert>
       )}
 
       <Grid container spacing={3}>
-        {!hasAssessment && showTaskRatings && (
+        {!showFormalAssessment && showTaskRatings && (
           <Grid size={{ xs: 12, lg: 5 }}>
             <Paper sx={CARD_SX}>
               <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 1 }}>
@@ -274,7 +301,7 @@ const InternRating = ({ refreshKey }) => {
           </Grid>
         )}
 
-        {hasAssessment && (
+        {showFormalAssessment && (
         <>
         {/* Hero + dimensions */}
         <Grid size={{ xs: 12, lg: 5 }}>
@@ -401,8 +428,8 @@ const InternRating = ({ refreshKey }) => {
         )}
 
         {/* Task KPIs */}
-        {(hasAssessment || showTaskRatings) && (
-        <Grid size={{ xs: 12, lg: hasAssessment ? 5 : 7 }}>
+        {(showFormalAssessment || showTaskRatings) && (
+        <Grid size={{ xs: 12, lg: showFormalAssessment ? 5 : 7 }}>
           <Paper sx={CARD_SX}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
               <AssignmentTurnedIn color="primary" />
@@ -471,7 +498,7 @@ const InternRating = ({ refreshKey }) => {
         )}
 
         {/* Recent rated tasks */}
-        {(hasAssessment || showTaskRatings) && (
+        {(showFormalAssessment || showTaskRatings) && (
         <Grid size={{ xs: 12 }}>
           <Paper sx={CARD_SX}>
             <Typography variant="h6" fontWeight={700} gutterBottom>

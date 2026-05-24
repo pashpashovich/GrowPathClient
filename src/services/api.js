@@ -229,6 +229,10 @@ export const internAPI = {
       responseType: 'blob',
       timeout: 120000,
     }),
+  getInternHiringDecision: (internId, programId) =>
+    api.get(`${internsPath}/${internId}/hiring-decision`, { params: { programId } }),
+  recordInternHiringDecision: (internId, data) =>
+    api.put(`${internsPath}/${internId}/hiring-decision`, data),
 };
 
 export const mentorAPI = {

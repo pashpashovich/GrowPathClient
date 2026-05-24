@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { ratingAPI } from '../../services/api';
+import { unwrapRatingProfile } from '../../utils/apiResponse';
 
 export const fetchRatingsAsync = createAsyncThunk(
   'rating/fetchRatings',
@@ -30,7 +31,11 @@ export const fetchRatingProfileAsync = createAsyncThunk(
   async (params, { rejectWithValue }) => {
     try {
       const response = await ratingAPI.getRatingProfile(params);
-      return response.data?.data ?? response.data;
+      const profile = unwrapRatingProfile(response.data);
+      if (!profile) {
+        return rejectWithValue('Некорректный ответ сервера (профиль рейтинга)');
+      }
+      return profile;
     } catch (error) {
       const data = error.response?.data;
       const message =

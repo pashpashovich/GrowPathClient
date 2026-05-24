@@ -32,8 +32,14 @@ import {
   Refresh,
   Search,
   PictureAsPdf,
+  Gavel,
 } from '@mui/icons-material';
 import { internAPI } from '../../services/api';
+import InternHiringDecisionDialog from '../hiring/InternHiringDecisionDialog';
+import {
+  canRecordHiringDecision,
+  isProgramEligibleForHiring,
+} from '../../utils/hiringDecision';
 import { getAxiosBlobErrorMessage, saveAxiosBlobResponse } from '../../utils/downloadBlob';
 import ActionSnackbar from '../mailings/ActionSnackbar';
 import { useSelector, useDispatch } from 'react-redux';
@@ -74,6 +80,8 @@ const RatingTable = () => {
   const { ratings = [], selectedInternshipId, isLoading } = useSelector((state) => state.rating || {});
   const { internships = [] } = useSelector((state) => state.roadmap || {});
   const programs = useSelector((state) => state.internshipProgram?.programs || []);
+  const userRole = useSelector((state) => state.auth?.user?.role);
+  const mayApproveHiring = canRecordHiringDecision(userRole);
 
   const internshipOptions = useMemo(() => {
     if (programs.length > 0) {
@@ -116,6 +124,7 @@ const RatingTable = () => {
   const [mentorPage, setMentorPage] = useState(0);
   const [pdfLoadingInternId, setPdfLoadingInternId] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [hiringTarget, setHiringTarget] = useState(null);
 
   useEffect(() => {
     dispatch(fetchRatingsAsync(selectedInternshipId ? { internshipId: selectedInternshipId } : undefined));
@@ -294,6 +303,33 @@ const RatingTable = () => {
     setFilterRank('all');
     setSortBy('rank');
     dispatch(setSelectedInternship(null));
+  };
+
+  const openHiringDialog = (rating) => {
+    const programId = rating.internshipId ?? selectedInternshipId;
+    if (!programId) {
+      setSnackbar({
+        open: true,
+        message: 'Не указана программа стажировки для решения о найме',
+        severity: 'warning',
+      });
+      return;
+    }
+    const program = programMap.get(Number(programId));
+    if (!isProgramEligibleForHiring(program)) {
+      setSnackbar({
+        open: true,
+        message: 'Решение доступно только для завершённых программ',
+        severity: 'warning',
+      });
+      return;
+    }
+    setHiringTarget({
+      internId: rating.internId,
+      programId: Number(programId),
+      internName: rating.internName,
+      programTitle: program?.title || program?.name || rating.programName,
+    });
   };
 
   const handleDownloadInternPdf = async (internId, internName) => {
@@ -622,21 +658,37 @@ const RatingTable = () => {
                   <TableCell sx={{ px: 3, py: 2 }}>{getTrendIcon(rating.trend)}</TableCell>
                   <TableCell sx={{ px: 3, py: 2 }} align="center">
                     {rating.internId ? (
-                      <Tooltip title="Итоги стажировки (PDF, GP-RPT-1)">
-                        <span>
-                          <IconButton
-                            size="small"
-                            disabled={pdfLoadingInternId === rating.internId}
-                            onClick={() => handleDownloadInternPdf(rating.internId, rating.internName)}
-                          >
-                            {pdfLoadingInternId === rating.internId ? (
-                              <CircularProgress size={18} />
-                            ) : (
-                              <PictureAsPdf fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
+                      <Box sx={{ display: 'inline-flex', gap: 0.25 }}>
+                        <Tooltip title="Итоги стажировки (PDF, GP-RPT-1)">
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={pdfLoadingInternId === rating.internId}
+                              onClick={() => handleDownloadInternPdf(rating.internId, rating.internName)}
+                            >
+                              {pdfLoadingInternId === rating.internId ? (
+                                <CircularProgress size={18} />
+                              ) : (
+                                <PictureAsPdf fontSize="small" />
+                              )}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        {mayApproveHiring &&
+                          isProgramEligibleForHiring(
+                            programMap.get(Number(rating.internshipId ?? selectedInternshipId))
+                          ) && (
+                            <Tooltip title="Принять решение о найме (UC-14)">
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => openHiringDialog(rating)}
+                              >
+                                <Gavel fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                      </Box>
                     ) : (
                       '—'
                     )}
@@ -659,6 +711,16 @@ const RatingTable = () => {
           sx={{ borderTop: 1, borderColor: 'divider', bgcolor: 'grey.50' }}
         />
       </TableContainer>
+
+      <InternHiringDecisionDialog
+        open={Boolean(hiringTarget)}
+        onClose={() => setHiringTarget(null)}
+        internId={hiringTarget?.internId}
+        programId={hiringTarget?.programId}
+        internName={hiringTarget?.internName}
+        programTitle={hiringTarget?.programTitle}
+        onRecorded={() => handleRefresh()}
+      />
 
       <ActionSnackbar
         open={snackbar.open}

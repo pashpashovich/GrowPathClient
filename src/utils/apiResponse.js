@@ -1,3 +1,31 @@
+/** Профиль рейтинга стажёра: GET /ratings/profile */
+export const unwrapRatingProfile = (body) => {
+  if (body == null || typeof body !== 'object') return null;
+
+  const looksLikeProfile = (obj) =>
+    obj &&
+    typeof obj === 'object' &&
+    !Array.isArray(obj) &&
+    (obj.internId != null ||
+      obj.internshipId != null ||
+      obj.tasks != null ||
+      Array.isArray(obj.recentRatedTasks) ||
+      Array.isArray(obj.recent_rated_tasks) ||
+      obj.hasAssessment !== undefined);
+
+  if (looksLikeProfile(body)) return body;
+
+  for (const key of ['data', 'payload', 'result', 'content', 'profile']) {
+    const nested = body[key];
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+      const unwrapped = unwrapRatingProfile(nested);
+      if (looksLikeProfile(unwrapped)) return unwrapped;
+    }
+  }
+
+  return looksLikeProfile(body) ? body : null;
+};
+
 export const unwrapList = (response) => {
   const payload = response?.data;
   if (Array.isArray(payload)) return payload;
