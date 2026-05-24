@@ -1,3 +1,20 @@
+export const buildTaskFormExtras = ({ goalId, checklist } = {}) => {
+  const extras = {};
+  if (goalId) {
+    extras.goalId = Number(goalId);
+  }
+  const items = (checklist || [])
+    .filter((item) => String(item.text || '').trim())
+    .map((item) => ({
+      text: String(item.text).trim(),
+      completed: Boolean(item.completed),
+    }));
+  if (items.length > 0) {
+    extras.checklist = items;
+  }
+  return extras;
+};
+
 export const buildCreateTaskPayload = ({
   title,
   description,
@@ -5,6 +22,8 @@ export const buildCreateTaskPayload = ({
   internshipId,
   dueDate,
   assignments,
+  goalId,
+  checklist,
 }) => {
   const payload = {
     title: title.trim(),
@@ -15,6 +34,7 @@ export const buildCreateTaskPayload = ({
       internId: Number(internId),
       iprStageId: Number(stageId),
     })),
+    ...buildTaskFormExtras({ goalId, checklist }),
   };
 
   if (dueDate) {

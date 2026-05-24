@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -33,7 +33,12 @@ import { fetchInternshipProgramsAsync } from '../../store/slices/internshipProgr
 import { getCurrentUserAsync } from '../../store/slices/authSlice';
 import { hrAPI, iprAPI } from '../../services/api';
 import { getApiErrorMessage, unwrapList } from '../../utils/apiResponse';
-import { buildCreateTaskPayload, validateTaskAssignments } from '../../utils/buildCreateTaskPayload';
+import {
+  buildCreateTaskPayload,
+  buildTaskFormExtras,
+  validateTaskAssignments,
+} from '../../utils/buildCreateTaskPayload';
+import { normalizeInternshipProgram } from '../../utils/internshipProgramApi';
 import { getNormalizedRole } from '../../utils/resolveAppRole';
 import { getAuthUserId } from '../../utils/authUser';
 import { uploadTaskArtifactFile } from '../../utils/taskArtifactUpload';
@@ -85,6 +90,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     priority: 'medium',
     dueDate: '',
     goalId: '',
+    goalLabel: '',
     checklist: [{ id: 1, text: '', completed: false }],
     attachments: [],
   });
@@ -93,6 +99,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   const [programInterns, setProgramInterns] = useState([]);
   const [programIprs, setProgramIprs] = useState([]);
   const [stagesByIprId, setStagesByIprId] = useState({});
+  const [programDetails, setProgramDetails] = useState(null);
   const [programDataLoading, setProgramDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingTask, setLoadingTask] = useState(false);
@@ -115,6 +122,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     if (!programId) {
       setProgramInterns([]);
       setProgramIprs([]);
+      setProgramDetails(null);
       setStagesByIprId({});
       return;
     }
@@ -124,10 +132,13 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
       if (scopeToMentor && Number.isFinite(mentorUserId)) {
         iprParams.mentorId = mentorUserId;
       }
-      const [internsRes, iprsRes] = await Promise.all([
+      const [internsRes, iprsRes, programRes] = await Promise.all([
         hrAPI.getProgramInterns(programId),
         iprAPI.getIprs(iprParams),
+        hrAPI.getInternshipProgramById(programId),
       ]);
+      const programRaw = programRes.data?.data ?? programRes.data;
+      setProgramDetails(normalizeInternshipProgram(programRaw));
       let interns = unwrapList(internsRes);
       if (scopeToMentor) {
         interns = interns.filter((p) => Number(p.mentorId) === Number(mentorUserId));
@@ -141,6 +152,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
       setSubmitError(getApiErrorMessage(e, 'Не удалось загрузить данные программы'));
       setProgramInterns([]);
       setProgramIprs([]);
+      setProgramDetails(null);
       return { interns: [], iprs: [] };
     } finally {
       setProgramDataLoading(false);
@@ -156,6 +168,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         priority: mapped.priority,
         dueDate: mapped.dueDate,
         goalId: mapped.goalId,
+        goalLabel: mapped.goalLabel || '',
         checklist: mapped.checklist,
         attachments: mapped.attachments,
       });
@@ -224,6 +237,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         priority: 'medium',
         dueDate: '',
         goalId: '',
+        goalLabel: '',
         checklist: [{ id: 1, text: '', completed: false }],
         attachments: [],
       });
@@ -266,6 +280,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
 
   const handleProgramChange = (programId) => {
     setInternshipId(programId);
+    setFormData((prev) => ({ ...prev, goalId: '', goalLabel: '' }));
     setAssignmentRows([newAssignmentRow()]);
     loadProgramData(programId);
     if (errors.internshipId) {
@@ -407,6 +422,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         if (row?.stageId) {
           payload.iprStageId = Number(row.stageId);
         }
+        Object.assign(payload, buildTaskFormExtras(formData));
         await dispatch(updateTaskAsync({ id: editingTask.id, data: payload })).unwrap();
         await uploadPendingFilesToTasks([editingTask.id]);
         onCreated?.();
@@ -430,6 +446,8 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         internshipId,
         dueDate: formData.dueDate,
         assignments: filledRows,
+        goalId: formData.goalId,
+        checklist: formData.checklist,
       });
       const created = await dispatch(createTaskAsync(payload)).unwrap();
       const taskIds = resolveCreatedTaskIds(created);
@@ -455,8 +473,28 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     return stagesByIprId[String(ipr.id)] || [];
   };
 
-  const currentProgram = programs.find((p) => String(p.id) === String(internshipId));
-  const availableGoals = currentProgram?.goals || [];
+  const goalOptions = useMemo(() => {
+    const listProgram =
+      programDetails ||
+      programs.find((p) => String(p.id) === String(internshipId));
+    const fromProgram = Array.isArray(listProgram?.goals) ? listProgram.goals : [];
+    const options = fromProgram
+      .filter((g) => g.id != null)
+      .map((g) => ({
+        id: String(g.id),
+        title: g.title || `Цель ${g.id}`,
+      }));
+    if (
+      formData.goalId &&
+      !options.some((g) => g.id === String(formData.goalId))
+    ) {
+      options.unshift({
+        id: String(formData.goalId),
+        title: formData.goalLabel || `Цель #${formData.goalId}`,
+      });
+    }
+    return options;
+  }, [programDetails, programs, internshipId, formData.goalId, formData.goalLabel]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -544,18 +582,26 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
             </FormControl>
           )}
 
-          {availableGoals.length > 0 && (
-            <FormControl fullWidth>
+          {internshipId && (
+            <FormControl fullWidth disabled={programDataLoading}>
               <InputLabel>Цель программы стажировки</InputLabel>
               <Select
                 value={formData.goalId}
-                onChange={(e) => handleInputChange('goalId', e.target.value)}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  const picked = goalOptions.find((g) => g.id === String(nextId));
+                  setFormData((prev) => ({
+                    ...prev,
+                    goalId: nextId,
+                    goalLabel: picked?.title || '',
+                  }));
+                }}
                 label="Цель программы стажировки"
               >
                 <MenuItem value="">
                   <em>Не выбрана</em>
                 </MenuItem>
-                {availableGoals.map((goal) => (
+                {goalOptions.map((goal) => (
                   <MenuItem key={goal.id} value={goal.id}>
                     {goal.title}
                   </MenuItem>
@@ -673,6 +719,8 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
             </Box>
           )}
 
+          {!loadingTask && (
+          <>
           <Divider />
 
           <Box>
@@ -783,6 +831,8 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
               </List>
             )}
           </Box>
+          </>
+          )}
         </Box>
       </DialogContent>
 

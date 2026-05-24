@@ -57,7 +57,6 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
   const userRole = useSelector((state) => state.auth.user?.role ?? state.auth.role);
   const useTaskProfile = userRole === 'mentor' || userRole === 'intern';
 
-  const [taskMenu, setTaskMenu] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
@@ -145,35 +144,21 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
     });
   };
 
-  const handleMenuOpen = (event, task) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setTaskMenu({ anchorEl: event.currentTarget, task });
+  const handleViewTask = (task) => {
+    dispatch(setCurrentTask(task));
     setSelectedTask(task);
-  };
-
-  const handleMenuClose = () => {
-    setTaskMenu(null);
-  };
-
-  const handleViewTask = () => {
-    if (!selectedTask) return;
-    dispatch(setCurrentTask(selectedTask));
     setIsTaskDetailsOpen(true);
-    handleMenuClose();
   };
 
-  const handleEditTask = () => {
-    if (!selectedTask) return;
-    setEditingTask(selectedTask);
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setSelectedTask(task);
     setIsTaskFormOpen(true);
-    handleMenuClose();
   };
 
-  const handleDeleteTask = () => {
-    if (!selectedTask) return;
-    setDeleteTarget(selectedTask);
-    handleMenuClose();
+  const handleDeleteTask = (task) => {
+    setSelectedTask(task);
+    setDeleteTarget(task);
   };
 
   const handleConfirmDelete = async () => {
@@ -194,11 +179,10 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
     }
   };
 
-  const handleChangeStatus = () => {
-    if (!selectedTask) return;
-    setNewStatus(selectedTask.status);
+  const handleChangeStatus = (task) => {
+    setSelectedTask(task);
+    setNewStatus(task.status);
     setIsStatusDialogOpen(true);
-    handleMenuClose();
   };
 
   const handleStatusUpdate = async () => {
@@ -294,8 +278,13 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
 
   const TaskCard = ({ task }) => {
     const taskGoal = getTaskGoal(task);
-    
+    const [menuAnchor, setMenuAnchor] = useState(null);
+    const menuOpen = Boolean(menuAnchor);
+
+    const closeMenu = () => setMenuAnchor(null);
+
     return (
+    <>
     <Card
       draggable
       onDragStart={handleTaskDragStart(task)}
@@ -308,10 +297,7 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
         },
         '&:active': { cursor: 'grabbing' },
       }}
-      onClick={() => {
-        dispatch(setCurrentTask(task));
-        setIsTaskDetailsOpen(true);
-      }}
+      onClick={() => handleViewTask(task)}
     >
       <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
         {/* Заголовок и меню */}
@@ -322,10 +308,13 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
           <IconButton
             id={`task-menu-button-${task.id}`}
             size="small"
+            aria-label="Действия с задачей"
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleMenuOpen(e, task);
+              setMenuAnchor(e.currentTarget);
             }}
           >
             <MoreVert fontSize="small" />
@@ -415,6 +404,61 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
         )}
       </CardContent>
     </Card>
+
+    <Menu
+      anchorEl={menuAnchor}
+      open={menuOpen}
+      onClose={closeMenu}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      disableScrollLock
+      slotProps={{
+        paper: { sx: { minWidth: 200 } },
+      }}
+    >
+      <MenuItem
+        onClick={(e) => {
+          e.stopPropagation();
+          closeMenu();
+          handleViewTask(task);
+        }}
+      >
+        <Visibility sx={{ mr: 1 }} />
+        Просмотр
+      </MenuItem>
+      <MenuItem
+        onClick={(e) => {
+          e.stopPropagation();
+          closeMenu();
+          handleEditTask(task);
+        }}
+      >
+        <Edit sx={{ mr: 1 }} />
+        Редактировать
+      </MenuItem>
+      <MenuItem
+        onClick={(e) => {
+          e.stopPropagation();
+          closeMenu();
+          handleChangeStatus(task);
+        }}
+      >
+        <DragIndicator sx={{ mr: 1 }} />
+        Изменить статус
+      </MenuItem>
+      <MenuItem
+        onClick={(e) => {
+          e.stopPropagation();
+          closeMenu();
+          handleDeleteTask(task);
+        }}
+        sx={{ color: 'error.main' }}
+      >
+        <Delete sx={{ mr: 1 }} />
+        Удалить
+      </MenuItem>
+    </Menu>
+    </>
     );
   };
 
@@ -586,47 +630,6 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
         ))}
         </Box>
       </Box>
-
-      <Menu
-        anchorEl={taskMenu?.anchorEl ?? null}
-        open={Boolean(taskMenu?.anchorEl)}
-        onClose={handleMenuClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        disableScrollLock
-        slotProps={{
-          paper: { sx: { minWidth: 200 } },
-        }}
-      >
-        <MenuItem onClick={(e) => {
-          e.stopPropagation();
-          handleViewTask();
-        }}>
-          <Visibility sx={{ mr: 1 }} />
-          Просмотр
-        </MenuItem>
-        <MenuItem onClick={(e) => {
-          e.stopPropagation();
-          handleEditTask();
-        }}>
-          <Edit sx={{ mr: 1 }} />
-          Редактировать
-        </MenuItem>
-        <MenuItem onClick={(e) => {
-          e.stopPropagation();
-          handleChangeStatus();
-        }}>
-          <DragIndicator sx={{ mr: 1 }} />
-          Изменить статус
-        </MenuItem>
-        <MenuItem onClick={(e) => {
-          e.stopPropagation();
-          handleDeleteTask();
-        }} sx={{ color: 'error.main' }}>
-          <Delete sx={{ mr: 1 }} />
-          Удалить
-        </MenuItem>
-      </Menu>
 
       {/* Диалог изменения статуса */}
       <Dialog open={isStatusDialogOpen} onClose={() => setIsStatusDialogOpen(false)}>

@@ -67,6 +67,49 @@ export const normalizeTaskFromApi = (raw) => {
   return task;
 };
 
+export const resolveTaskGoalId = (task) => {
+  const t = normalizeTaskFromApi(task) || task || {};
+  if (t.goalId != null) return String(t.goalId);
+  if (t.programGoalId != null) return String(t.programGoalId);
+  if (t.goal?.id != null) return String(t.goal.id);
+  if (t.programGoal?.id != null) return String(t.programGoal.id);
+  return '';
+};
+
+export const resolveTaskGoalLabel = (task) => {
+  const t = normalizeTaskFromApi(task) || task || {};
+  return (
+    t.goalTitle ??
+    t.goal?.title ??
+    t.programGoal?.title ??
+    t.programGoalTitle ??
+    ''
+  );
+};
+
+export const resolveTaskChecklist = (task) => {
+  const t = normalizeTaskFromApi(task) || task || {};
+  const raw =
+    t.checklist ??
+    t.acceptanceChecklist ??
+    t.checkList ??
+    t.checklistItems ??
+    t.acceptanceCriteria;
+
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return [{ id: 1, text: '', completed: false }];
+  }
+
+  return raw.map((item, index) => ({
+    id: item?.id ?? index + 1,
+    text:
+      typeof item === 'string'
+        ? item
+        : item?.text ?? item?.title ?? item?.description ?? item?.label ?? '',
+    completed: typeof item === 'object' ? Boolean(item.completed) : false,
+  }));
+};
+
 export const mapTaskToFormFields = (task) => {
   const t = normalizeTaskFromApi(task) || {};
   let dueDate = '';
@@ -84,17 +127,12 @@ export const mapTaskToFormFields = (task) => {
     description: t.description ?? '',
     priority: ['low', 'medium', 'high'].includes(priority) ? priority : 'medium',
     dueDate,
-    goalId: t.goalId != null ? String(t.goalId) : '',
+    goalId: resolveTaskGoalId(t),
+    goalLabel: resolveTaskGoalLabel(t),
     internshipId: resolveTaskProgramId(t),
     assigneeId: resolveTaskAssigneeId(t),
     stageId: resolveTaskStageId(t),
-    checklist: Array.isArray(t.checklist)
-      ? t.checklist.map((item, index) => ({
-          id: index + 1,
-          text: typeof item === 'string' ? item : item.text || '',
-          completed: typeof item === 'object' ? Boolean(item.completed) : false,
-        }))
-      : [{ id: 1, text: '', completed: false }],
+    checklist: resolveTaskChecklist(t),
     attachments: resolveTaskFileAttachments(t),
     links: t.links || t.submissionLinks || [],
   };
