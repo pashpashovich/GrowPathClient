@@ -89,6 +89,7 @@ const RoadmapPage = ({ canEdit = true }) => {
         onEditInternship={handleEditInternship}
         onCreateIpr={handleCreateIpr}
         canEdit={canEdit}
+        useIpr={useIprMode}
       />
       <RoadmapView onEdit={handleOpenForm} canEdit={canEdit} useIpr={useIprMode} />
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import {
   Edit,
+  Delete,
   School,
   Schedule,
   CheckCircle,
@@ -25,8 +26,12 @@ import {
   Note,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
-import { setCurrentInternship } from '../../store/slices/roadmapSlice';
+import { deleteInternshipAsync, setCurrentInternship } from '../../store/slices/roadmapSlice';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import { getApiErrorMessage } from '../../utils/apiResponse';
 import { getRoadmapEntityStatusLabel } from '../../utils/roadmapEntityStatus';
+import { canDeleteRoadmapEntity } from '../../utils/roadmapPermissions';
+import { getNormalizedRole } from '../../utils/resolveAppRole';
 
 const InternshipSelector = ({
   onEditInternship,
@@ -34,14 +39,20 @@ const InternshipSelector = ({
   canEdit = true,
   entityViewMode = 'templates',
   onChangeEntityViewMode,
+  useIpr = false,
 }) => {
   const dispatch = useDispatch();
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const { internships, currentInternshipId } = useSelector((state) => state.roadmap);
   const currentUser = useSelector((state) => state.auth.user);
   const authRole = useSelector((state) => state.auth.role);
   const userRole = currentUser?.role ?? authRole;
+  const appRole = getNormalizedRole(currentUser) ?? userRole;
 
   const isIntern = userRole === 'intern';
+  const canDelete = (entity) => canDeleteRoadmapEntity(entity, currentUser, appRole);
   const isMentor = userRole === 'mentor';
   const internInternship = isIntern
     ? internships.find((internship) => internship.status === 'active') || internships[0] || null
@@ -98,6 +109,26 @@ const InternshipSelector = ({
     dispatch(setCurrentInternship(value || null));
   };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const isIprEntity = useIpr || Boolean(deleteTarget.internId);
+      await dispatch(
+        deleteInternshipAsync({
+          internshipId: deleteTarget.id,
+          useIpr: isIprEntity,
+        })
+      ).unwrap();
+      setDeleteTarget(null);
+    } catch (e) {
+      setDeleteError(getApiErrorMessage(e, 'Не удалось удалить'));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const currentInternship = isIntern 
     ? internInternship 
     : internships.find(i => i.id === currentInternshipId);
@@ -143,6 +174,12 @@ const InternshipSelector = ({
           </Button>
         )}
       </Box>
+
+      {deleteError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDeleteError('')}>
+          {deleteError}
+        </Alert>
+      )}
 
       {!isIntern && (
         <FormControl fullWidth sx={{ mb: 2 }}>
@@ -211,16 +248,29 @@ const InternshipSelector = ({
                   )}
                 </Box>
               </Box>
-              {canEdit && (
+              {(canEdit || canDelete(currentInternship)) && (
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Tooltip title="Редактировать стажировку">
-                    <IconButton
-                      size="small"
-                      onClick={() => onEditInternship(currentInternship)}
-                    >
-                      <Edit />
-                    </IconButton>
-                  </Tooltip>
+                  {canEdit && (
+                    <Tooltip title={useIpr || currentInternship.internId ? 'Редактировать ИПР' : 'Редактировать шаблон'}>
+                      <IconButton
+                        size="small"
+                        onClick={() => onEditInternship(currentInternship)}
+                      >
+                        <Edit />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {canDelete(currentInternship) && (
+                    <Tooltip title={useIpr || currentInternship.internId ? 'Удалить ИПР' : 'Удалить шаблон'}>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => setDeleteTarget(currentInternship)}
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
               )}
             </Box>
@@ -252,6 +302,26 @@ const InternshipSelector = ({
           </Box>
         </Box>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={
+          deleteTarget && (useIpr || deleteTarget.internId)
+            ? 'Удаление ИПР'
+            : 'Удаление шаблона'
+        }
+        message={
+          deleteTarget
+            ? `Удалить «${deleteTarget.title}»?`
+            : ''
+        }
+        detail="Действие нельзя отменить. Все этапы будут удалены вместе с записью."
+        confirmLabel="Удалить"
+        confirmColor="error"
+        confirming={deleting}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 };

@@ -45,6 +45,8 @@ import {
   reorderStagesAsync,
   clearError,
 } from '../../store/slices/roadmapSlice';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import { getApiErrorMessage } from '../../utils/apiResponse';
 
 const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
   const dispatch = useDispatch();
@@ -58,6 +60,9 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [statusComments, setStatusComments] = useState('');
+  const [stageToDelete, setStageToDelete] = useState(null);
+  const [deletingStage, setDeletingStage] = useState(false);
+  const [localError, setLocalError] = useState('');
 
   const getStatusInfo = (status) => {
     switch (status) {
@@ -144,15 +149,31 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
     handleMenuClose();
   };
 
-  const handleDeleteStage = async () => {
-    if (selectedStage && window.confirm('Вы уверены, что хотите удалить этот этап?')) {
-      await dispatch(deleteStageAsync({ 
-        internshipId: currentInternshipId, 
-        stageId: selectedStage.id,
-        useIpr,
-      }));
+  const handleDeleteStage = () => {
+    if (selectedStage) {
+      setStageToDelete(selectedStage);
     }
     handleMenuClose();
+  };
+
+  const handleConfirmDeleteStage = async () => {
+    if (!stageToDelete || !currentInternshipId) return;
+    setDeletingStage(true);
+    setLocalError('');
+    try {
+      await dispatch(
+        deleteStageAsync({
+          internshipId: currentInternshipId,
+          stageId: stageToDelete.id,
+          useIpr,
+        })
+      ).unwrap();
+      setStageToDelete(null);
+    } catch (e) {
+      setLocalError(getApiErrorMessage(e, 'Не удалось удалить этап'));
+    } finally {
+      setDeletingStage(false);
+    }
   };
 
   const openStatusDialog = (stage) => {
@@ -486,14 +507,36 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
         </DialogActions>
       </Dialog>
 
+      <ConfirmDialog
+        open={Boolean(stageToDelete)}
+        title="Удаление этапа"
+        message={stageToDelete ? `Удалить этап «${stageToDelete.title}»?` : ''}
+        detail="Действие нельзя отменить."
+        confirmLabel="Удалить"
+        confirmColor="error"
+        confirming={deletingStage}
+        onClose={() => !deletingStage && setStageToDelete(null)}
+        onConfirm={handleConfirmDeleteStage}
+      />
+
       <Snackbar
-        open={!!error}
+        open={!!(error || localError)}
         autoHideDuration={4000}
-        onClose={() => dispatch(clearError())}
+        onClose={() => {
+          dispatch(clearError());
+          setLocalError('');
+        }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert onClose={() => dispatch(clearError())} severity="error" sx={{ width: '100%' }}>
-          {error}
+        <Alert
+          onClose={() => {
+            dispatch(clearError());
+            setLocalError('');
+          }}
+          severity="error"
+          sx={{ width: '100%' }}
+        >
+          {localError || error}
         </Alert>
       </Snackbar>
     </Box>

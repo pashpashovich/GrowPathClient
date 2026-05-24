@@ -8,6 +8,8 @@ export const unwrapList = (response) => {
 const KNOWN_API_ERROR_MESSAGES = {
   'At least one stage is required for activation':
     'Нельзя активировать шаблон без этапов. Добавьте хотя бы один этап.',
+  Forbidden: 'Недостаточно прав для этого действия',
+  'Access denied': 'Недостаточно прав для этого действия',
 };
 
 const extractRawApiError = (error) => {
