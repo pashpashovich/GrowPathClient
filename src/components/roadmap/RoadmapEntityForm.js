@@ -14,6 +14,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { hrAPI, internAPI, roadmapAPI } from '../../services/api';
 import { createInternshipAsync, updateInternshipAsync } from '../../store/slices/roadmapSlice';
+import { getApiErrorMessage } from '../../utils/apiResponse';
 import {
   getRoadmapEntityStatusLabel,
   IPR_STATUSES,
@@ -179,7 +180,7 @@ const RoadmapEntityForm = ({ mode, entityToEdit, onClose }) => {
       }
       onClose();
     } catch (e) {
-      setError(e?.message || 'Ошибка сохранения');
+      setError(getApiErrorMessage(e, 'Ошибка сохранения'));
     } finally {
       setIsSubmitting(false);
     }

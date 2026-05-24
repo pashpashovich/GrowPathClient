@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { roadmapAPI, iprAPI } from '../../services/api';
+import { getApiErrorMessage } from '../../utils/apiResponse';
 
 const toArray = (body) => {
   if (!body) return [];
@@ -44,7 +45,7 @@ export const fetchInternshipsAsync = createAsyncThunk(
       const response = await roadmapAPI.getInternships(params || {});
       return toArray(response.data).map(normalizeInternship);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки стажировок');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка загрузки стажировок');
     }
   }
 );
@@ -63,7 +64,7 @@ export const fetchInternshipsProfileAsync = createAsyncThunk(
       }
       return list;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки стажировок профиля');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка загрузки стажировок профиля');
     }
   }
 );
@@ -75,7 +76,7 @@ export const fetchInternshipsByProgramAsync = createAsyncThunk(
       const response = await roadmapAPI.getInternshipsByProgram(programId);
       return toArray(response.data).map(normalizeInternship);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки стажировок программы');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка загрузки стажировок программы');
     }
   }
 );
@@ -87,7 +88,7 @@ export const fetchIprsAsync = createAsyncThunk(
       const response = await iprAPI.getIprs(params || {});
       return toArray(response.data).map(normalizeInternship);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки ИПР');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка загрузки ИПР');
     }
   }
 );
@@ -109,7 +110,7 @@ export const createInternshipAsync = createAsyncThunk(
       }
       return created;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка создания стажировки');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка создания стажировки');
     }
   }
 );
@@ -123,7 +124,7 @@ export const updateInternshipAsync = createAsyncThunk(
         : await roadmapAPI.updateInternship(internshipId, data);
       return normalizeInternship(response.data?.data ?? response.data);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка обновления стажировки');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка обновления стажировки');
     }
   }
 );
@@ -139,7 +140,7 @@ export const deleteInternshipAsync = createAsyncThunk(
       }
       return String(internshipId);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка удаления стажировки');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка удаления стажировки');
     }
   }
 );
@@ -154,7 +155,7 @@ export const fetchStagesAsync = createAsyncThunk(
       const stages = toArray(response.data).map(normalizeStage).sort((a, b) => a.order - b.order);
       return { internshipId: String(internshipId), stages };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки этапов');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка загрузки этапов');
     }
   }
 );
@@ -168,7 +169,7 @@ export const createStageAsync = createAsyncThunk(
         : await roadmapAPI.createStage(internshipId, data);
       return { internshipId: String(internshipId), stage: normalizeStage(response.data?.data ?? response.data) };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка создания этапа');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка создания этапа');
     }
   }
 );
@@ -182,7 +183,7 @@ export const updateStageAsync = createAsyncThunk(
         : await roadmapAPI.updateStage(internshipId, stageId, data);
       return { internshipId: String(internshipId), stage: normalizeStage(response.data?.data ?? response.data) };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка обновления этапа');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка обновления этапа');
     }
   }
 );
@@ -198,7 +199,7 @@ export const deleteStageAsync = createAsyncThunk(
       }
       return { internshipId: String(internshipId), stageId: String(stageId) };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка удаления этапа');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка удаления этапа');
     }
   }
 );
@@ -215,7 +216,7 @@ export const reorderStagesAsync = createAsyncThunk(
       await dispatch(fetchStagesAsync({ internshipId, useIpr }));
       return { internshipId: String(internshipId) };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка переупорядочивания этапов');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка переупорядочивания этапов');
     }
   }
 );
@@ -229,7 +230,7 @@ export const changeStageStatusAsync = createAsyncThunk(
         : await roadmapAPI.changeStageStatus(internshipId, stageId, { status, comments });
       return { internshipId: String(internshipId), stage: normalizeStage(response.data?.data ?? response.data) };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка смены статуса этапа');
+      return rejectWithValue(getApiErrorMessage(error, 'Ошибка смены статуса этапа');
     }
   }
 );
