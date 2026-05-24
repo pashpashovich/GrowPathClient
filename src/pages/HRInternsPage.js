@@ -19,8 +19,8 @@ const HRInternsPage = () => {
   );
 
   return (
-    <Box>
-      <Typography variant="h4" fontWeight="bold" sx={{ mb: 3 }}>
+    <Box sx={{ width: '100%', textAlign: 'left' }}>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: 3, textAlign: 'left' }}>
         Стажёры программ
       </Typography>
 

@@ -65,8 +65,8 @@ const AnalyticsPage = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" fontWeight="bold" sx={{ mb: 4 }}>
+    <Box sx={{ width: '100%', textAlign: 'left' }}>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: 4, textAlign: 'left' }}>
         Аналитика и отчеты
       </Typography>
 
