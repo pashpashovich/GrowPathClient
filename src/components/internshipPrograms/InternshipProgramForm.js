@@ -32,7 +32,11 @@ import {
   buildUpdateInternshipProgramPayload,
   extractDataArray,
   isInternshipProgramEditable,
+  isInternshipProgramStatusEditable,
   getInternshipProgramEditLockReason,
+  INTERNSHIP_PROGRAM_STATUSES,
+  INTERNSHIP_PROGRAM_STATUS_LABELS,
+  normalizeInternshipProgramStatus,
 } from '../../utils/internshipProgramApi';
 import { hrAPI } from '../../services/api';
 
@@ -59,7 +63,13 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   const dispatch = useDispatch();
   const isEdit = Boolean(programToEdit);
   const updateLocked = isEdit && programToEdit && !isInternshipProgramEditable(programToEdit);
+  const statusEditable = isEdit && programToEdit && isInternshipProgramStatusEditable(programToEdit);
+  const statusOptions = isEdit
+    ? INTERNSHIP_PROGRAM_STATUSES
+    : INTERNSHIP_PROGRAM_STATUSES.filter((s) => s === 'draft' || s === 'active');
   const [formData, setFormData] = useState(emptyForm);
+  const initialStatus = normalizeInternshipProgramStatus(programToEdit?.status);
+  const statusChanged = isEdit && normalizeInternshipProgramStatus(formData.status) !== initialStatus;
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,7 +131,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
         requirementIds: [...(programToEdit.requirementIds || [])],
         goalIds: [...(programToEdit.goalIds || [])],
         selectionStageIds: [...(programToEdit.selectionStageIds || [])],
-        status: programToEdit.status || 'draft',
+        status: normalizeInternshipProgramStatus(programToEdit.status),
       });
     } else {
       setFormData(emptyForm());
@@ -154,7 +164,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   };
 
   const handleSubmit = async () => {
-    if (isEdit && programToEdit && !isInternshipProgramEditable(programToEdit)) return;
+    if (updateLocked && !statusChanged) return;
     if (!validateForm()) return;
     setIsSubmitting(true);
     setSubmitError('');
@@ -293,11 +303,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
   return (
     <Dialog open={open} onClose={() => !isSubmitting && onClose()} maxWidth="md" fullWidth>
       <DialogTitle>
-        {isEdit && updateLocked
-          ? 'Просмотр программы стажировки'
-          : isEdit
-            ? 'Редактировать программу стажировки'
-            : 'Создать программу стажировки'}
+        {isEdit ? 'Редактировать программу стажировки' : 'Создать программу стажировки'}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 1 }}>
@@ -387,22 +393,18 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
                 />
               </Box>
 
-              <FormControl fullWidth margin="normal" disabled={updateLocked}>
+              <FormControl fullWidth margin="normal" disabled={!statusEditable && updateLocked}>
                 <InputLabel>Статус</InputLabel>
                 <Select
                   value={formData.status}
                   label="Статус"
                   onChange={(e) => handleInputChange('status', e.target.value)}
                 >
-                  <MenuItem value="draft">Черновик</MenuItem>
-                  <MenuItem value="active">Активная</MenuItem>
-                  {isEdit && (
-                    <>
-                      <MenuItem value="completed">Завершена</MenuItem>
-                      <MenuItem value="cancelled">Отменена</MenuItem>
-                      <MenuItem value="archived">В архиве</MenuItem>
-                    </>
-                  )}
+                  {statusOptions.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {INTERNSHIP_PROGRAM_STATUS_LABELS[status] || status}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </AccordionDetails>
@@ -571,7 +573,7 @@ const InternshipProgramForm = ({ open, onClose, programToEdit = null }) => {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={isSubmitting || catalogsLoading || updateLocked}
+          disabled={isSubmitting || catalogsLoading || (updateLocked && !statusChanged)}
         >
           {isSubmitting ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Создать'}
         </Button>

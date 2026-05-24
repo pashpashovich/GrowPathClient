@@ -121,6 +121,29 @@ export function buildCreateInternshipProgramPayload(formData) {
   return payload;
 }
 
+export const INTERNSHIP_PROGRAM_STATUSES = [
+  'draft',
+  'active',
+  'completed',
+  'cancelled',
+  'archived',
+];
+
+export const INTERNSHIP_PROGRAM_STATUS_LABELS = {
+  draft: 'Черновик',
+  active: 'Активная',
+  completed: 'Завершена',
+  cancelled: 'Отменена',
+  archived: 'В архиве',
+};
+
+const INTERNSHIP_PROGRAM_STATUS_SET = new Set(INTERNSHIP_PROGRAM_STATUSES);
+
+export function normalizeInternshipProgramStatus(status) {
+  const value = String(status || 'draft').toLowerCase();
+  return INTERNSHIP_PROGRAM_STATUS_SET.has(value) ? value : 'draft';
+}
+
 export function buildUpdateInternshipProgramPayload(formData) {
   const duration = clampDuration(formData.duration);
   const maxPlaces = Number.isFinite(Number(formData.maxPlaces)) ? Number(formData.maxPlaces) : 0;
@@ -135,7 +158,7 @@ export function buildUpdateInternshipProgramPayload(formData) {
     requirementIds: cleanPositiveIntIds(formData.requirementIds),
     goalIds: cleanPositiveIntIds(formData.goalIds),
     selectionStageIds: cleanPositiveIntIds(formData.selectionStageIds),
-    status: formData.status || 'draft',
+    status: normalizeInternshipProgramStatus(formData.status),
   };
 
   if (formData.itDirectionId != null && Number.isInteger(Number(formData.itDirectionId))) {
@@ -157,10 +180,30 @@ export function isInternshipProgramStartDateReached(startDateStr) {
   return start <= today;
 }
 
-export function isInternshipProgramEditable(program) {
+/** Поля программы (кроме статуса) можно менять только у черновика до даты начала. */
+export function isInternshipProgramContentEditable(program) {
+  if (!program) return true;
+  if (program.status !== 'draft') return false;
+  if (isInternshipProgramStartDateReached(program.startDate)) return false;
   return true;
 }
 
+/** Статус можно менять на любой из справочника при редактировании существующей программы. */
+export function isInternshipProgramStatusEditable(program) {
+  return Boolean(program);
+}
+
+export function isInternshipProgramEditable(program) {
+  return isInternshipProgramContentEditable(program);
+}
+
 export function getInternshipProgramEditLockReason(program) {
+  if (!program) return '';
+  if (program.status !== 'draft') {
+    return 'Основные поля недоступны: программа уже не в статусе «Черновик». Статус можно изменить ниже.';
+  }
+  if (isInternshipProgramStartDateReached(program.startDate)) {
+    return 'Основные поля недоступны: дата начала уже наступила. Статус можно изменить ниже.';
+  }
   return '';
 }
