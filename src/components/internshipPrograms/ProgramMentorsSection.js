@@ -21,8 +21,13 @@ import {
   TextField,
 } from '@mui/material';
 import { Add, Delete } from '@mui/icons-material';
-import { hrAPI, userAPI } from '../../services/api';
-import { unwrapList, getApiErrorMessage } from '../../utils/apiResponse';
+import { hrAPI, userAPI, departmentAPI } from '../../services/api';
+import {
+  unwrapList,
+  getApiErrorMessage,
+  buildDepartmentMap,
+  resolveDepartmentName,
+} from '../../utils/apiResponse';
 import ActionSnackbar from '../mailings/ActionSnackbar';
 
 const formatDate = (value) => {
@@ -40,8 +45,20 @@ const participantLabel = (p) => {
   return parts.length ? parts.join(' ') : `ID ${p.userId}`;
 };
 
+const mapUserToCandidate = (u, departmentMap) => {
+  const label = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email;
+  const departmentName = resolveDepartmentName(u, departmentMap);
+  return {
+    id: u.id,
+    label,
+    email: u.email,
+    departmentName,
+  };
+};
+
 const ProgramMentorsSection = ({ programId, readOnly = false, compact = false }) => {
   const [mentors, setMentors] = useState([]);
+  const [departmentMap, setDepartmentMap] = useState({});
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [candidates, setCandidates] = useState([]);
@@ -49,6 +66,54 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
   const [selectedUser, setSelectedUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+
+  useEffect(() => {
+    departmentAPI
+      .getDepartments()
+      .then((res) => setDepartmentMap(buildDepartmentMap(unwrapList(res))))
+      .catch(() => setDepartmentMap({}));
+  }, []);
+
+  const enrichParticipants = useCallback(
+    async (participants) => {
+      if (!participants.length) return [];
+
+      let deptMap = departmentMap;
+      if (!Object.keys(deptMap).length) {
+        try {
+          const res = await departmentAPI.getDepartments();
+          deptMap = buildDepartmentMap(unwrapList(res));
+          setDepartmentMap(deptMap);
+        } catch {
+          deptMap = {};
+        }
+      }
+
+      let userById = {};
+      try {
+        const usersRes = await userAPI.getUsers({ role: 'mentor', limit: 100, page: 1 });
+        unwrapList(usersRes).forEach((u) => {
+          userById[String(u.id)] = u;
+        });
+      } catch {
+        userById = {};
+      }
+
+      return participants.map((p) => {
+        const user = userById[String(p.userId)];
+        const merged = {
+          departmentName: p.departmentName,
+          departmentId: p.departmentId ?? user?.departmentId,
+        };
+        let departmentName = resolveDepartmentName(merged, deptMap);
+        if (departmentName === '—' && user) {
+          departmentName = resolveDepartmentName(user, deptMap);
+        }
+        return { ...p, departmentName };
+      });
+    },
+    [departmentMap]
+  );
 
   const loadMentors = useCallback(async () => {
     if (!programId) {
@@ -58,7 +123,8 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
     setLoading(true);
     try {
       const res = await hrAPI.getProgramMentors(programId);
-      setMentors(unwrapList(res));
+      const list = unwrapList(res);
+      setMentors(await enrichParticipants(list));
     } catch (error) {
       setSnackbar({
         open: true,
@@ -69,7 +135,7 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
     } finally {
       setLoading(false);
     }
-  }, [programId]);
+  }, [programId, enrichParticipants]);
 
   useEffect(() => {
     loadMentors();
@@ -80,15 +146,20 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
     setSelectedUser(null);
     setCandidatesLoading(true);
     try {
+      let deptMap = departmentMap;
+      if (!Object.keys(deptMap).length) {
+        const deptRes = await departmentAPI.getDepartments();
+        deptMap = buildDepartmentMap(unwrapList(deptRes));
+        setDepartmentMap(deptMap);
+      }
+
       const res = await userAPI.getUsers({ role: 'mentor', limit: 100, page: 1, status: 'active' });
       const all = unwrapList(res);
       const assignedIds = new Set(mentors.map((m) => String(m.userId)));
       setCandidates(
-        all.filter((u) => !assignedIds.has(String(u.id))).map((u) => ({
-          id: u.id,
-          label: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email,
-          email: u.email,
-        }))
+        all
+          .filter((u) => !assignedIds.has(String(u.id)))
+          .map((u) => mapUserToCandidate(u, deptMap))
       );
     } catch (error) {
       setSnackbar({
@@ -136,6 +207,8 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
     }
   };
 
+  const colSpan = readOnly ? 4 : 5;
+
   if (!programId) {
     return (
       <Typography color="text.secondary" variant="body2">
@@ -178,6 +251,7 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
               <TableRow sx={{ bgcolor: 'grey.50' }}>
                 <TableCell sx={{ fontWeight: 600 }}>ФИО</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Отдел</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Назначен</TableCell>
                 {!readOnly && <TableCell align="right" sx={{ fontWeight: 600 }}>Действия</TableCell>}
               </TableRow>
@@ -185,7 +259,7 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
             <TableBody>
               {mentors.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={readOnly ? 3 : 4} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                  <TableCell colSpan={colSpan} align="center" sx={{ py: 3, color: 'text.secondary' }}>
                     Менторы не назначены
                   </TableCell>
                 </TableRow>
@@ -194,6 +268,7 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
                   <TableRow key={m.userId} hover>
                     <TableCell>{participantLabel(m)}</TableCell>
                     <TableCell>{m.email || '—'}</TableCell>
+                    <TableCell>{m.departmentName || '—'}</TableCell>
                     <TableCell>{formatDate(m.assignedAt)}</TableCell>
                     {!readOnly && (
                       <TableCell align="right">
@@ -226,8 +301,30 @@ const ProgramMentorsSection = ({ programId, readOnly = false, compact = false })
               loading={candidatesLoading}
               value={selectedUser}
               onChange={(_, val) => setSelectedUser(val)}
-              getOptionLabel={(opt) => (opt ? `${opt.label}${opt.email ? ` (${opt.email})` : ''}` : '')}
+              getOptionLabel={(opt) => {
+                if (!opt) return '';
+                const dept = opt.departmentName && opt.departmentName !== '—' ? ` · ${opt.departmentName}` : '';
+                return `${opt.label}${dept}${opt.email ? ` (${opt.email})` : ''}`;
+              }}
               isOptionEqualToValue={(opt, val) => String(opt.id) === String(val?.id)}
+              renderOption={(props, option) => {
+                const { key, ...optionProps } = props;
+                return (
+                  <li key={key} {...optionProps}>
+                    <Box sx={{ py: 0.25 }}>
+                      <Typography variant="body2" fontWeight={500}>
+                        {option.label}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {option.email || '—'}
+                        {option.departmentName && option.departmentName !== '—'
+                          ? ` · ${option.departmentName}`
+                          : ''}
+                      </Typography>
+                    </Box>
+                  </li>
+                );
+              }}
               renderInput={(params) => (
                 <TextField {...params} label="Ментор" placeholder="Выберите пользователя" />
               )}
