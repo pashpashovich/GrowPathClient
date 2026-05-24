@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -10,23 +10,28 @@ import {
   CardActions,
   Alert,
 } from '@mui/material';
-import { 
-  PlayArrow, 
-  CheckCircle, 
-  Pending, 
-  Assignment, 
+import {
+  PlayArrow,
+  CheckCircle,
+  Pending,
+  Assignment,
   Person,
   Schedule,
-  Visibility 
+  Visibility,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { takeTaskAsync } from '../../store/slices/taskSlice';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import { getApiErrorMessage } from '../../utils/apiResponse';
 
-const InternTaskList = ({ onViewTask, onSubmitTask }) => {
+const InternTaskList = ({ onViewTask, onSubmitTask, onTasksChanged }) => {
   const dispatch = useDispatch();
   const tasks = useSelector((state) => state.task.tasks);
   const currentUser = useSelector((state) => state.auth.user);
   const currentUserId = currentUser?.id;
+  const [takeTarget, setTakeTarget] = useState(null);
+  const [taking, setTaking] = useState(false);
+  const [takeError, setTakeError] = useState('');
 
   const getStatusInfo = (status) => {
     switch (status) {
@@ -99,9 +104,23 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
     });
   };
 
-  const handleTakeTask = (taskId) => {
-    if (window.confirm('Вы уверены, что хотите взять эту задачу в работу?')) {
-      dispatch(takeTaskAsync(taskId));
+  const handleTakeTaskClick = (task) => {
+    setTakeError('');
+    setTakeTarget(task);
+  };
+
+  const handleConfirmTake = async () => {
+    if (!takeTarget) return;
+    setTaking(true);
+    setTakeError('');
+    try {
+      await dispatch(takeTaskAsync(takeTarget.id)).unwrap();
+      setTakeTarget(null);
+      onTasksChanged?.();
+    } catch (e) {
+      setTakeError(getApiErrorMessage(e, 'Не удалось взять задание в работу'));
+    } finally {
+      setTaking(false);
     }
   };
 
@@ -132,6 +151,24 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
 
   return (
     <Box>
+      {takeError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setTakeError('')}>
+          {takeError}
+        </Alert>
+      )}
+
+      <ConfirmDialog
+        open={Boolean(takeTarget)}
+        title="Взять задание в работу"
+        message="Вы будете назначены исполнителем. Задание перейдёт в статус «В работе»."
+        detail={takeTarget ? `«${takeTarget.title}»` : ''}
+        confirmLabel="Взять в работу"
+        confirmColor="primary"
+        confirming={taking}
+        onClose={() => !taking && setTakeTarget(null)}
+        onConfirm={handleConfirmTake}
+      />
+
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
         {assignedTasks.map((task) => {
           const statusInfo = getStatusInfo(task.status);
@@ -214,7 +251,7 @@ const InternTaskList = ({ onViewTask, onSubmitTask }) => {
                     size="small"
                     variant="contained"
                     startIcon={<PlayArrow />}
-                    onClick={() => handleTakeTask(task.id)}
+                    onClick={() => handleTakeTaskClick(task)}
                   >
                     Взять в работу
                   </Button>

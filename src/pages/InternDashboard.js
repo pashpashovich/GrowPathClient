@@ -12,13 +12,18 @@ import Sidebar from '../components/Sidebar';
 import { useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logoutAsync } from '../store/slices/authSlice';
-import { setCurrentTask, fetchTaskProfileAsync } from '../store/slices/taskSlice';
+import {
+  setCurrentTask,
+  fetchTaskProfileAsync,
+  fetchTaskByIdAsync,
+} from '../store/slices/taskSlice';
 
 const InternDashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [submissionTask, setSubmissionTask] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -29,13 +34,27 @@ const InternDashboard = () => {
     }
   }, [dispatch, location.pathname]);
 
-  const handleViewTask = (task) => {
+  const handleViewTask = async (task) => {
+    setDetailsOpen(true);
+    setDetailsLoading(true);
     dispatch(setCurrentTask(task));
-    setSelectedTask(task);
+    try {
+      const full = await dispatch(fetchTaskByIdAsync(task.id)).unwrap();
+      dispatch(setCurrentTask(full));
+    } catch {
+      dispatch(setCurrentTask(task));
+    } finally {
+      setDetailsLoading(false);
+    }
   };
 
   const handleCloseTaskDetails = () => {
-    setSelectedTask(null);
+    setDetailsOpen(false);
+    dispatch(setCurrentTask(null));
+  };
+
+  const refreshTasks = () => {
+    dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }));
   };
 
   const handleSubmitTask = (task) => {
@@ -47,7 +66,7 @@ const InternDashboard = () => {
   };
 
   const handleSubmissionComplete = () => {
-    dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }));
+    refreshTasks();
   };
 
   const handleLogout = async () => {
@@ -94,6 +113,7 @@ const InternDashboard = () => {
           <InternTaskList
             onViewTask={handleViewTask}
             onSubmitTask={handleSubmitTask}
+            onTasksChanged={refreshTasks}
           />
         </Box>
       );
@@ -124,38 +144,12 @@ const InternDashboard = () => {
           </Box>
         </Box>
 
-      {/* Модальное окно для просмотра деталей задачи */}
-      <Modal
-        open={!!selectedTask}
+      <TaskDetails
+        open={detailsOpen}
         onClose={handleCloseTaskDetails}
-        aria-labelledby="task-details-modal-title"
-        aria-describedby="task-details-modal-description"
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', md: 800 },
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            borderRadius: 2,
-          }}
-        >
-              {selectedTask && (
-                <TaskDetails
-                  open={!!selectedTask}
-                  onClose={handleCloseTaskDetails}
-                  onEdit={() => {}} // Стажер не может редактировать задачи
-                  canEdit={false} // Стажер не может редактировать задачи
-                />
-              )}
-        </Box>
-      </Modal>
+        loading={detailsLoading}
+        canEdit={false}
+      />
 
       {/* Модальное окно для сдачи задачи */}
       <Modal
