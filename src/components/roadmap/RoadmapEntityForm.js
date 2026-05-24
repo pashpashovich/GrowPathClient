@@ -12,20 +12,24 @@ import {
   Typography,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { hrAPI, internAPI, roadmapAPI } from '../../services/api';
+import { hrAPI, roadmapAPI } from '../../services/api';
 import { createInternshipAsync, updateInternshipAsync } from '../../store/slices/roadmapSlice';
-import { getApiErrorMessage } from '../../utils/apiResponse';
+import { getApiErrorMessage, unwrapList } from '../../utils/apiResponse';
 import {
   getRoadmapEntityStatusLabel,
   IPR_STATUSES,
   TEMPLATE_STATUSES,
 } from '../../utils/roadmapEntityStatus';
 
-const toArray = (body) => (Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : []);
-
 const formatDateInput = (value) => {
   if (!value) return '';
   return String(value).slice(0, 10);
+};
+
+const participantLabel = (p) => {
+  if (p.name) return p.name;
+  const parts = [p.firstName, p.lastName].filter(Boolean);
+  return parts.length ? parts.join(' ') : `ID ${p.userId ?? p.id}`;
 };
 
 const RoadmapEntityForm = ({ mode, entityToEdit, onClose }) => {
@@ -35,6 +39,8 @@ const RoadmapEntityForm = ({ mode, entityToEdit, onClose }) => {
   const internships = useSelector((state) => state.roadmap.internships);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [programsLoading, setProgramsLoading] = useState(false);
+  const [dependentsLoading, setDependentsLoading] = useState(false);
   const [error, setError] = useState('');
   const [programs, setPrograms] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -58,23 +64,48 @@ const RoadmapEntityForm = ({ mode, entityToEdit, onClose }) => {
   );
 
   useEffect(() => {
-    const loadCatalogs = async () => {
-      if (mode !== 'ipr-create') return;
+    if (mode !== 'ipr-create') return;
+    const loadPrograms = async () => {
+      setProgramsLoading(true);
       try {
-        const [programsRes, templatesRes, internsRes] = await Promise.all([
-          hrAPI.getInternshipPrograms({ page: 1, limit: 100}),
-          roadmapAPI.getRoadmapTemplates({}),
-          internAPI.getInterns({ page: 1, limit: 100 }),
-        ]);
-        setPrograms(toArray(programsRes.data));
-        setTemplates(toArray(templatesRes.data));
-        setInterns(toArray(internsRes.data));
+        const response = await hrAPI.getInternshipPrograms({ page: 1, limit: 100 });
+        setPrograms(unwrapList(response));
       } catch (e) {
-        setError(e.response?.data?.message || 'Не удалось загрузить справочники для ИПР');
+        setError(getApiErrorMessage(e, 'Не удалось загрузить программы'));
+        setPrograms([]);
+      } finally {
+        setProgramsLoading(false);
       }
     };
-    loadCatalogs();
+    loadPrograms();
   }, [mode]);
+
+  useEffect(() => {
+    if (mode !== 'ipr-create' || !formData.programId) {
+      setTemplates([]);
+      setInterns([]);
+      return;
+    }
+    const programId = formData.programId;
+    const loadProgramData = async () => {
+      setDependentsLoading(true);
+      try {
+        const [internsRes, templatesRes] = await Promise.all([
+          hrAPI.getProgramInterns(programId),
+          roadmapAPI.getRoadmapTemplates({ programId }),
+        ]);
+        setInterns(unwrapList(internsRes));
+        setTemplates(unwrapList(templatesRes));
+      } catch (e) {
+        setError(getApiErrorMessage(e, 'Не удалось загрузить данные программы'));
+        setInterns([]);
+        setTemplates([]);
+      } finally {
+        setDependentsLoading(false);
+      }
+    };
+    loadProgramData();
+  }, [mode, formData.programId]);
 
   useEffect(() => {
     if (mode === 'template' && entityToEdit) {
@@ -125,7 +156,15 @@ const RoadmapEntityForm = ({ mode, entityToEdit, onClose }) => {
   }, [mode, entityToEdit, currentUser?.id, internships, selectedTemplateId]);
 
   const handleChange = (key) => (event) => {
-    setFormData((prev) => ({ ...prev, [key]: event.target.value }));
+    const value = event.target.value;
+    setFormData((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === 'programId') {
+        next.templateId = '';
+        next.internId = '';
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (event) => {
@@ -210,7 +249,7 @@ const RoadmapEntityForm = ({ mode, entityToEdit, onClose }) => {
 
         {isCreateIprMode && (
           <>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required disabled={programsLoading}>
               <InputLabel>Программа</InputLabel>
               <Select label="Программа" value={formData.programId} onChange={handleChange('programId')}>
                 {programs.map((program) => (
@@ -221,27 +260,28 @@ const RoadmapEntityForm = ({ mode, entityToEdit, onClose }) => {
               </Select>
             </FormControl>
 
-            <FormControl fullWidth required>
+            <FormControl fullWidth required disabled={!formData.programId || dependentsLoading}>
               <InputLabel>Шаблон дорожной карты</InputLabel>
               <Select label="Шаблон дорожной карты" value={formData.templateId} onChange={handleChange('templateId')}>
-                {templates
-                  .filter((template) => !formData.programId || Number(template.programId) === Number(formData.programId))
-                  .map((template) => (
-                    <MenuItem key={template.id} value={template.id}>
-                      {template.title}
-                    </MenuItem>
-                  ))}
+                {templates.map((template) => (
+                  <MenuItem key={template.id} value={template.id}>
+                    {template.title}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 
-            <FormControl fullWidth required>
-              <InputLabel>Стажер</InputLabel>
-              <Select label="Стажер" value={formData.internId} onChange={handleChange('internId')}>
-                {interns.map((intern) => (
-                  <MenuItem key={intern.id} value={intern.id}>
-                    {intern.name || `ID ${intern.id}`} ({intern.email || 'без email'})
-                  </MenuItem>
-                ))}
+            <FormControl fullWidth required disabled={!formData.programId || dependentsLoading}>
+              <InputLabel>Стажёр</InputLabel>
+              <Select label="Стажёр" value={formData.internId} onChange={handleChange('internId')}>
+                {interns.map((intern) => {
+                  const userId = intern.userId ?? intern.id;
+                  return (
+                    <MenuItem key={userId} value={userId}>
+                      {participantLabel(intern)} ({intern.email || 'без email'})
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
 
