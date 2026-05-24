@@ -16,8 +16,11 @@ import {
   Divider,
   Alert,
   CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
-import { Add, Delete, AttachFile, Link } from '@mui/icons-material';
+import { Add, Delete, AttachFile } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { createTaskAsync, fetchTaskByIdAsync, updateTaskAsync } from '../../store/slices/taskSlice';
 import {
@@ -33,6 +36,23 @@ import { getApiErrorMessage, unwrapList } from '../../utils/apiResponse';
 import { buildCreateTaskPayload, validateTaskAssignments } from '../../utils/buildCreateTaskPayload';
 import { getNormalizedRole } from '../../utils/resolveAppRole';
 import { getAuthUserId } from '../../utils/authUser';
+import { uploadTaskArtifactFile } from '../../utils/taskArtifactUpload';
+
+const formatFileSize = (bytes) => {
+  if (!bytes) return '';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+};
+
+const resolveCreatedTaskIds = (created) => {
+  if (!created) return [];
+  if (Array.isArray(created)) return created.map((t) => t.id).filter(Boolean);
+  if (Array.isArray(created?.data)) return created.data.map((t) => t.id).filter(Boolean);
+  if (created.id != null) return [created.id];
+  return [];
+};
 
 const MENTOR_SCOPED_ROLES = new Set(['mentor', 'department_head']);
 
@@ -79,6 +99,8 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   const [loadingTask, setLoadingTask] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [fileUploadNote, setFileUploadNote] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -182,6 +204,8 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     const initForm = async () => {
       setErrors({});
       setSubmitError('');
+      setPendingFiles([]);
+      setFileUploadNote('');
 
       if (editingTask?.id) {
         setLoadingTask(true);
@@ -311,6 +335,39 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     }
   };
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    const newFiles = files.map((file) => ({
+      id: `${Date.now()}-${Math.random()}`,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file,
+    }));
+    setPendingFiles((prev) => [...prev, ...newFiles]);
+    e.target.value = '';
+  };
+
+  const handleRemovePendingFile = (fileId) => {
+    setPendingFiles((prev) => prev.filter((f) => f.id !== fileId));
+  };
+
+  const uploadPendingFilesToTasks = async (taskIds) => {
+    if (!pendingFiles.length || !taskIds.length) return;
+    for (const taskId of taskIds) {
+      for (let i = 0; i < pendingFiles.length; i += 1) {
+        setFileUploadNote(
+          taskIds.length > 1
+            ? `Задача ${taskId}: файл ${i + 1} из ${pendingFiles.length}…`
+            : `Загрузка файла ${i + 1} из ${pendingFiles.length}…`
+        );
+        await uploadTaskArtifactFile(taskId, pendingFiles[i].file);
+      }
+    }
+    setPendingFiles([]);
+    setFileUploadNote('');
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Заголовок обязателен';
@@ -354,6 +411,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
           payload.iprStageId = Number(row.stageId);
         }
         await dispatch(updateTaskAsync({ id: editingTask.id, data: payload })).unwrap();
+        await uploadPendingFilesToTasks([editingTask.id]);
         onCreated?.();
         onClose();
       } catch (e) {
@@ -376,7 +434,15 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         dueDate: formData.dueDate,
         assignments: filledRows,
       });
-      await dispatch(createTaskAsync(payload)).unwrap();
+      const created = await dispatch(createTaskAsync(payload)).unwrap();
+      const taskIds = resolveCreatedTaskIds(created);
+      if (taskIds.length) {
+        await uploadPendingFilesToTasks(taskIds);
+      } else if (pendingFiles.length) {
+        setSubmitError('Задание создано, но не удалось определить id для загрузки файлов');
+        onCreated?.();
+        return;
+      }
       onCreated?.();
       onClose();
     } catch (e) {
@@ -643,22 +709,94 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
 
           <Box>
             <Typography variant="h6" gutterBottom>
-              Прикрепленные файлы
+              Прикреплённые файлы
             </Typography>
-            <Button startIcon={<AttachFile />} size="small" disabled>
-              Добавить файл (скоро)
-            </Button>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Материалы к заданию (ТЗ, шаблоны). Загружаются на сервер после сохранения карточки.
+            </Typography>
+            <input
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+              id="task-form-file-upload"
+              accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt,.zip"
+              disabled={isSubmitting || loadingTask}
+            />
+            <label htmlFor="task-form-file-upload">
+              <Button
+                component="span"
+                startIcon={<AttachFile />}
+                size="small"
+                variant="outlined"
+                sx={{ mb: 1 }}
+                disabled={isSubmitting || loadingTask}
+              >
+                Добавить файл
+              </Button>
+            </label>
+            {fileUploadNote && (
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                {fileUploadNote}
+              </Typography>
+            )}
+            {formData.attachments?.length > 0 && (
+              <List dense sx={{ mb: 1 }}>
+                {formData.attachments.map((file, index) => (
+                  <ListItem key={file.id ?? `saved-${index}`} sx={{ py: 0.25 }}>
+                    <ListItemText
+                      primary={file.name || file.fileName || 'Файл'}
+                      secondary={
+                        file.url ? (
+                          <a href={file.url} target="_blank" rel="noopener noreferrer">
+                            Открыть
+                          </a>
+                        ) : (
+                          formatFileSize(file.size)
+                        )
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+            {pendingFiles.length > 0 && (
+              <List dense>
+                {pendingFiles.map((file) => (
+                  <ListItem
+                    key={file.id}
+                    secondaryAction={
+                      <IconButton
+                        edge="end"
+                        size="small"
+                        aria-label="Удалить"
+                        onClick={() => handleRemovePendingFile(file.id)}
+                        disabled={isSubmitting}
+                      >
+                        <Delete />
+                      </IconButton>
+                    }
+                  >
+                    <ListItemText
+                      primary={file.name}
+                      secondary={`Будет загружен при сохранении • ${formatFileSize(file.size)}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Box>
 
           <Divider />
 
           <Box>
             <Typography variant="h6" gutterBottom>
-              Полезные ссылки
+              Ссылки на репозиторий
             </Typography>
-            <Button startIcon={<Link />} size="small" disabled>
-              Добавить ссылку (скоро)
-            </Button>
+            <Typography variant="body2" color="text.secondary">
+              Ссылки к результату добавляет стажёр при сдаче задания (в запросе submit), а не при
+              создании карточки ментором.
+            </Typography>
           </Box>
         </Box>
       </DialogContent>

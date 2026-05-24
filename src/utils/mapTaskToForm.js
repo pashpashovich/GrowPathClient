@@ -95,7 +95,26 @@ export const mapTaskToFormFields = (task) => {
           completed: typeof item === 'object' ? Boolean(item.completed) : false,
         }))
       : [{ id: 1, text: '', completed: false }],
-    attachments: t.attachments || [],
-    links: t.links || [],
+    attachments: resolveTaskFileAttachments(t),
+    links: t.links || t.submissionLinks || [],
   };
+};
+
+/** Файлы задачи (не ссылки стажёра при сдаче). */
+export const resolveTaskFileAttachments = (task) => {
+  const t = normalizeTaskFromApi(task) || task || {};
+  if (Array.isArray(t.attachments) && t.attachments.length > 0) {
+    return t.attachments;
+  }
+  if (Array.isArray(t.artifacts)) {
+    return t.artifacts
+      .filter((a) => String(a.type || a.artifactType || '').toUpperCase() !== 'LINK')
+      .map((a) => ({
+        id: a.id,
+        name: a.name || a.fileName || 'Файл',
+        url: a.url,
+        size: a.sizeBytes ?? a.size,
+      }));
+  }
+  return [];
 };
