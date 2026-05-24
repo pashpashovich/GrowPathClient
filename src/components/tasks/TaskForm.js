@@ -21,11 +21,12 @@ import { Add, Delete, AttachFile, Link } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateTask, createTaskAsync } from '../../store/slices/taskSlice';
 import { fetchInternshipProgramsAsync } from '../../store/slices/internshipProgramSlice';
+import { getCurrentUserAsync } from '../../store/slices/authSlice';
 import { hrAPI, iprAPI } from '../../services/api';
 import { getApiErrorMessage, unwrapList } from '../../utils/apiResponse';
 import { buildCreateTaskPayload, validateTaskAssignments } from '../../utils/buildCreateTaskPayload';
 import { getNormalizedRole } from '../../utils/resolveAppRole';
-import { getAuthUserId } from '../../utils/roadmapPermissions';
+import { getAuthUserId } from '../../utils/authUser';
 
 const MENTOR_SCOPED_ROLES = new Set(['mentor', 'department_head']);
 
@@ -50,7 +51,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   const authRole = useSelector((state) => state.auth.role);
   const appRole = getNormalizedRole(currentUser) ?? authRole;
   const mentorUserId = getAuthUserId(currentUser);
-  const scopeToMentor = MENTOR_SCOPED_ROLES.has(appRole) && mentorUserId != null;
+  const scopeToMentor = MENTOR_SCOPED_ROLES.has(appRole) && Number.isFinite(mentorUserId);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -73,10 +74,14 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
-    if (open && programs.length === 0) {
+    if (!open) return;
+    if (programs.length === 0) {
       dispatch(fetchInternshipProgramsAsync({ page: 1, limit: 100 }));
     }
-  }, [open, dispatch, programs.length]);
+    if (MENTOR_SCOPED_ROLES.has(appRole) && !Number.isFinite(mentorUserId)) {
+      dispatch(getCurrentUserAsync());
+    }
+  }, [open, dispatch, programs.length, appRole, mentorUserId]);
 
   const loadProgramData = useCallback(async (programId) => {
     if (!programId) {
@@ -87,8 +92,10 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     }
     setProgramDataLoading(true);
     try {
-      const iprParams = { programId };
-      if (scopeToMentor) iprParams.mentorId = mentorUserId;
+      const iprParams = { programId: Number(programId) };
+      if (scopeToMentor && Number.isFinite(mentorUserId)) {
+        iprParams.mentorId = mentorUserId;
+      }
       const [internsRes, iprsRes] = await Promise.all([
         hrAPI.getProgramInterns(programId),
         iprAPI.getIprs(iprParams),

@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authAPI } from '../../services/api';
 import { getLoginErrorMessage } from '../../utils/getLoginErrorMessage';
 import { getNormalizedRole } from '../../utils/resolveAppRole';
+import { normalizeAuthUser } from '../../utils/authUser';
 
 const initialState = {
   user: null,
@@ -26,7 +27,7 @@ export const loginAsync = createAsyncThunk(
       localStorage.setItem('refreshToken', refreshToken);
       
       const userResponse = await authAPI.getCurrentUser();
-      const user = userResponse.data;
+      const user = normalizeAuthUser(userResponse.data);
       
       return { tokens: { accessToken, refreshToken }, user };
     } catch (error) {
@@ -178,7 +179,7 @@ const authSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(getCurrentUserAsync.fulfilled, (state, action) => {
-        const user = action.payload;
+        const user = normalizeAuthUser(action.payload);
         const role = getNormalizedRole(user);
         state.isLoading = false;
         state.user = user ? { ...user, role } : null;

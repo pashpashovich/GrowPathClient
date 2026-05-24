@@ -1,12 +1,9 @@
 import { getNormalizedRole } from './resolveAppRole';
+import { getAuthUserId } from './authUser';
+
+export { getAuthUserId };
 
 const FULL_ACCESS_ROLES = new Set(['admin', 'hr']);
-
-export const getAuthUserId = (user) => {
-  if (!user) return null;
-  const id = user.id ?? user.userId ?? user.sub;
-  return id != null ? Number(id) : null;
-};
 
 export const getRoadmapEntityOwnerId = (entity) => {
   if (!entity) return null;
@@ -28,7 +25,7 @@ export const canDeleteRoadmapEntity = (entity, user, role, options = {}) => {
   if (appRole === 'mentor' && options.trustListOwnership) return true;
 
   const userId = getAuthUserId(user);
-  if (userId == null) return false;
+  if (!Number.isFinite(userId)) return false;
 
   const ownerId = getRoadmapEntityOwnerId(entity);
   if (ownerId != null) return ownerId === userId;

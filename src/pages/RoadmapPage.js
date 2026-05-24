@@ -13,6 +13,7 @@ import {
   fetchStagesAsync,
   setCurrentInternship,
 } from '../store/slices/roadmapSlice';
+import { getAuthUserId } from '../utils/authUser';
 
 const RoadmapPage = ({ canEdit = true }) => {
   const dispatch = useDispatch();
@@ -34,10 +35,12 @@ const RoadmapPage = ({ canEdit = true }) => {
       dispatch(fetchInternshipsProfileAsync());
     } else if (userRole === 'mentor') {
       dispatch(setCurrentInternship(null));
+      const mentorId = getAuthUserId(currentUser);
+      const mentorParams = Number.isFinite(mentorId) ? { mentorId } : {};
       if (entityViewMode === 'iprs') {
-        dispatch(fetchIprsAsync({ mentorId: currentUser?.id }));
+        dispatch(fetchIprsAsync(mentorParams));
       } else {
-        dispatch(fetchInternshipsAsync({ mentorId: currentUser?.id }));
+        dispatch(fetchInternshipsAsync(mentorParams));
       }
     } else if (userRole) {
       dispatch(fetchInternshipsAsync());
