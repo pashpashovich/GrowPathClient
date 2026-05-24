@@ -19,7 +19,16 @@ const normalizeInternship = (x) => ({
   id: String(x.id),
   programId: x.programId != null ? Number(x.programId) : null,
   templateId: x.templateId != null ? Number(x.templateId) : null,
-  mentorId: x.mentorId != null ? Number(x.mentorId) : null,
+  mentorId:
+    x.mentorId != null
+      ? Number(x.mentorId)
+      : x.mentorUserId != null
+        ? Number(x.mentorUserId)
+        : x.mentor?.id != null
+          ? Number(x.mentor.id)
+          : x.mentor?.userId != null
+            ? Number(x.mentor.userId)
+            : null,
   internId: x.internId != null ? Number(x.internId) : null,
   internIds: Array.isArray(x.internIds)
     ? x.internIds

@@ -51,9 +51,13 @@ const InternshipSelector = ({
   const userRole = currentUser?.role ?? authRole;
   const appRole = getNormalizedRole(currentUser) ?? userRole;
 
-  const isIntern = userRole === 'intern';
-  const canDelete = (entity) => canDeleteRoadmapEntity(entity, currentUser, appRole);
-  const isMentor = userRole === 'mentor';
+  const isIntern = appRole === 'intern';
+  const isMentor = appRole === 'mentor';
+  const canDeleteEntity = (entity) =>
+    canDeleteRoadmapEntity(entity, currentUser, appRole, {
+      trustListOwnership: isMentor,
+    });
+  const showEntityActions = !isIntern && canEdit;
   const internInternship = isIntern
     ? internships.find((internship) => internship.status === 'active') || internships[0] || null
     : null;
@@ -248,26 +252,25 @@ const InternshipSelector = ({
                   )}
                 </Box>
               </Box>
-              {(canEdit || canDelete(currentInternship)) && (
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  {canEdit && (
-                    <Tooltip title={useIpr || currentInternship.internId ? 'Редактировать ИПР' : 'Редактировать шаблон'}>
-                      <IconButton
-                        size="small"
-                        onClick={() => onEditInternship(currentInternship)}
-                      >
-                        <Edit />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {canDelete(currentInternship) && (
+              {showEntityActions && (
+                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                  <Tooltip title={useIpr || currentInternship.internId ? 'Редактировать ИПР' : 'Редактировать шаблон'}>
+                    <IconButton
+                      size="small"
+                      onClick={() => onEditInternship(currentInternship)}
+                    >
+                      <Edit />
+                    </IconButton>
+                  </Tooltip>
+                  {(canDeleteEntity(currentInternship) || isMentor) && (
                     <Tooltip title={useIpr || currentInternship.internId ? 'Удалить ИПР' : 'Удалить шаблон'}>
                       <IconButton
                         size="small"
                         color="error"
                         onClick={() => setDeleteTarget(currentInternship)}
+                        aria-label={useIpr || currentInternship.internId ? 'Удалить ИПР' : 'Удалить шаблон'}
                       >
-                        <Delete />
+                        <Delete fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   )}
