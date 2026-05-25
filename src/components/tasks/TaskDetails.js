@@ -86,7 +86,7 @@ const TaskDetails = ({ open, onClose, onEdit, canEdit = true, loading = false })
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (String(status || '').toLowerCase()) {
       case 'pending':
         return 'default';
       case 'in_progress':
@@ -106,7 +106,7 @@ const TaskDetails = ({ open, onClose, onEdit, canEdit = true, loading = false })
   };
 
   const getStatusLabel = (status) => {
-    switch (status) {
+    switch (String(status || '').toLowerCase()) {
       case 'pending':
         return 'Доступно';
       case 'in_progress':

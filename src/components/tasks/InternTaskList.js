@@ -34,7 +34,7 @@ const InternTaskList = ({ onViewTask, onSubmitTask, onTasksChanged }) => {
   const [takeError, setTakeError] = useState('');
 
   const getStatusInfo = (status) => {
-    switch (status) {
+    switch (String(status || '').toLowerCase()) {
       case 'pending':
         return { 
           label: 'Доступно', 

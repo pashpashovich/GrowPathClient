@@ -69,22 +69,49 @@ const TaskList = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'assigned': return 'info';
-      case 'in_progress': return 'warning';
-      case 'completed': return 'success';
-      case 'cancelled': return 'error';
-      default: return 'default';
+    switch (String(status || '').toLowerCase()) {
+      case 'assigned':
+      case 'pending':
+        return 'info';
+      case 'in_progress':
+      case 'submitted':
+      case 'on_review':
+        return 'warning';
+      case 'completed':
+      case 'done':
+        return 'success';
+      case 'needs_rework':
+      case 'rejected':
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
     }
   };
 
   const getStatusLabel = (status) => {
-    switch (status) {
-      case 'assigned': return 'Назначено';
-      case 'in_progress': return 'В работе';
-      case 'completed': return 'Завершено';
-      case 'cancelled': return 'Отменено';
-      default: return status;
+    switch (String(status || '').toLowerCase()) {
+      case 'assigned':
+        return 'Назначено';
+      case 'pending':
+        return 'Ожидание';
+      case 'in_progress':
+        return 'В работе';
+      case 'submitted':
+        return 'Отправлено';
+      case 'on_review':
+        return 'На проверке';
+      case 'needs_rework':
+        return 'Требует доработки';
+      case 'rejected':
+        return 'Отклонено';
+      case 'completed':
+      case 'done':
+        return 'Завершено';
+      case 'cancelled':
+        return 'Отменено';
+      default:
+        return status;
     }
   };
 

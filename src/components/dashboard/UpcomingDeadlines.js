@@ -46,6 +46,8 @@ const STATUS_LABELS = {
   in_progress: 'В работе',
   submitted: 'Отправлено',
   on_review: 'На проверке',
+  needs_rework: 'Требует доработки',
+  rejected: 'Отклонено',
   completed: 'Завершено',
   cancelled: 'Отменено',
 };
@@ -134,7 +136,7 @@ const UpcomingDeadlines = ({ data }) => {
                     }
                     secondary={
                       <Typography variant="caption" color="text.secondary">
-                        {new Date(task.dueDate).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' })} · {STATUS_LABELS[task.status] || task.status}
+                        {new Date(task.dueDate).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' })} · {STATUS_LABELS[String(task.status).toLowerCase()] || task.status}
                       </Typography>
                     }
                   />

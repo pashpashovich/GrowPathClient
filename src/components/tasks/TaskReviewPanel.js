@@ -80,7 +80,7 @@ const TaskReviewPanel = ({ onViewTask }) => {
   }, [dispatch, useTaskProfile]);
 
   const getStatusInfo = (status) => {
-    switch (status) {
+    switch (String(status || '').toLowerCase()) {
       case 'pending':
         return { label: 'Доступно', color: 'default' };
       case 'in_progress':

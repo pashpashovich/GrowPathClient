@@ -28,6 +28,8 @@ const STATUS_COLORS = {
   in_progress: '#FFAB00',
   submitted: '#6554C0',
   on_review: '#00B8D9',
+  needs_rework: '#BA1A1A',
+  rejected: '#737685',
   completed: '#36B37E',
   cancelled: '#737685',
 };
@@ -37,6 +39,8 @@ const STATUS_LABELS = {
   in_progress: 'В работе',
   submitted: 'Отправлено',
   on_review: 'На проверке',
+  needs_rework: 'Требует доработки',
+  rejected: 'Отклонено',
   completed: 'Завершено',
   cancelled: 'Отменено',
 };
@@ -62,9 +66,9 @@ const TasksStatsCharts = ({ data, compact = false, chartsOnly = false }) => {
   const statusDistribution = useMemo(() => {
     const dist = data?.distributionByStatus || {};
     return Object.entries(dist).map(([key, value]) => ({
-      name: STATUS_LABELS[key] || key,
+      name: STATUS_LABELS[String(key).toLowerCase()] || key,
       value,
-      color: STATUS_COLORS[key] || '#737685',
+      color: STATUS_COLORS[String(key).toLowerCase()] || '#737685',
     }));
   }, [data]);
 
