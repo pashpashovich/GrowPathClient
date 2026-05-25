@@ -56,7 +56,7 @@ const PRIORITY_LABELS = {
 };
 
 const TasksStatsCharts = ({ data, compact = false, chartsOnly = false }) => {
-  const pieHeight = chartsOnly ? 100 : compact ? 160 : 200;
+  const pieHeight = chartsOnly ? 88 : compact ? 160 : 200;
   const areaHeight = compact ? 120 : 150;
   const minHeight = chartsOnly ? 120 : compact ? 200 : 300;
   const statusDistribution = useMemo(() => {
@@ -85,6 +85,10 @@ const TasksStatsCharts = ({ data, compact = false, chartsOnly = false }) => {
       })),
     [data]
   );
+
+  const priorityChartHeight = chartsOnly
+    ? Math.max(110, priorityDistribution.length * 34 + 20)
+    : pieHeight;
 
   if (!data) {
     return (
@@ -119,13 +123,13 @@ const TasksStatsCharts = ({ data, compact = false, chartsOnly = false }) => {
             </Typography>
             {statusDistribution.length > 0 ? (
               <ResponsiveContainer width="100%" height={pieHeight}>
-                <PieChart margin={{ top: 10 }}>
+                <PieChart margin={{ top: 10, left: 0, right: 0, bottom: chartsOnly ? 0 : 12 }}>
                   <Pie
                     data={statusDistribution}
                     cx="50%"
-                    cy="50%"
+                    cy={chartsOnly ? '48%' : '50%'}
                     innerRadius={chartsOnly ? 22 : 40}
-                    outerRadius={chartsOnly ? 38 : 55}
+                    outerRadius={chartsOnly ? 32 : 55}
                     paddingAngle={2}
                     dataKey="value"
                   >
@@ -134,18 +138,52 @@ const TasksStatsCharts = ({ data, compact = false, chartsOnly = false }) => {
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend
-                    layout="horizontal"
-                    align="center"
-                    verticalAlign="bottom"
-                    iconType="circle"
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: chartsOnly ? 9 : 12 }}
-                  />
+                  {!chartsOnly && (
+                    <Legend
+                      layout="horizontal"
+                      align="center"
+                      verticalAlign="bottom"
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: 12 }}
+                    />
+                  )}
                 </PieChart>
               </ResponsiveContainer>
+            ) : null}
+
+            {chartsOnly && statusDistribution.length > 0 ? (
+              <Stack
+                direction="row"
+                spacing={1}
+                flexWrap="wrap"
+                useFlexGap
+                sx={{ mt: 0.5, justifyContent: 'center' }}
+              >
+                {statusDistribution.map((entry) => (
+                  <Box
+                    key={entry.name}
+                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: entry.color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                      {entry.name}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
             ) : (
-              <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+              statusDistribution.length === 0 && (
+                <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+              )
             )}
           </Box>
 
@@ -154,13 +192,22 @@ const TasksStatsCharts = ({ data, compact = false, chartsOnly = false }) => {
               По приоритету
             </Typography>
             {priorityDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={pieHeight}>
-                <BarChart data={priorityDistribution} layout="vertical" margin={{ left: 10, right: 10 }}>
+              <ResponsiveContainer width="100%" height={priorityChartHeight}>
+                <BarChart
+                  data={priorityDistribution}
+                  layout="vertical"
+                  margin={{ top: chartsOnly ? 6 : 0, left: chartsOnly ? 0 : 10, right: 10, bottom: chartsOnly ? 6 : 0 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
                   <XAxis type="number" tick={{ fontSize: 12 }} />
-                  <YAxis dataKey="name" type="category" tick={{ fontSize: chartsOnly ? 10 : 12 }} width={chartsOnly ? 56 : 80} />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tick={{ fontSize: chartsOnly ? 10 : 12 }}
+                    width={chartsOnly ? 72 : 80}
+                  />
                   <Tooltip />
-                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={chartsOnly ? 14 : undefined}>
                     {priorityDistribution.map((entry, i) => (
                       <Cell key={i} fill={entry.fill} />
                     ))}

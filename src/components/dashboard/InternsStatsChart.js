@@ -42,7 +42,7 @@ const STATUS_LABELS = {
 const CHART_COLORS = ['#0052cc', '#36B37E', '#FFAB00', '#BA1A1A', '#6554C0', '#00B8D9', '#FF8B00', '#737685'];
 
 const InternsStatsChart = ({ data, compact = false, chartsOnly = false }) => {
-  const chartHeight = chartsOnly ? 100 : compact ? 150 : 180;
+  const chartHeight = chartsOnly ? 88 : compact ? 150 : 180;
   const minHeight = chartsOnly ? 120 : compact ? 200 : 300;
   const listLimit = chartsOnly ? 0 : compact ? 3 : 5;
   const statusDistribution = useMemo(() => {
@@ -61,6 +61,10 @@ const InternsStatsChart = ({ data, compact = false, chartsOnly = false }) => {
     })),
     [data]
   );
+
+  const programChartHeight = chartsOnly
+    ? Math.max(110, programDistribution.length * 34 + 20)
+    : chartHeight;
 
   if (!data) {
     return (
@@ -112,18 +116,51 @@ const InternsStatsChart = ({ data, compact = false, chartsOnly = false }) => {
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend
-                    layout="horizontal"
-                    align="center"
-                    verticalAlign="bottom"
-                    iconType="circle"
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: chartsOnly ? 9 : 12 }}
-                  />
+                  {!chartsOnly && (
+                    <Legend
+                      layout="horizontal"
+                      align="center"
+                      verticalAlign="bottom"
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: 12 }}
+                    />
+                  )}
                 </PieChart>
               </ResponsiveContainer>
+            ) : null}
+            {chartsOnly && statusDistribution.length > 0 ? (
+              <Stack
+                direction="row"
+                spacing={1}
+                flexWrap="wrap"
+                useFlexGap
+                sx={{ mt: 0.5, justifyContent: 'center' }}
+              >
+                {statusDistribution.map((entry) => (
+                  <Box
+                    key={entry.name}
+                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: entry.color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                      {entry.name}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
             ) : (
-              <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+              statusDistribution.length === 0 && (
+                <Typography variant="body2" color="text.secondary">Нет данных</Typography>
+              )
             )}
           </Box>
 
@@ -133,7 +170,7 @@ const InternsStatsChart = ({ data, compact = false, chartsOnly = false }) => {
               По программам
             </Typography>
             {programDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={chartHeight}>
+              <ResponsiveContainer width="100%" height={programChartHeight}>
                 <BarChart data={programDistribution} layout="vertical" margin={{ left: 10, right: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e1e2e4" />
                   <XAxis type="number" tick={{ fontSize: 12 }} />
