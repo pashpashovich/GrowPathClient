@@ -37,6 +37,8 @@ import {
   Timeline,
   KeyboardArrowUp,
   KeyboardArrowDown,
+  Star,
+  RateReview,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -46,9 +48,10 @@ import {
   clearError,
 } from '../../store/slices/roadmapSlice';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import IprStageAssessmentDialog from './IprStageAssessmentDialog';
 import { getApiErrorMessage } from '../../utils/apiResponse';
 
-const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
+const RoadmapView = ({ onEdit, canEdit = true, useIpr = false, showStageAssessments = false }) => {
   const dispatch = useDispatch();
   const { stages, currentInternshipId, internships, isLoading, error } = useSelector((state) => state.roadmap);
 
@@ -63,6 +66,26 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
   const [stageToDelete, setStageToDelete] = useState(null);
   const [deletingStage, setDeletingStage] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
+  const [assessmentStage, setAssessmentStage] = useState(null);
+
+  const assessmentsByStageId = useSelector((state) =>
+    showStageAssessments && currentInternshipId
+      ? state.assessment.byIprId[String(currentInternshipId)]?.byStageId ?? {}
+      : {}
+  );
+  const assessmentsLoading = useSelector(
+    (state) => showStageAssessments && state.assessment.isLoading
+  );
+
+  const assessmentContext =
+    showStageAssessments && currentInternship
+      ? {
+          iprId: Number(currentInternshipId),
+          internId: currentInternship.internId,
+          internshipId: currentInternship.programId,
+        }
+      : null;
 
   const getStatusInfo = (status) => {
     switch (status) {
@@ -231,6 +254,30 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
     await handleReorderByOrder(reordered);
   };
 
+  const openAssessmentDialog = (stage) => {
+    if (!stage || !assessmentContext?.internId || !assessmentContext?.internshipId) {
+      setLocalError('Не удалось определить стажёра или программу для ассессмента.');
+      return;
+    }
+    setAssessmentStage(stage);
+    setAssessmentDialogOpen(true);
+    setAnchorEl(null);
+    setSelectedStage(null);
+  };
+
+  const handleAssessmentDialogClose = (saved) => {
+    setAssessmentDialogOpen(false);
+    setAssessmentStage(null);
+    if (saved) {
+      setLocalError('');
+    }
+  };
+
+  const formatAssessmentRating = (value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    return Number(value).toFixed(1);
+  };
+
   const getStatusBorderColor = (status) => {
     switch (status) {
       case 'pending': return '#9e9e9e';
@@ -314,6 +361,7 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
             const statusInfo = getStatusInfo(stage.status);
             const daysRemaining = getDaysRemaining(stage.endDate);
             const isOverdue = daysRemaining !== null && daysRemaining < 0 && stage.status !== 'completed';
+            const stageAssessment = assessmentsByStageId[String(stage.id)];
 
             return (
               <Card
@@ -351,6 +399,15 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
                             label="Контрольная точка"
                             color="primary"
                             icon={<Flag />}
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
+                        {showStageAssessments && stageAssessment && (
+                          <Chip
+                            label={`Оценён: ${formatAssessmentRating(stageAssessment.overallRating)}`}
+                            color="success"
+                            icon={<Star />}
                             size="small"
                             variant="outlined"
                           />
@@ -404,23 +461,51 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
                       </Box>
                     </>
                   )}
+
+                  {showStageAssessments && stageAssessment?.comment && (
+                    <>
+                      <Divider sx={{ my: 1.5 }} />
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                        Комментарий к ассессменту
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        {stageAssessment.comment}
+                      </Typography>
+                    </>
+                  )}
                 </CardContent>
 
-                {canEdit && (
-                  <CardActions sx={{ pt: 0 }}>
-                    <Button
-                      size="small"
-                      onClick={() => openStatusDialog(stage)}
-                      startIcon={<Timeline />}
-                    >
-                      Изменить статус
-                    </Button>
-                    <IconButton size="small" onClick={() => moveStage(stage.id, -1)}>
-                      <KeyboardArrowUp />
-                    </IconButton>
-                    <IconButton size="small" onClick={() => moveStage(stage.id, 1)}>
-                      <KeyboardArrowDown />
-                    </IconButton>
+                {(canEdit || showStageAssessments) && (
+                  <CardActions sx={{ pt: 0, flexWrap: 'wrap', gap: 0.5 }}>
+                    {showStageAssessments && (
+                      <Button
+                        size="small"
+                        variant={stageAssessment ? 'outlined' : 'contained'}
+                        color={stageAssessment ? 'success' : 'primary'}
+                        onClick={() => openAssessmentDialog(stage)}
+                        startIcon={<RateReview />}
+                        disabled={assessmentsLoading}
+                      >
+                        {stageAssessment ? 'Изменить ассессмент' : 'Провести ассессмент'}
+                      </Button>
+                    )}
+                    {canEdit && (
+                      <>
+                        <Button
+                          size="small"
+                          onClick={() => openStatusDialog(stage)}
+                          startIcon={<Timeline />}
+                        >
+                          Изменить статус
+                        </Button>
+                        <IconButton size="small" onClick={() => moveStage(stage.id, -1)}>
+                          <KeyboardArrowUp />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => moveStage(stage.id, 1)}>
+                          <KeyboardArrowDown />
+                        </IconButton>
+                      </>
+                    )}
                   </CardActions>
                 )}
               </Card>
@@ -450,6 +535,12 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
           <Timeline sx={{ mr: 1 }} />
           Изменить статус
         </MenuItem>
+        {showStageAssessments && selectedStage && (
+          <MenuItem onClick={() => openAssessmentDialog(selectedStage)}>
+            <RateReview sx={{ mr: 1 }} />
+            {assessmentsByStageId[String(selectedStage.id)] ? 'Ассессмент' : 'Провести ассессмент'}
+          </MenuItem>
+        )}
         <MenuItem onClick={handleDeleteStage} sx={{ color: 'error.main' }}>
           <Delete sx={{ mr: 1 }} />
           Удалить
@@ -506,6 +597,18 @@ const RoadmapView = ({ onEdit, canEdit = true, useIpr = false }) => {
           <Button onClick={handleStatusUpdate} variant="contained">Сохранить</Button>
         </DialogActions>
       </Dialog>
+
+      {showStageAssessments && (
+        <IprStageAssessmentDialog
+          open={assessmentDialogOpen}
+          onClose={handleAssessmentDialogClose}
+          stage={assessmentStage}
+          context={assessmentContext}
+          existingAssessment={
+            assessmentStage ? assessmentsByStageId[String(assessmentStage.id)] : null
+          }
+        />
+      )}
 
       <ConfirmDialog
         open={Boolean(stageToDelete)}

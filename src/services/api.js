@@ -378,11 +378,11 @@ export const taskAPI = {
 };
 
 export const assessmentAPI = {
-  getAssessments: (params) => api.get('/assessments', { params }),
-  getAssessmentById: (id) => api.get(`/assessments/${id}`),
-  createAssessment: (data) => api.post('/assessments', data),
-  updateAssessment: (id, data) => api.put(`/assessments/${id}`, data),
-  deleteAssessment: (id) => api.delete(`/assessments/${id}`),
+  getAssessments: (params) => api.get(assessmentsPath, { params }),
+  getAssessmentById: (id) => api.get(`${assessmentsPath}/${id}`),
+  createAssessment: (data) => api.post(assessmentsPath, data),
+  updateAssessment: (id, data) => api.put(`${assessmentsPath}/${id}`, data),
+  deleteAssessment: (id) => api.delete(`${assessmentsPath}/${id}`),
 };
 
 export const departmentAPI = {

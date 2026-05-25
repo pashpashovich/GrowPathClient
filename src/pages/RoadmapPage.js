@@ -13,6 +13,10 @@ import {
   fetchStagesAsync,
   setCurrentInternship,
 } from '../store/slices/roadmapSlice';
+import {
+  fetchAssessmentsForIprAsync,
+  clearAssessmentsForIpr,
+} from '../store/slices/assessmentSlice';
 import { getAuthUserId } from '../utils/authUser';
 
 const RoadmapPage = ({ canEdit = true }) => {
@@ -22,11 +26,13 @@ const RoadmapPage = ({ canEdit = true }) => {
   const authRole = useSelector((state) => state.auth.role);
   const userRole = currentUser?.role ?? authRole;
   const currentInternshipId = useSelector((state) => state.roadmap.currentInternshipId);
+  const internships = useSelector((state) => state.roadmap.internships);
   const isIntern = userRole === 'intern';
   const isMentor = userRole === 'mentor';
   const [openForm, setOpenForm] = useState(false);
   const [stageToEdit, setStageToEdit] = useState(null);
   const [entityViewMode, setEntityViewMode] = useState('templates');
+  const showStageAssessments = isMentor && (isIntern || entityViewMode === 'iprs');
   const [entityFormOpen, setEntityFormOpen] = useState(false);
   const [entityFormMode, setEntityFormMode] = useState('template');
   const [entityToEdit, setEntityToEdit] = useState(null);
@@ -54,6 +60,30 @@ const RoadmapPage = ({ canEdit = true }) => {
       dispatch(fetchStagesAsync({ internshipId: currentInternshipId, useIpr: useIprMode }));
     }
   }, [dispatch, currentInternshipId, useIprMode]);
+
+  useEffect(() => {
+    if (!showStageAssessments || !currentInternshipId) {
+      return undefined;
+    }
+    const ipr = internships.find((i) => String(i.id) === String(currentInternshipId));
+    if (!ipr?.internId || !ipr?.programId) {
+      return undefined;
+    }
+    dispatch(
+      fetchAssessmentsForIprAsync({
+        iprId: currentInternshipId,
+        internId: ipr.internId,
+        internshipId: ipr.programId,
+      })
+    );
+    return undefined;
+  }, [dispatch, showStageAssessments, currentInternshipId, internships]);
+
+  useEffect(() => {
+    if (!showStageAssessments && currentInternshipId) {
+      dispatch(clearAssessmentsForIpr(currentInternshipId));
+    }
+  }, [dispatch, showStageAssessments, currentInternshipId]);
 
   const handleOpenForm = (stage = null) => {
     setStageToEdit(stage);
@@ -94,7 +124,12 @@ const RoadmapPage = ({ canEdit = true }) => {
         canEdit={canEdit}
         useIpr={useIprMode}
       />
-      <RoadmapView onEdit={handleOpenForm} canEdit={canEdit} useIpr={useIprMode} />
+      <RoadmapView
+        onEdit={handleOpenForm}
+        canEdit={canEdit}
+        useIpr={useIprMode}
+        showStageAssessments={showStageAssessments}
+      />
 
       <Modal
         open={openForm}

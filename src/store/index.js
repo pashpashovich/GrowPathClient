@@ -11,6 +11,7 @@ import userManagementReducer from './slices/userManagementSlice';
 import ratingReducer from './slices/ratingSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import dashboardReducer from './slices/dashboardSlice';
+import assessmentReducer from './slices/assessmentSlice';
 
 export const store = configureStore({
   reducer: {
@@ -26,5 +27,6 @@ export const store = configureStore({
     rating: ratingReducer,
     analytics: analyticsReducer,
     dashboard: dashboardReducer,
+    assessment: assessmentReducer,
   },
 });
