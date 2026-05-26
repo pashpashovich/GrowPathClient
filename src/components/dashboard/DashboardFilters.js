@@ -26,13 +26,28 @@ const STATUS_OPTIONS = [
   { value: 'on_hold', label: 'На паузе' },
 ];
 
+const GROUP_BY_OPTIONS = [
+  { value: 'day', label: 'По дням' },
+  { value: 'week', label: 'По неделям' },
+  { value: 'month', label: 'По месяцам' },
+];
+
 const mentorLabel = (m) => {
   if (m.name) return m.name;
   const parts = [m.firstName, m.lastName].filter(Boolean);
   return parts.length ? parts.join(' ') : '—';
 };
 
-const DashboardFilters = ({ filters, programs, mentors, onApply, onReset, compact = false }) => {
+const DashboardFilters = ({
+  filters,
+  programs,
+  mentors,
+  onApply,
+  onReset,
+  compact = false,
+  showGroupBy = false,
+  departmentLabel = null,
+}) => {
   const [localFilters, setLocalFilters] = useState(filters);
 
   useEffect(() => {
@@ -66,8 +81,9 @@ const DashboardFilters = ({ filters, programs, mentors, onApply, onReset, compac
       dateTo: null,
       programId: null,
       mentorId: null,
-      departmentId: null,
+      departmentId: filters.departmentId ?? null,
       status: null,
+      groupBy: null,
     };
     setLocalFilters(reset);
     onReset();
@@ -172,6 +188,26 @@ const DashboardFilters = ({ filters, programs, mentors, onApply, onReset, compac
               ))}
             </Select>
           </FormControl>
+          {showGroupBy && (
+            <FormControl size="small" sx={selectSx}>
+              <InputLabel>Группировка</InputLabel>
+              <Select
+                value={localFilters.groupBy || ''}
+                label="Группировка"
+                onChange={handleChange('groupBy')}
+              >
+                <MenuItem value="">Авто</MenuItem>
+                {GROUP_BY_OPTIONS.map((g) => (
+                  <MenuItem key={g.value} value={g.value}>
+                    {g.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+          {departmentLabel && (
+            <Chip label={departmentLabel} size="small" color="primary" variant="outlined" sx={{ height: 32 }} />
+          )}
           <Stack direction="row" spacing={0.75} sx={{ flexShrink: 0 }}>
             <Button variant="contained" size="small" onClick={handleApply}>
               Применить
@@ -280,6 +316,26 @@ const DashboardFilters = ({ filters, programs, mentors, onApply, onReset, compac
             ))}
           </Select>
         </FormControl>
+        {showGroupBy && (
+          <FormControl size="small" sx={{ minWidth: 160, flex: '1 1 160px' }}>
+            <InputLabel>Группировка</InputLabel>
+            <Select
+              value={localFilters.groupBy || ''}
+              label="Группировка"
+              onChange={handleChange('groupBy')}
+            >
+              <MenuItem value="">Авто</MenuItem>
+              {GROUP_BY_OPTIONS.map((g) => (
+                <MenuItem key={g.value} value={g.value}>
+                  {g.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+        {departmentLabel && (
+          <Chip label={departmentLabel} size="small" color="primary" variant="outlined" />
+        )}
         <Stack direction="row" spacing={1} sx={{ flexShrink: 0, pb: 0.25 }}>
           <Button variant="contained" size="small" onClick={handleApply}>
             Применить

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Box, Grid, CircularProgress, Alert, Typography } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -7,11 +7,11 @@ import {
   fetchProgramsStatsAsync,
   fetchMentorsStatsAsync,
   fetchInternsStatsAsync,
+  fetchDashboardChartsAsync,
   setFilters,
   clearFilters as clearDashboardFilters,
 } from '../store/slices/dashboardSlice';
-import { hrAPI } from '../services/api';
-import { mentorAPI } from '../services/api';
+import { hrAPI, mentorAPI, profileAPI } from '../services/api';
 import DashboardFilters from '../components/dashboard/DashboardFilters';
 import KpiCards from '../components/dashboard/KpiCards';
 import TrendsChart from '../components/dashboard/TrendsChart';
@@ -19,33 +19,56 @@ import TasksStatsCharts from '../components/dashboard/TasksStatsCharts';
 import ProgramsStatsChart from '../components/dashboard/ProgramsStatsChart';
 import MentorsStatsChart from '../components/dashboard/MentorsStatsChart';
 import InternsStatsChart from '../components/dashboard/InternsStatsChart';
+import DashboardChartsGrid from '../components/dashboard/DashboardChartsGrid';
 
 const DEFAULT_PERIOD_DAYS = 30;
 
 const programsHasCharts = (data) =>
   (data?.mostPopularPrograms?.length ?? 0) > 0 || (data?.bestPerformingPrograms?.length ?? 0) > 0;
 
-const DashboardPage = ({ compact = false }) => {
+const buildDefaultDateFilters = () => {
+  const dateTo = new Date();
+  const dateFrom = new Date();
+  dateFrom.setDate(dateFrom.getDate() - DEFAULT_PERIOD_DAYS);
+  return {
+    dateFrom: dateFrom.toISOString().slice(0, 10),
+    dateTo: dateTo.toISOString().slice(0, 10),
+    programId: null,
+    mentorId: null,
+    departmentId: null,
+    status: null,
+    groupBy: null,
+  };
+};
+
+const DashboardPage = ({ compact = false, variant = 'default' }) => {
+  const isDepartmentHead = variant === 'departmentHead';
   const dispatch = useDispatch();
   const {
     data,
+    charts,
     tasksStats,
     programsStats,
     mentorsStats,
     internsStats,
     filters,
     isLoading,
+    chartsLoading,
     error,
   } = useSelector((state) => state.dashboard);
 
   const [programs, setPrograms] = useState([]);
   const [mentors, setMentors] = useState([]);
+  const [departmentLabel, setDepartmentLabel] = useState(null);
+  const profileLoadedRef = useRef(false);
 
   useEffect(() => {
-    hrAPI.getInternshipPrograms({ page: 1, limit: 100 })
+    hrAPI
+      .getInternshipPrograms({ page: 1, limit: 100 })
       .then((res) => setPrograms(res.data?.data || res.data || []))
       .catch(() => {});
-    mentorAPI.getMentors({ page: 1, limit: 100 })
+    mentorAPI
+      .getMentors({ page: 1, limit: 100 })
       .then((res) => setMentors(res.data?.data || res.data || []))
       .catch(() => {});
   }, []);
@@ -67,12 +90,13 @@ const DashboardPage = ({ compact = false }) => {
       if (f.mentorId) params.mentorId = f.mentorId;
       if (f.departmentId) params.departmentId = f.departmentId;
       if (f.status) params.status = f.status;
+      if (f.groupBy) params.groupBy = f.groupBy;
       return params;
     },
     [filters]
   );
 
-  const fetchAll = useCallback(
+  const fetchLegacyAll = useCallback(
     (params) => {
       dispatch(fetchDashboardDataAsync(params));
       dispatch(fetchTasksStatsAsync(params));
@@ -83,47 +107,68 @@ const DashboardPage = ({ compact = false }) => {
     [dispatch]
   );
 
+  const fetchDepartmentHeadData = useCallback(
+    (params) => {
+      dispatch(fetchDashboardDataAsync(params));
+      dispatch(fetchDashboardChartsAsync(params));
+    },
+    [dispatch]
+  );
+
+  const applyFilters = useCallback(
+    (nextFilters) => {
+      const params = buildParams(nextFilters);
+      if (isDepartmentHead) {
+        fetchDepartmentHeadData(params);
+      } else {
+        fetchLegacyAll(params);
+      }
+    },
+    [buildParams, fetchDepartmentHeadData, fetchLegacyAll, isDepartmentHead]
+  );
+
   useEffect(() => {
-    const dateTo = new Date();
-    const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - DEFAULT_PERIOD_DAYS);
-    const initialFilters = {
-      dateFrom: dateFrom.toISOString().slice(0, 10),
-      dateTo: dateTo.toISOString().slice(0, 10),
-      programId: null,
-      mentorId: null,
-      departmentId: null,
-      status: null,
+    const init = async () => {
+      let initialFilters = buildDefaultDateFilters();
+
+      if (isDepartmentHead && !profileLoadedRef.current) {
+        profileLoadedRef.current = true;
+        try {
+          const res = await profileAPI.getProfile();
+          const profile = res.data;
+          if (profile?.departmentId) {
+            initialFilters = { ...initialFilters, departmentId: profile.departmentId };
+            const deptName = profile.departmentName || profile.department;
+            if (deptName) {
+              setDepartmentLabel(`Отдел: ${deptName}`);
+            }
+          }
+        } catch {
+          /* profile optional for charts */
+        }
+      }
+
+      dispatch(setFilters(initialFilters));
+      applyFilters(initialFilters);
     };
-    dispatch(setFilters(initialFilters));
-    const params = buildParams(initialFilters);
-    if (!data) dispatch(fetchDashboardDataAsync(params));
-    if (!tasksStats) dispatch(fetchTasksStatsAsync(params));
-    if (!programsStats) dispatch(fetchProgramsStatsAsync(params));
-    if (!mentorsStats) dispatch(fetchMentorsStatsAsync(params));
-    if (!internsStats) dispatch(fetchInternsStatsAsync(params));
-  }, []);
+
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDepartmentHead]);
 
   const handleApply = (newFilters) => {
     dispatch(setFilters(newFilters));
-    fetchAll(buildParams(newFilters));
+    applyFilters(newFilters);
   };
 
   const handleReset = () => {
+    const resetFilters = buildDefaultDateFilters();
+    if (isDepartmentHead && filters.departmentId) {
+      resetFilters.departmentId = filters.departmentId;
+    }
     dispatch(clearDashboardFilters());
-    const dateTo = new Date();
-    const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - DEFAULT_PERIOD_DAYS);
-    const resetFilters = {
-      dateFrom: dateFrom.toISOString().slice(0, 10),
-      dateTo: dateTo.toISOString().slice(0, 10),
-      programId: null,
-      mentorId: null,
-      departmentId: null,
-      status: null,
-    };
     dispatch(setFilters(resetFilters));
-    fetchAll(buildParams(resetFilters));
+    applyFilters(resetFilters);
   };
 
   const dateFromISO = filters.dateFrom ? new Date(filters.dateFrom).toISOString() : undefined;
@@ -136,7 +181,7 @@ const DashboardPage = ({ compact = false }) => {
     [compact, programsStats]
   );
 
-  const chartPanels = compact
+  const chartPanels = compact && !isDepartmentHead
     ? [
         { key: 'tasks', node: <TasksStatsCharts data={tasksStats} compact chartsOnly /> },
         showProgramsChart
@@ -147,17 +192,55 @@ const DashboardPage = ({ compact = false }) => {
       ].filter(Boolean)
     : null;
 
-  const sectionSpacing = compact ? 1.5 : 3;
+  const sectionSpacing = compact || isDepartmentHead ? 1.5 : 3;
+  const pageLoading = isLoading && !charts;
+  const gridLoading = chartsLoading;
+
+  if (isDepartmentHead) {
+    return (
+      <Box sx={{ width: '100%', minWidth: 0, maxWidth: '100%' }}>
+        <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
+          Дашборд отдела
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          Аналитика по стажировкам, задачам и команде за выбранный период
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 1, py: 0 }}>
+            {error}
+          </Alert>
+        )}
+
+        <DashboardFilters
+          filters={filters}
+          programs={programs}
+          mentors={mentors}
+          onApply={handleApply}
+          onReset={handleReset}
+          compact
+          showGroupBy
+          departmentLabel={departmentLabel}
+        />
+
+        {pageLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+            <CircularProgress size={28} />
+          </Box>
+        )}
+
+        <Box sx={{ mb: sectionSpacing }}>
+          <KpiCards data={data} compact />
+        </Box>
+
+        <DashboardChartsGrid charts={charts} loading={gridLoading} />
+      </Box>
+    );
+  }
 
   if (compact) {
     return (
-      <Box
-        sx={{
-          width: '100%',
-          minWidth: 0,
-          maxWidth: '100%',
-        }}
-      >
+      <Box sx={{ width: '100%', minWidth: 0, maxWidth: '100%' }}>
         <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
           Дашборд
         </Typography>

@@ -173,23 +173,11 @@ const DepartmentHeadDashboard = () => {
       );
     }
 
-    if (location.pathname === '/department-head/dashboard') {
-      return <DashboardPage compact />;
-    }
-
-    if (location.pathname === '/department-head/stats') {
-      return (
-        <Box>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" fontWeight="bold">
-              Статистика
-            </Typography>
-          </Box>
-          <Typography variant="body1" color="text.secondary">
-            Здесь будет отображаться статистика по заданиям, прогрессу стажеров и аналитика.
-          </Typography>
-        </Box>
-      );
+    if (
+      location.pathname === '/department-head/dashboard' ||
+      location.pathname === '/department-head/stats'
+    ) {
+      return <DashboardPage variant="departmentHead" />;
     }
 
     return <ProfilePage />;
@@ -198,7 +186,9 @@ const DepartmentHeadDashboard = () => {
   const showTaskButton =
     location.pathname === '/department-head/tasks';
 
-  const isDashboardPage = location.pathname === '/department-head/dashboard';
+  const isDashboardPage =
+    location.pathname === '/department-head/dashboard' ||
+    location.pathname === '/department-head/stats';
 
   const getPageTitle = () => {
     if (location.pathname === '/department-head/roadmap') return 'Дорожная карта';

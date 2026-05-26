@@ -413,6 +413,7 @@ export const ratingAPI = {
 
 export const dashboardAPI = {
   getData: (params) => api.get(dashboardPath, { params }),
+  getCharts: (params) => api.get(`${dashboardPath}/charts`, { params }),
   getUpcomingDeadlines: (params) => api.get(`${dashboardPath}/upcoming-deadlines`, { params }),
   getTrends: (params) => api.get(`${dashboardPath}/trends`, { params }),
   getTasksStats: (params) => api.get(`${dashboardPath}/tasks-stats`, { params }),

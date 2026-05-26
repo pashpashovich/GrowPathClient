@@ -85,8 +85,21 @@ export const fetchUpcomingDeadlinesAsync = createAsyncThunk(
   }
 );
 
+export const fetchDashboardChartsAsync = createAsyncThunk(
+  'dashboard/fetchCharts',
+  async (params, { rejectWithValue }) => {
+    try {
+      const response = await dashboardAPI.getCharts(params);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки графиков');
+    }
+  }
+);
+
 const initialState = {
   data: null,
+  charts: null,
   trends: null,
   tasksStats: null,
   programsStats: null,
@@ -100,8 +113,10 @@ const initialState = {
     mentorId: null,
     departmentId: null,
     status: null,
+    groupBy: null,
   },
   isLoading: false,
+  chartsLoading: false,
   error: null,
 };
 
@@ -174,7 +189,20 @@ const dashboardSlice = createSlice({
         state.isLoading = false;
         state.deadlines = action.payload;
       })
-      .addCase(fetchUpcomingDeadlinesAsync.rejected, handleRejected);
+      .addCase(fetchUpcomingDeadlinesAsync.rejected, handleRejected)
+
+      .addCase(fetchDashboardChartsAsync.pending, (state) => {
+        state.chartsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchDashboardChartsAsync.fulfilled, (state, action) => {
+        state.chartsLoading = false;
+        state.charts = action.payload;
+      })
+      .addCase(fetchDashboardChartsAsync.rejected, (state, action) => {
+        state.chartsLoading = false;
+        state.error = action.payload;
+      });
   },
 });
 
