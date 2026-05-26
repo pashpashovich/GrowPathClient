@@ -19,6 +19,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  Autocomplete,
 } from '@mui/material';
 import { Add, Delete, AttachFile } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -42,6 +43,7 @@ import { normalizeInternshipProgram } from '../../utils/internshipProgramApi';
 import { getNormalizedRole } from '../../utils/resolveAppRole';
 import { getAuthUserId } from '../../utils/authUser';
 import { uploadTaskArtifactFile } from '../../utils/taskArtifactUpload';
+import { fetchProgramCompetenciesForIntern } from '../../utils/taskCompetencies';
 
 const formatFileSize = (bytes) => {
   if (!bytes) return '';
@@ -107,6 +109,10 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   const [submitError, setSubmitError] = useState('');
   const [pendingFiles, setPendingFiles] = useState([]);
   const [fileUploadNote, setFileUploadNote] = useState('');
+  const [competencyIds, setCompetencyIds] = useState([]);
+  const [programCompetencies, setProgramCompetencies] = useState([]);
+  const [competenciesProgramTitle, setCompetenciesProgramTitle] = useState('');
+  const [competenciesLoading, setCompetenciesLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -172,10 +178,12 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         checklist: mapped.checklist,
         attachments: mapped.attachments,
       });
+      setCompetencyIds(mapped.competencyIds || []);
 
       if (!mapped.internshipId) {
         setInternshipId('');
         setAssignmentRows([newAssignmentRow()]);
+        setCompetencyIds([]);
         return;
       }
 
@@ -244,6 +252,9 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
       const defaultProgram = taskFilters.internshipId || programs[0]?.id || '';
       setInternshipId(defaultProgram ? String(defaultProgram) : '');
       setAssignmentRows([newAssignmentRow()]);
+      setCompetencyIds([]);
+      setProgramCompetencies([]);
+      setCompetenciesProgramTitle('');
     };
 
     initForm();
@@ -259,6 +270,50 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
       loadProgramData(internshipId);
     }
   }, [open, editingTask?.id, internshipId, loadProgramData]);
+
+  const competencySourceInternId = useMemo(() => {
+    const row = assignmentRows.find((r) => r.internId);
+    return row?.internId ? String(row.internId) : '';
+  }, [assignmentRows]);
+
+  useEffect(() => {
+    if (!open || !internshipId || !competencySourceInternId) {
+      setProgramCompetencies([]);
+      setCompetenciesProgramTitle('');
+      if (!competencySourceInternId) {
+        setCompetencyIds([]);
+      }
+      return undefined;
+    }
+
+    let cancelled = false;
+    setCompetenciesLoading(true);
+
+    (async () => {
+      try {
+        const result = await fetchProgramCompetenciesForIntern(
+          competencySourceInternId,
+          internshipId
+        );
+        if (cancelled) return;
+        setProgramCompetencies(result.competencies);
+        setCompetenciesProgramTitle(result.programTitle || '');
+        const validIds = new Set(result.competencies.map((c) => c.id));
+        setCompetencyIds((prev) => prev.filter((id) => validIds.has(id)));
+      } catch {
+        if (!cancelled) {
+          setProgramCompetencies([]);
+          setCompetenciesProgramTitle('');
+        }
+      } finally {
+        if (!cancelled) setCompetenciesLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, internshipId, competencySourceInternId]);
 
   const findIprForIntern = (internId) =>
     findIprForParticipant(programIprs, internId, programInterns);
@@ -282,6 +337,9 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     setInternshipId(programId);
     setFormData((prev) => ({ ...prev, goalId: '', goalLabel: '' }));
     setAssignmentRows([newAssignmentRow()]);
+    setCompetencyIds([]);
+    setProgramCompetencies([]);
+    setCompetenciesProgramTitle('');
     loadProgramData(programId);
     if (errors.internshipId) {
       setErrors((prev) => ({ ...prev, internshipId: '' }));
@@ -423,6 +481,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
           payload.iprStageId = Number(row.stageId);
         }
         Object.assign(payload, buildTaskFormExtras(formData));
+        payload.competencyIds = competencyIds.map((id) => Number(id));
         await dispatch(updateTaskAsync({ id: editingTask.id, data: payload })).unwrap();
         await uploadPendingFilesToTasks([editingTask.id]);
         onCreated?.();
@@ -448,6 +507,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         assignments: filledRows,
         goalId: formData.goalId,
         checklist: formData.checklist,
+        competencyIds,
       });
       const created = await dispatch(createTaskAsync(payload)).unwrap();
       const taskIds = resolveCreatedTaskIds(created);
@@ -716,6 +776,49 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
                   {errors.assignments}
                 </Typography>
               )}
+            </Box>
+          )}
+
+          {!loadingTask && internshipId && (
+            <Box>
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                Компетенции
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                {competencySourceInternId
+                  ? competenciesProgramTitle
+                    ? `Компетенции программы «${competenciesProgramTitle}». При нескольких стажёрах выбранные компетенции применяются ко всем создаваемым задачам.`
+                    : 'Компетенции программы стажировки выбранного стажёра.'
+                  : 'Сначала выберите стажёра в назначении — список компетенций загрузится автоматически.'}
+              </Typography>
+              <Autocomplete
+                multiple
+                options={programCompetencies}
+                getOptionLabel={(option) => option.name}
+                isOptionEqualToValue={(a, b) => Number(a.id) === Number(b.id)}
+                value={programCompetencies.filter((c) =>
+                  competencyIds.some((id) => Number(id) === Number(c.id))
+                )}
+                onChange={(_, selected) => {
+                  setCompetencyIds(selected.map((c) => c.id));
+                }}
+                loading={competenciesLoading}
+                disabled={!competencySourceInternId || competenciesLoading}
+                noOptionsText={
+                  competencySourceInternId
+                    ? 'Нет компетенций в программе'
+                    : 'Выберите стажёра'
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Компетенции задания"
+                    placeholder={
+                      competencySourceInternId ? 'Выберите компетенции' : 'Сначала выберите стажёра'
+                    }
+                  />
+                )}
+              />
             </Box>
           )}
 

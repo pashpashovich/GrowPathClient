@@ -15,6 +15,13 @@ export const buildTaskFormExtras = ({ goalId, checklist } = {}) => {
   return extras;
 };
 
+const cleanPositiveIntIds = (arr) => {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((n) => (typeof n === 'number' ? n : parseInt(n, 10)))
+    .filter((n) => Number.isInteger(n) && n > 0);
+};
+
 export const buildCreateTaskPayload = ({
   title,
   description,
@@ -24,6 +31,7 @@ export const buildCreateTaskPayload = ({
   assignments,
   goalId,
   checklist,
+  competencyIds,
 }) => {
   const payload = {
     title: title.trim(),
@@ -35,6 +43,7 @@ export const buildCreateTaskPayload = ({
       iprStageId: Number(stageId),
     })),
     ...buildTaskFormExtras({ goalId, checklist }),
+    competencyIds: cleanPositiveIntIds(competencyIds),
   };
 
   if (dueDate) {

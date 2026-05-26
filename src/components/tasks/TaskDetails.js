@@ -39,6 +39,7 @@ import {
   resolveTaskFileAttachments,
   resolveTaskGoalLabel,
 } from '../../utils/mapTaskToForm';
+import { resolveTaskCompetencyRefsForDisplay } from '../../utils/taskCompetencies';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -57,6 +58,7 @@ const TaskDetails = ({ open, onClose, onEdit, canEdit = true, loading = false })
   const checklist = resolveTaskChecklist(task).filter((item) => item.text?.trim());
   const attachments = resolveTaskFileAttachments(task);
   const goalLabel = resolveTaskGoalLabel(task);
+  const competencyRefs = resolveTaskCompetencyRefsForDisplay(task);
   const links = Array.isArray(task?.links) ? task.links : [];
 
   const getPriorityColor = (priority) => {
@@ -248,6 +250,19 @@ const TaskDetails = ({ open, onClose, onEdit, canEdit = true, loading = false })
                         Цель программы:
                       </Typography>
                       <Typography variant="body2">{goalLabel}</Typography>
+                    </Box>
+                  )}
+
+                  {competencyRefs.length > 0 && (
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        Компетенции:
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {competencyRefs.map((c) => (
+                          <Chip key={c.id} label={c.name} size="small" variant="outlined" />
+                        ))}
+                      </Box>
                     </Box>
                   )}
 

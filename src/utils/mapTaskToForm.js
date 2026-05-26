@@ -87,6 +87,14 @@ export const resolveTaskGoalLabel = (task) => {
   );
 };
 
+export const resolveTaskCompetencyIds = (task) => {
+  const t = normalizeTaskFromApi(task) || task || {};
+  const refs = Array.isArray(t.competencyRefs) ? t.competencyRefs : [];
+  return refs
+    .map((c) => (c?.id != null ? Number(c.id) : null))
+    .filter((id) => id != null && Number.isFinite(id));
+};
+
 export const resolveTaskChecklist = (task) => {
   const t = normalizeTaskFromApi(task) || task || {};
   const raw =
@@ -133,6 +141,7 @@ export const mapTaskToFormFields = (task) => {
     assigneeId: resolveTaskAssigneeId(t),
     stageId: resolveTaskStageId(t),
     checklist: resolveTaskChecklist(t),
+    competencyIds: resolveTaskCompetencyIds(t),
     attachments: resolveTaskFileAttachments(t),
     links: t.links || t.submissionLinks || [],
   };

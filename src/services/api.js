@@ -223,6 +223,8 @@ export const internAPI = {
   deleteIntern: (id) => api.delete(`${internsPath}/${id}`),
   getInternProgress: (id) => api.get(`${internsPath}/${id}/progress`),
   getInternTasks: (id) => api.get(`${internsPath}/${id}/tasks`),
+  getInternProgramCompetencies: (id, params) =>
+    api.get(`${internsPath}/${id}/program-competencies`, { params }),
   getInternAssessments: (id) => api.get(`${internsPath}/${id}/assessments`),
   downloadInternshipResultReport: (id) =>
     api.get(`${internsPath}/${id}/internship-result-report`, {
