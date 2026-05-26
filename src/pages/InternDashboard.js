@@ -89,19 +89,6 @@ const InternDashboard = () => {
       );
     } else if (location.pathname === '/intern/rating') {
       return <InternRatingPage />;
-    } else if (location.pathname === '/intern/stats') {
-      return (
-        <Box>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" fontWeight="bold">
-              Статистика
-            </Typography>
-          </Box>
-          <Typography variant="body1" color="text.secondary">
-            Здесь будет отображаться статистика выполнения заданий, прогресс и достижения.
-          </Typography>
-        </Box>
-      );
     } else if (location.pathname === '/intern/tasks') {
       return (
         <Box>

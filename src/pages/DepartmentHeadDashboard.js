@@ -173,10 +173,7 @@ const DepartmentHeadDashboard = () => {
       );
     }
 
-    if (
-      location.pathname === '/department-head/dashboard' ||
-      location.pathname === '/department-head/stats'
-    ) {
+    if (location.pathname === '/department-head/dashboard') {
       return <DashboardPage variant="departmentHead" />;
     }
 
@@ -186,15 +183,12 @@ const DepartmentHeadDashboard = () => {
   const showTaskButton =
     location.pathname === '/department-head/tasks';
 
-  const isDashboardPage =
-    location.pathname === '/department-head/dashboard' ||
-    location.pathname === '/department-head/stats';
+  const isDashboardPage = location.pathname === '/department-head/dashboard';
 
   const getPageTitle = () => {
     if (location.pathname === '/department-head/roadmap') return 'Дорожная карта';
     if (location.pathname === '/department-head/review') return 'Проверка заданий';
     if (location.pathname === '/department-head/dashboard') return 'Дашборд';
-    if (location.pathname === '/department-head/stats') return 'Статистика';
     if (location.pathname === '/department-head/tasks') return 'Доска задач';
     if (location.pathname === '/department-head/programs') return 'Программы стажировок';
     if (location.pathname.startsWith('/department-head/rating')) return 'Рейтинг стажеров';

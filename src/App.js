@@ -70,12 +70,6 @@ function App() {
                     </ProtectedRoute>
                   } />
 
-                  <Route path="/mentor/stats" element={
-                    <ProtectedRoute requiredRole="mentor">
-                      <MentorDashboard />
-                    </ProtectedRoute>
-                  } />
-
                   <Route path="/mentor/mailings" element={
                     <ProtectedRoute requiredRole="mentor">
                       <MentorDashboard />
@@ -101,12 +95,6 @@ function App() {
                   } />
 
                   <Route path="/intern/roadmap" element={
-                    <ProtectedRoute requiredRole="intern">
-                      <InternDashboard />
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/intern/stats" element={
                     <ProtectedRoute requiredRole="intern">
                       <InternDashboard />
                     </ProtectedRoute>
@@ -227,12 +215,6 @@ function App() {
                   } />
 
                   <Route path="/department-head/dashboard" element={
-                    <ProtectedRoute requiredRole="department_head">
-                      <DepartmentHeadDashboard />
-                    </ProtectedRoute>
-                  } />
-
-                  <Route path="/department-head/stats" element={
                     <ProtectedRoute requiredRole="department_head">
                       <DepartmentHeadDashboard />
                     </ProtectedRoute>

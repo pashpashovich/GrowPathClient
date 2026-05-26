@@ -91,12 +91,6 @@ const Sidebar = ({ open, onClose }) => {
           active: location.pathname === '/mentor/review',
         },
         {
-          text: 'Статистика',
-          icon: <BarChart />,
-          path: '/mentor/stats',
-          active: location.pathname === '/mentor/stats',
-        },
-        {
           text: 'Рассылки',
           icon: <MailOutline />,
           path: '/mentor/mailings',
@@ -239,12 +233,6 @@ const Sidebar = ({ open, onClose }) => {
       icon: <EmojiEvents />,
       path: '/intern/rating',
       active: location.pathname === '/intern/rating',
-    },
-    {
-      text: 'Статистика',
-      icon: <BarChart />,
-      path: '/intern/stats',
-      active: location.pathname === '/intern/stats',
     },
   ];
 

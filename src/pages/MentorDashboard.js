@@ -67,19 +67,6 @@ const MentorDashboard = () => {
           <TaskReviewPanel onViewTask={handleViewTask} />
         </Box>
       );
-    } else if (location.pathname === '/mentor/stats') {
-      return (
-        <Box>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" fontWeight="bold">
-              Статистика
-            </Typography>
-          </Box>
-          <Typography variant="body1" color="text.secondary">
-            Здесь будет отображаться статистика по заданиям, прогрессу стажеров и аналитика.
-          </Typography>
-        </Box>
-      );
     } else if (location.pathname === '/mentor/mailings') {
       return <MailingsPage />;
     } else if (location.pathname === '/mentor/tasks') {
