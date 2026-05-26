@@ -45,15 +45,18 @@ import TaskDetails from './TaskDetails';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import ActionSnackbar from '../mailings/ActionSnackbar';
 import { getApiErrorMessage } from '../../utils/apiResponse';
+import { fetchInternshipProgramsAsync } from '../../store/slices/internshipProgramSlice';
+import { getAuthUserId } from '../../utils/authUser';
 
 const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
   const dispatch = useDispatch();
   const theme = useTheme();
   const tasks = useSelector((state) => state.task?.tasks || []);
   const interns = useSelector((state) => state.intern?.interns || []);
-  const internships = useSelector((state) => state.roadmap?.internships || []);
   const programs = useSelector((state) => state.internshipProgram?.programs || []);
+  const programsLoading = useSelector((state) => state.internshipProgram?.isLoading);
   const filters = useSelector((state) => state.task?.filters || {});
+  const currentUser = useSelector((state) => state.auth.user);
   const userRole = useSelector((state) => state.auth.user?.role ?? state.auth.role);
   const useTaskProfile = userRole === 'mentor' || userRole === 'intern';
 
@@ -97,6 +100,17 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
   }, [loadTasks]);
 
   useEffect(() => {
+    const params = { page: 1, limit: 100, includeArchived: false };
+    if (userRole === 'mentor') {
+      const mentorId = getAuthUserId(currentUser);
+      if (Number.isFinite(mentorId)) {
+        params.mentorId = mentorId;
+      }
+    }
+    dispatch(fetchInternshipProgramsAsync(params));
+  }, [dispatch, userRole, currentUser?.id]);
+
+  useEffect(() => {
     if (!formRequest) return;
     if (formRequest.mode === 'create') {
       setEditingTask(null);
@@ -131,9 +145,9 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
     return intern ? intern.name : `Стажер ${internId}`;
   };
 
-  const getInternshipName = (internshipId) => {
-    const internship = internships.find(i => i.id === internshipId);
-    return internship ? internship.title : `Стажировка ${internshipId}`;
+  const getProgramName = (programId) => {
+    const program = programs.find((p) => String(p.id) === String(programId));
+    return program?.title || `Программа ${programId}`;
   };
 
   const formatDate = (dateString) => {
@@ -337,7 +351,7 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
           />
           {task.internshipId && (
             <Chip
-              label={getInternshipName(task.internshipId)}
+              label={getProgramName(task.internshipId)}
               variant="outlined"
               size="small"
               sx={{ fontSize: '0.6rem', height: 18 }}
@@ -477,32 +491,32 @@ const KanbanBoard = ({ formRequest, onFormRequestHandled }) => {
         </Typography>
       </Box>
 
-      {/* Фильтр по стажировкам */}
+      {/* Фильтр по программам стажировок (GET /internship-programs) */}
       <Paper sx={{ p: 2, mb: 2, flexShrink: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <Typography variant="subtitle1" fontWeight="bold">
-            Фильтр по стажировкам:
+            Фильтр по программе:
           </Typography>
-          <FormControl sx={{ minWidth: 300 }}>
-            <InputLabel>Выберите стажировку</InputLabel>
+          <FormControl sx={{ minWidth: 300 }} disabled={programsLoading}>
+            <InputLabel>Выберите программу</InputLabel>
             <Select
               value={filters.internshipId || ''}
-              label="Выберите стажировку"
+              label="Выберите программу"
               onChange={(e) => handleInternshipFilterChange(e.target.value)}
             >
               <MenuItem value="">
-                <em>Все стажировки</em>
+                <em>Все программы</em>
               </MenuItem>
-              {internships.map((internship) => (
-                <MenuItem key={internship.id} value={internship.id}>
-                  {internship.title}
+              {programs.map((program) => (
+                <MenuItem key={program.id} value={String(program.id)}>
+                  {program.title}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
           {filters.internshipId && (
             <Chip
-              label={`Активен: ${getInternshipName(filters.internshipId)}`}
+              label={`Активна: ${getProgramName(filters.internshipId)}`}
               color="primary"
               onDelete={() => handleInternshipFilterChange('')}
             />
