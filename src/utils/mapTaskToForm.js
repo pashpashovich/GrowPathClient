@@ -73,6 +73,10 @@ export const resolveTaskGoalId = (task) => {
   if (t.programGoalId != null) return String(t.programGoalId);
   if (t.goal?.id != null) return String(t.goal.id);
   if (t.programGoal?.id != null) return String(t.programGoal.id);
+  if (t.programGoalRef?.id != null) return String(t.programGoalRef.id);
+  if (Array.isArray(t.goalRefs) && t.goalRefs[0]?.id != null) {
+    return String(t.goalRefs[0].id);
+  }
   return '';
 };
 
@@ -83,39 +87,72 @@ export const resolveTaskGoalLabel = (task) => {
     t.goal?.title ??
     t.programGoal?.title ??
     t.programGoalTitle ??
+    t.programGoalRef?.title ??
+    (Array.isArray(t.goalRefs) ? t.goalRefs[0]?.title : null) ??
     ''
   );
 };
 
 export const resolveTaskCompetencyIds = (task) => {
   const t = normalizeTaskFromApi(task) || task || {};
+  if (Array.isArray(t.competencyIds) && t.competencyIds.length > 0) {
+    return t.competencyIds
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id));
+  }
   const refs = Array.isArray(t.competencyRefs) ? t.competencyRefs : [];
   return refs
     .map((c) => (c?.id != null ? Number(c.id) : null))
     .filter((id) => id != null && Number.isFinite(id));
 };
 
+const normalizeChecklistSource = (source) => {
+  if (!source) return null;
+  if (Array.isArray(source)) return source;
+  if (typeof source === 'object' && Array.isArray(source.items)) return source.items;
+  return null;
+};
+
 export const resolveTaskChecklist = (task) => {
   const t = normalizeTaskFromApi(task) || task || {};
   const raw =
-    t.checklist ??
-    t.acceptanceChecklist ??
-    t.checkList ??
-    t.checklistItems ??
-    t.acceptanceCriteria;
+    normalizeChecklistSource(t.checklist) ??
+    normalizeChecklistSource(t.acceptanceChecklist) ??
+    normalizeChecklistSource(t.acceptanceChecklistItems) ??
+    normalizeChecklistSource(t.checkList) ??
+    normalizeChecklistSource(t.checklistItems) ??
+    normalizeChecklistSource(t.acceptanceCriteria) ??
+    normalizeChecklistSource(t.criteria);
 
   if (!Array.isArray(raw) || raw.length === 0) {
     return [{ id: 1, text: '', completed: false }];
   }
 
-  return raw.map((item, index) => ({
+  const items = raw.map((item, index) => ({
     id: item?.id ?? index + 1,
     text:
       typeof item === 'string'
         ? item
-        : item?.text ?? item?.title ?? item?.description ?? item?.label ?? '',
+        : item?.text ??
+          item?.title ??
+          item?.description ??
+          item?.label ??
+          item?.criterion ??
+          item?.name ??
+          '',
     completed: typeof item === 'object' ? Boolean(item.completed) : false,
   }));
+
+  const hasContent = items.some((item) => String(item.text || '').trim());
+  return hasContent ? items : [{ id: 1, text: '', completed: false }];
+};
+
+export const resolveGoalIdFromProgram = (goalId, goalLabel, program) => {
+  if (goalId) return String(goalId);
+  const label = String(goalLabel || '').trim();
+  if (!label || !Array.isArray(program?.goals)) return '';
+  const match = program.goals.find((g) => String(g.title || '').trim() === label);
+  return match?.id != null ? String(match.id) : '';
 };
 
 export const mapTaskToFormFields = (task) => {

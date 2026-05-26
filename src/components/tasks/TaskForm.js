@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -29,6 +29,7 @@ import {
   matchProgramParticipant,
   participantSelectValue,
   findIprForParticipant,
+  resolveGoalIdFromProgram,
 } from '../../utils/mapTaskToForm';
 import { fetchInternshipProgramsAsync } from '../../store/slices/internshipProgramSlice';
 import { getCurrentUserAsync } from '../../store/slices/authSlice';
@@ -113,6 +114,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   const [programCompetencies, setProgramCompetencies] = useState([]);
   const [competenciesProgramTitle, setCompetenciesProgramTitle] = useState('');
   const [competenciesLoading, setCompetenciesLoading] = useState(false);
+  const pendingCompetencyIdsRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
@@ -130,7 +132,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
       setProgramIprs([]);
       setProgramDetails(null);
       setStagesByIprId({});
-      return;
+      return { interns: [], iprs: [], program: null };
     }
     setProgramDataLoading(true);
     try {
@@ -153,13 +155,14 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
       setProgramInterns(interns);
       setProgramIprs(iprs);
       setStagesByIprId({});
-      return { interns, iprs };
+      const program = normalizeInternshipProgram(programRaw);
+      return { interns, iprs, program };
     } catch (e) {
       setSubmitError(getApiErrorMessage(e, 'Не удалось загрузить данные программы'));
       setProgramInterns([]);
       setProgramIprs([]);
       setProgramDetails(null);
-      return { interns: [], iprs: [] };
+      return { interns: [], iprs: [], program: null };
     } finally {
       setProgramDataLoading(false);
     }
@@ -168,28 +171,33 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   const applyTaskToForm = useCallback(
     async (task) => {
       const mapped = mapTaskToFormFields(task);
-      setFormData({
-        title: mapped.title,
-        description: mapped.description,
-        priority: mapped.priority,
-        dueDate: mapped.dueDate,
-        goalId: mapped.goalId,
-        goalLabel: mapped.goalLabel || '',
-        checklist: mapped.checklist,
-        attachments: mapped.attachments,
-      });
-      setCompetencyIds(mapped.competencyIds || []);
 
       if (!mapped.internshipId) {
+        pendingCompetencyIdsRef.current = null;
+        setFormData({
+          title: mapped.title,
+          description: mapped.description,
+          priority: mapped.priority,
+          dueDate: mapped.dueDate,
+          goalId: mapped.goalId,
+          goalLabel: mapped.goalLabel || '',
+          checklist: mapped.checklist,
+          attachments: mapped.attachments,
+        });
         setInternshipId('');
         setAssignmentRows([newAssignmentRow()]);
         setCompetencyIds([]);
         return;
       }
 
-      setInternshipId(mapped.internshipId);
-      const { interns, iprs } = await loadProgramData(mapped.internshipId);
+      const { interns, iprs, program } = await loadProgramData(mapped.internshipId);
+      const resolvedGoalId = resolveGoalIdFromProgram(
+        mapped.goalId,
+        mapped.goalLabel,
+        program
+      );
 
+      let nextRows = [newAssignmentRow()];
       if (mapped.assigneeId) {
         const participant = matchProgramParticipant(interns, mapped.assigneeId);
         const selectInternId = participant
@@ -201,16 +209,29 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
           const stages = unwrapList(response);
           setStagesByIprId({ [String(ipr.id)]: stages });
         }
-        setAssignmentRows([
+        nextRows = [
           {
             key: `edit-${selectInternId}`,
             internId: selectInternId,
             stageId: mapped.stageId ? String(mapped.stageId) : '',
           },
-        ]);
-      } else {
-        setAssignmentRows([newAssignmentRow()]);
+        ];
       }
+
+      pendingCompetencyIdsRef.current = mapped.competencyIds || [];
+      setAssignmentRows(nextRows);
+      setFormData({
+        title: mapped.title,
+        description: mapped.description,
+        priority: mapped.priority,
+        dueDate: mapped.dueDate,
+        goalId: resolvedGoalId,
+        goalLabel: mapped.goalLabel || '',
+        checklist: mapped.checklist,
+        attachments: mapped.attachments,
+      });
+      setCompetencyIds(mapped.competencyIds || []);
+      setInternshipId(mapped.internshipId);
     },
     [loadProgramData]
   );
@@ -230,7 +251,9 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         setLoadingTask(true);
         try {
           const full = await dispatch(fetchTaskByIdAsync(editingTask.id)).unwrap();
-          if (!cancelled) await applyTaskToForm(full);
+          if (!cancelled) {
+            await applyTaskToForm({ ...editingTask, ...full });
+          }
         } catch {
           if (!cancelled) await applyTaskToForm(editingTask);
         } finally {
@@ -255,6 +278,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
       setCompetencyIds([]);
       setProgramCompetencies([]);
       setCompetenciesProgramTitle('');
+      pendingCompetencyIdsRef.current = null;
     };
 
     initForm();
@@ -277,12 +301,16 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
   }, [assignmentRows]);
 
   useEffect(() => {
-    if (!open || !internshipId || !competencySourceInternId) {
-      setProgramCompetencies([]);
-      setCompetenciesProgramTitle('');
-      if (!competencySourceInternId) {
+    if (!open || !internshipId) {
+      if (!editingTask?.id) {
+        setProgramCompetencies([]);
+        setCompetenciesProgramTitle('');
         setCompetencyIds([]);
       }
+      return undefined;
+    }
+
+    if (!competencySourceInternId) {
       return undefined;
     }
 
@@ -298,8 +326,14 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         if (cancelled) return;
         setProgramCompetencies(result.competencies);
         setCompetenciesProgramTitle(result.programTitle || '');
-        const validIds = new Set(result.competencies.map((c) => c.id));
-        setCompetencyIds((prev) => prev.filter((id) => validIds.has(id)));
+        const validIds = new Set(result.competencies.map((c) => Number(c.id)));
+        setCompetencyIds((prev) => {
+          const seed =
+            prev.length > 0 ? prev : pendingCompetencyIdsRef.current || [];
+          pendingCompetencyIdsRef.current = null;
+          if (!validIds.size) return seed;
+          return seed.filter((id) => validIds.has(Number(id)));
+        });
       } catch {
         if (!cancelled) {
           setProgramCompetencies([]);
@@ -313,7 +347,7 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
     return () => {
       cancelled = true;
     };
-  }, [open, internshipId, competencySourceInternId]);
+  }, [open, internshipId, competencySourceInternId, editingTask?.id]);
 
   const findIprForIntern = (internId) =>
     findIprForParticipant(programIprs, internId, programInterns);
@@ -480,7 +514,13 @@ const TaskForm = ({ open, onClose, taskToEdit, task, onCreated }) => {
         if (row?.stageId) {
           payload.iprStageId = Number(row.stageId);
         }
-        Object.assign(payload, buildTaskFormExtras(formData));
+        Object.assign(
+          payload,
+          buildTaskFormExtras({
+            goalId: formData.goalId,
+            checklist: formData.checklist,
+          })
+        );
         payload.competencyIds = competencyIds.map((id) => Number(id));
         await dispatch(updateTaskAsync({ id: editingTask.id, data: payload })).unwrap();
         await uploadPendingFilesToTasks([editingTask.id]);
