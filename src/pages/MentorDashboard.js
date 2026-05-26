@@ -4,13 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
 import DashboardAppBar, { DASHBOARD_APP_BAR_HEIGHT } from '../components/DashboardAppBar';
 import TaskDetails from '../components/tasks/TaskDetails';
+import TaskForm from '../components/tasks/TaskForm';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
+import { fetchTaskProfileAsync } from '../store/slices/taskSlice';
 import RoadmapPage from './RoadmapPage';
 import ProfilePage from './ProfilePage';
 import MailingsPage from './MailingsPage';
 import Sidebar from '../components/Sidebar';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logoutAsync } from '../store/slices/authSlice';
 import { useLocation } from 'react-router-dom';
 
@@ -20,14 +22,34 @@ const MentorDashboard = () => {
   const location = useLocation();
   const [taskFormRequest, setTaskFormRequest] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const currentTask = useSelector((state) => state.task.currentTask);
 
   const handleOpenCreateTask = () => {
     setTaskFormRequest({ mode: 'create' });
   };
 
   const handleOpenEditTask = (task) => {
-    setTaskFormRequest({ mode: 'edit', task });
+    if (location.pathname === '/mentor/review') {
+      setEditingTask(task);
+      setIsTaskFormOpen(true);
+    } else {
+      setTaskFormRequest({ mode: 'edit', task });
+    }
+  };
+
+  const handleEditFromDetailsModal = () => {
+    const task = currentTask || selectedTask;
+    if (!task) return;
+    handleCloseTaskDetails();
+    setEditingTask(task);
+    setIsTaskFormOpen(true);
+  };
+
+  const refreshReviewTasks = () => {
+    dispatch(fetchTaskProfileAsync({ page: 1, limit: 100 }));
   };
 
   const handleViewTask = (task) => {
@@ -154,15 +176,22 @@ const MentorDashboard = () => {
                 <TaskDetails
                   open={!!selectedTask}
                   onClose={handleCloseTaskDetails}
-                  onEdit={() => {
-                    handleCloseTaskDetails();
-                    handleOpenEditTask(selectedTask);
-                  }}
+                  onEdit={handleEditFromDetailsModal}
                   canEdit={true} 
                 />
               )}
         </Box>
       </Modal>
+
+      <TaskForm
+        open={isTaskFormOpen}
+        onClose={() => {
+          setIsTaskFormOpen(false);
+          setEditingTask(null);
+        }}
+        task={editingTask}
+        onCreated={refreshReviewTasks}
+      />
 
       </Box>
     </Box>

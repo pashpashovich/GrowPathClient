@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Modal } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Add } from '@mui/icons-material';
 import { logoutAsync } from '../store/slices/authSlice';
 import {
@@ -17,8 +17,10 @@ import InternshipProgramForm from '../components/internshipPrograms/InternshipPr
 import InternshipProgramDetails from '../components/internshipPrograms/InternshipProgramDetails';
 import AnalyticsPage from './AnalyticsPage';
 import TaskDetails from '../components/tasks/TaskDetails';
+import TaskForm from '../components/tasks/TaskForm';
 import TaskReviewPanel from '../components/tasks/TaskReviewPanel';
 import KanbanBoard from '../components/tasks/KanbanBoard';
+import { fetchTasksAsync } from '../store/slices/taskSlice';
 import RoadmapPage from './RoadmapPage';
 import DashboardPage from './DashboardPage';
 import HRMentorsPage from './HRMentorsPage';
@@ -37,6 +39,9 @@ const DepartmentHeadDashboard = () => {
 
   const [taskFormRequest, setTaskFormRequest] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const currentTask = useSelector((state) => state.task.currentTask);
 
   const normalizedPath = location.pathname.replace(/\/$/, '') || '/';
   const isProgramsTab = normalizedPath === '/department-head/programs';
@@ -94,7 +99,24 @@ const DepartmentHeadDashboard = () => {
   };
 
   const handleOpenEditTask = (task) => {
-    setTaskFormRequest({ mode: 'edit', task });
+    if (location.pathname === '/department-head/review') {
+      setEditingTask(task);
+      setIsTaskFormOpen(true);
+    } else {
+      setTaskFormRequest({ mode: 'edit', task });
+    }
+  };
+
+  const handleEditFromDetailsModal = () => {
+    const task = currentTask || selectedTask;
+    if (!task) return;
+    handleCloseTaskDetails();
+    setEditingTask(task);
+    setIsTaskFormOpen(true);
+  };
+
+  const refreshReviewTasks = () => {
+    dispatch(fetchTasksAsync({ page: 1, limit: 100 }));
   };
 
   const handleViewTask = (task) => {
@@ -287,15 +309,22 @@ const DepartmentHeadDashboard = () => {
             <TaskDetails
               open={!!selectedTask}
               onClose={handleCloseTaskDetails}
-              onEdit={() => {
-                handleCloseTaskDetails();
-                handleOpenEditTask(selectedTask);
-              }}
+              onEdit={handleEditFromDetailsModal}
               canEdit={true}
             />
           )}
         </Box>
       </Modal>
+
+      <TaskForm
+        open={isTaskFormOpen}
+        onClose={() => {
+          setIsTaskFormOpen(false);
+          setEditingTask(null);
+        }}
+        task={editingTask}
+        onCreated={refreshReviewTasks}
+      />
 
     </Box>
   );
