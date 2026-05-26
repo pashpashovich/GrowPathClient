@@ -208,24 +208,6 @@ const Sidebar = ({ open, onClose }) => {
       active: location.pathname.startsWith('/department-head/rating'),
     },
     {
-      text: 'Доска задач',
-      icon: <Dashboard />,
-      path: '/department-head/tasks',
-      active: location.pathname === '/department-head/tasks',
-    },
-    {
-      text: 'Дорожная карта',
-      icon: <Timeline />,
-      path: '/department-head/roadmap',
-      active: location.pathname === '/department-head/roadmap',
-    },
-    {
-      text: 'Проверка заданий',
-      icon: <CheckCircle />,
-      path: '/department-head/review',
-      active: location.pathname === '/department-head/review',
-    },
-    {
       text: 'Дашборд',
       icon: <Dashboard />,
       path: '/department-head/dashboard',
